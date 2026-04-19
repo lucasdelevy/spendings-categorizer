@@ -92,6 +92,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [showManage, setShowManage] = useState(false);
   const [showFamily, setShowFamily] = useState(false);
+  const [showUploadOverlay, setShowUploadOverlay] = useState(false);
 
   const availableMonths = Array.from(
     new Set(savedMonths.map((s) => s.id.split("#")[0])),
@@ -163,6 +164,7 @@ export default function App() {
   const handleSaved = useCallback(async (ym: string) => {
     setSelectedMonth(ym);
     setFamilyFiles([]);
+    setShowUploadOverlay(false);
     const items = await loadSavedMonths();
     const months = Array.from(new Set(items.map((s) => s.id.split("#")[0])));
     if (months.includes(ym)) {
@@ -193,6 +195,7 @@ export default function App() {
     setFamilyFiles([]);
     setResult(null);
     setDataSource(null);
+    setShowUploadOverlay(false);
   }, []);
 
   if (authLoading) {
@@ -220,9 +223,10 @@ export default function App() {
     );
   }
 
-  const showUploader = !monthHasData && dataSource !== "local";
+  const showUploader = (!monthHasData && dataSource !== "local") || showUploadOverlay;
   const showConfirmBar = dataSource === "local" && result !== null;
-  const showResults = result !== null;
+  const showResults = result !== null && !showUploadOverlay;
+  const canAddFiles = user.familyId && monthHasData && dataSource === "remote" && !showUploadOverlay;
 
   const selectorMonths = [
     ...availableMonths,
@@ -280,8 +284,35 @@ export default function App() {
         )}
       </div>
 
+      {canAddFiles && (
+        <div className="mb-6">
+          <button
+            onClick={() => setShowUploadOverlay(true)}
+            className="flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Enviar meus extratos
+          </button>
+        </div>
+      )}
+
       {showUploader && (
         <div className="mb-6">
+          {showUploadOverlay && (
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm text-gray-600">
+                Envie seus extratos para este mês. Eles serão combinados com os dos outros membros.
+              </p>
+              <button
+                onClick={() => { setShowUploadOverlay(false); setFamilyFiles([]); setDataSource(null); }}
+                className="text-sm text-gray-500 underline hover:text-gray-700"
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
           <FamilyUploader
             files={familyFiles}
             onFilesLoaded={handleFamilyFiles}
