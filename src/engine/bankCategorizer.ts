@@ -5,12 +5,18 @@ import type { EngineConfig } from "./categories";
 
 function categorize(description: string, cats: Record<string, string[]>): string {
   const lower = description.toLowerCase();
+  let bestMatch = "";
+  let bestCategory = "";
+
   for (const [category, keywords] of Object.entries(cats)) {
     for (const keyword of keywords) {
-      if (lower.includes(keyword)) return category;
+      if (lower.includes(keyword) && keyword.length > bestMatch.length) {
+        bestMatch = keyword;
+        bestCategory = category;
+      }
     }
   }
-  return "Sem Categoria";
+  return bestCategory || "Sem Categoria";
 }
 
 function shouldIgnore(description: string, ignoreList: string[]): boolean {

@@ -164,14 +164,20 @@ function categorizeTransaction(
   const categories = source === "bank" ? config.bankCategories : config.cardCategories;
   const desc = tx.originalDescription.toLowerCase();
 
+  let bestMatch = "";
+  let bestCategory = "";
+
   for (const [catName, entry] of Object.entries(categories)) {
     for (const kw of entry.keywords) {
-      if (desc.includes(kw.toLowerCase())) {
-        return catName;
+      const kwLower = kw.toLowerCase();
+      if (desc.includes(kwLower) && kwLower.length > bestMatch.length) {
+        bestMatch = kwLower;
+        bestCategory = catName;
       }
     }
   }
-  return tx.category;
+
+  return bestCategory || tx.category;
 }
 
 export async function applyCategoryConfig(

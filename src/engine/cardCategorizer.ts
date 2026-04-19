@@ -7,12 +7,18 @@ const INSTALLMENT_RE = / - Parcela (\d+\/\d+)$/i;
 
 function categorize(title: string, cats: Record<string, string[]>): string {
   const lower = title.toLowerCase();
+  let bestMatch = "";
+  let bestCategory = "";
+
   for (const [category, keywords] of Object.entries(cats)) {
     for (const keyword of keywords) {
-      if (lower.includes(keyword)) return category;
+      if (lower.includes(keyword) && keyword.length > bestMatch.length) {
+        bestMatch = keyword;
+        bestCategory = category;
+      }
     }
   }
-  return "Sem Categoria";
+  return bestCategory || "Sem Categoria";
 }
 
 function shouldIgnore(title: string, ignoreList: string[]): boolean {
