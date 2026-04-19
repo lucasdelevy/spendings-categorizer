@@ -2,8 +2,9 @@ import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from "aws-lambda
 import { OAuth2Client } from "google-auth-library";
 import { getCorsHeaders } from "../middleware/cors.js";
 import { createJWT, verifyJWT, extractBearerToken } from "../middleware/auth.js";
-import { upsertUser, getUser } from "../services/userService.js";
+import { upsertUser, getUser, setFamilyId } from "../services/userService.js";
 import { createSession, getSession, deleteSession } from "../services/sessionService.js";
+import { lookupFamilyByEmail, activateMember } from "../services/familyService.js";
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
@@ -42,13 +43,31 @@ async function handleGoogleLogin(event: APIGatewayProxyEventV2): Promise<APIGate
       picture: payload.picture || "",
     });
 
+    if (!user.familyId && payload.email) {
+      const familyId = await lookupFamilyByEmail(payload.email);
+      if (familyId) {
+        await activateMember(familyId, payload.email, {
+          userId: payload.sub,
+          name: payload.name || "",
+          picture: payload.picture || "",
+        });
+        await setFamilyId(payload.sub, familyId);
+        user.familyId = familyId;
+      }
+    }
+
     const session = await createSession(payload.sub);
     const sessionId = session.SK.replace("SESS#", "");
     const jwt = await createJWT({ userId: payload.sub, sessionId });
 
     return respond(200, {
       token: jwt,
-      user: { email: user.email, name: user.name, picture: user.picture },
+      user: {
+        email: user.email,
+        name: user.name,
+        picture: user.picture,
+        familyId: user.familyId || null,
+      },
     }, origin);
   } catch (err) {
     console.error("Google auth error:", err);
@@ -71,7 +90,12 @@ async function handleGetMe(event: APIGatewayProxyEventV2): Promise<APIGatewayPro
   if (!user) return respond(404, { error: "User not found" }, origin);
 
   return respond(200, {
-    user: { email: user.email, name: user.name, picture: user.picture },
+    user: {
+      email: user.email,
+      name: user.name,
+      picture: user.picture,
+      familyId: user.familyId || null,
+    },
   }, origin);
 }
 

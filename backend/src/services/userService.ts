@@ -39,3 +39,17 @@ export async function upsertUser(params: {
 
   return (await getUser(params.googleId))!;
 }
+
+export async function setFamilyId(
+  userId: string,
+  familyId: string,
+): Promise<void> {
+  await docClient.send(
+    new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: `USER#${userId}`, SK: "PROFILE" },
+      UpdateExpression: "SET familyId = :fid",
+      ExpressionAttributeValues: { ":fid": familyId },
+    }),
+  );
+}

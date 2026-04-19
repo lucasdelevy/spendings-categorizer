@@ -47,7 +47,19 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "statements.handler",
       code: lambda.Code.fromAsset(backendDist, {
-        exclude: ["auth.*"],
+        exclude: ["auth.*", "families.*"],
+      }),
+      environment: sharedEnv,
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 256,
+    });
+
+    const familiesFunction = new lambda.Function(this, "FamiliesFunction", {
+      functionName: "spendings-categorizer-families",
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "families.handler",
+      code: lambda.Code.fromAsset(backendDist, {
+        exclude: ["auth.*", "statements.*"],
       }),
       environment: sharedEnv,
       timeout: cdk.Duration.seconds(10),
@@ -56,6 +68,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
 
     table.grantReadWriteData(authFunction);
     table.grantReadWriteData(statementsFunction);
+    table.grantReadWriteData(familiesFunction);
 
     const httpApi = new apigatewayv2.HttpApi(this, "HttpApi", {
       apiName: "spendings-categorizer-api",
@@ -67,6 +80,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
         allowMethods: [
           apigatewayv2.CorsHttpMethod.GET,
           apigatewayv2.CorsHttpMethod.POST,
+          apigatewayv2.CorsHttpMethod.PUT,
           apigatewayv2.CorsHttpMethod.DELETE,
           apigatewayv2.CorsHttpMethod.OPTIONS,
         ],
@@ -82,6 +96,10 @@ export class SpendingsCategorizerStack extends cdk.Stack {
     const statementsIntegration = new integrations.HttpLambdaIntegration(
       "StatementsIntegration",
       statementsFunction,
+    );
+    const familiesIntegration = new integrations.HttpLambdaIntegration(
+      "FamiliesIntegration",
+      familiesFunction,
     );
 
     httpApi.addRoutes({
@@ -108,6 +126,26 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       path: "/statements/{id}",
       methods: [apigatewayv2.HttpMethod.GET, apigatewayv2.HttpMethod.DELETE],
       integration: statementsIntegration,
+    });
+    httpApi.addRoutes({
+      path: "/families",
+      methods: [apigatewayv2.HttpMethod.POST, apigatewayv2.HttpMethod.PUT],
+      integration: familiesIntegration,
+    });
+    httpApi.addRoutes({
+      path: "/families/mine",
+      methods: [apigatewayv2.HttpMethod.GET],
+      integration: familiesIntegration,
+    });
+    httpApi.addRoutes({
+      path: "/families/members",
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: familiesIntegration,
+    });
+    httpApi.addRoutes({
+      path: "/families/members/{email}",
+      methods: [apigatewayv2.HttpMethod.DELETE],
+      integration: familiesIntegration,
     });
 
     new cdk.CfnOutput(this, "ApiUrl", {

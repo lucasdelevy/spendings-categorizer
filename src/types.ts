@@ -2,6 +2,12 @@ export type StatementType = "bank" | "card" | "family";
 
 export type TransactionSource = "bank" | "card";
 
+export interface UploadedBy {
+  userId: string;
+  name: string;
+  picture: string;
+}
+
 export interface Transaction {
   date: string;
   amount: number;
@@ -10,6 +16,7 @@ export interface Transaction {
   installment: string;
   originalDescription: string;
   source?: TransactionSource;
+  uploadedBy?: UploadedBy;
 }
 
 export interface CategorySummary {

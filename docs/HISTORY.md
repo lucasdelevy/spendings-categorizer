@@ -49,3 +49,25 @@ Key decisions:
 - No GSI needed; JWT carries both userId and sessionId for direct lookups.
 - CDK for infrastructure-as-code, deployed to AWS account 905418115093 (us-east-1).
 - CORS restricted to GitHub Pages origin + localhost for dev.
+
+## Phase 3.1: Soft-Delete + Month Management
+
+Added soft-delete semantics: statements are marked `status: "overridden"` instead of being physically removed from DDB. This preserves history and supports re-upload workflows.
+
+Also added:
+- "Gerenciar Meses" management page (list, view, soft-delete per month).
+- Month auto-detection from uploaded CSV dates.
+- `SaveConfirmBar` component for month confirmation before saving.
+
+## Phase 4: Family Sharing (current)
+
+Introduced a Family abstraction so multiple users can share and view combined spendings.
+
+Key changes:
+- New DDB record types: `FAMILY#<familyId>/META`, `FAMILY#<familyId>/MEMBER#<userId>`, `EMAILFAM#<email>/LINK`.
+- Family lifecycle: create → add members by email → auto-link on Google login.
+- Statements scope: users in a family store uploads under `FAMILY#<familyId>` instead of `USER#<userId>`. Each user's upload is separate (`STMT#<YYYYMM>#<userId>`), merged at read time.
+- Solo mode preserved: users without a family continue to work as before (backward compatible).
+- Each transaction carries `uploadedBy: { userId, name, picture }` for avatar attribution in the UI.
+- New "Família" management page for creating families and adding/removing members.
+- New Lambda function (`families`) with dedicated API Gateway routes.

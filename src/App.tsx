@@ -10,6 +10,7 @@ import { currentYearMonth } from "./utils";
 import type { SavedStatementItem } from "./utils";
 import LoginPage from "./pages/LoginPage";
 import ManageMonths from "./pages/SavedStatements";
+import FamilyPage from "./pages/FamilyPage";
 import MonthSelector from "./components/MonthSelector";
 import SaveConfirmBar from "./components/SaveConfirmBar";
 import FamilyUploader from "./components/FamilyUploader";
@@ -90,6 +91,7 @@ export default function App() {
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showManage, setShowManage] = useState(false);
+  const [showFamily, setShowFamily] = useState(false);
 
   const availableMonths = Array.from(
     new Set(savedMonths.map((s) => s.id.split("#")[0])),
@@ -203,6 +205,10 @@ export default function App() {
 
   if (!user) return <LoginPage />;
 
+  if (showFamily) {
+    return <FamilyPage onBack={() => setShowFamily(false)} />;
+  }
+
   if (showManage) {
     return (
       <ManageMonths
@@ -235,6 +241,12 @@ export default function App() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowFamily(true)}
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+          >
+            Família
+          </button>
           <button
             onClick={() => setShowManage(true)}
             className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"

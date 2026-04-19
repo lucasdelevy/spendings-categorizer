@@ -5,7 +5,42 @@ export interface UserRecord {
   name: string;
   picture: string;
   googleId: string;
+  familyId?: string;
   createdAt: string;
+}
+
+export interface FamilyRecord {
+  PK: string;
+  SK: "META";
+  name: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+export type FamilyMemberRole = "owner" | "member";
+export type FamilyMemberStatus = "active" | "pending";
+
+export interface FamilyMemberRecord {
+  PK: string;
+  SK: string;
+  email: string;
+  name: string;
+  picture: string;
+  role: FamilyMemberRole;
+  status: FamilyMemberStatus;
+  joinedAt: string;
+}
+
+export interface EmailFamilyLookup {
+  PK: string;
+  SK: "LINK";
+  familyId: string;
+}
+
+export interface UploadedBy {
+  userId: string;
+  name: string;
+  picture: string;
 }
 
 export interface SessionRecord {
@@ -49,6 +84,7 @@ export interface TransactionItem {
   installment: string;
   originalDescription: string;
   source?: "bank" | "card";
+  uploadedBy?: UploadedBy;
 }
 
 export interface JWTPayload {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { CategorySummary, StatementType } from "../types";
+import type { CategorySummary, StatementType, UploadedBy } from "../types";
 import { getCategoryColor } from "../engine/categories";
 
 interface Props {
@@ -38,9 +38,25 @@ function SourceBadge({ source }: { source?: "bank" | "card" }) {
   );
 }
 
+function UploaderAvatar({ uploadedBy }: { uploadedBy?: UploadedBy }) {
+  if (!uploadedBy) return null;
+  return (
+    <img
+      src={uploadedBy.picture}
+      alt={uploadedBy.name}
+      title={uploadedBy.name}
+      className="h-5 w-5 rounded-full border border-gray-200"
+      referrerPolicy="no-referrer"
+    />
+  );
+}
+
 export default function TransactionTable({ categories, statementType }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const showSource = statementType === "family";
+  const hasAvatars = categories.some((c) =>
+    c.transactions.some((t) => t.uploadedBy?.picture),
+  );
 
   const toggle = (cat: string) =>
     setExpanded((prev) => {
@@ -104,6 +120,7 @@ export default function TransactionTable({ categories, statementType }: Props) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                      {hasAvatars && <th className="w-8 px-2 py-2" />}
                       <th className="px-4 py-2">Data</th>
                       {showSource && (
                         <th className="px-4 py-2">Origem</th>
@@ -122,6 +139,11 @@ export default function TransactionTable({ categories, statementType }: Props) {
                   <tbody className="divide-y divide-gray-50">
                     {transactions.map((t, i) => (
                       <tr key={i} className="hover:bg-gray-50">
+                        {hasAvatars && (
+                          <td className="px-2 py-2">
+                            <UploaderAvatar uploadedBy={t.uploadedBy} />
+                          </td>
+                        )}
                         <td className="whitespace-nowrap px-4 py-2 text-gray-500">
                           {formatDate(t.date)}
                         </td>
