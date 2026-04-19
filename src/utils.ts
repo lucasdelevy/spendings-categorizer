@@ -36,4 +36,5 @@ export interface SavedStatementItem {
   totalOut: number;
   categoryCount: number;
   transactionCount: number;
+  uploadedBy?: { userId: string; name: string; picture: string } | null;
 }

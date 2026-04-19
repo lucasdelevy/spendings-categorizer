@@ -1,11 +1,10 @@
 import { formatYearMonth } from "../utils";
 import type { SavedStatementItem } from "../utils";
 
-const TYPE_LABELS: Record<string, string> = {
-  bank: "Banco",
-  card: "Cartão",
-  family: "Familiar",
-};
+function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
 
 interface Props {
   items: SavedStatementItem[];
@@ -35,11 +34,12 @@ export default function ManageMonths({ items, onBack, onView, onDelete }: Props)
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
-          <table className="w-full min-w-[500px] text-sm">
+          <table className="w-full min-w-[640px] text-sm">
             <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
               <tr>
                 <th className="px-4 py-3">Período</th>
-                <th className="px-4 py-3">Tipo</th>
+                <th className="px-4 py-3">Dono</th>
+                <th className="px-4 py-3">Data</th>
                 <th className="px-4 py-3 text-right">Gastos</th>
                 <th className="px-4 py-3 text-right">Transações</th>
                 <th className="px-4 py-3" />
@@ -52,9 +52,24 @@ export default function ManageMonths({ items, onBack, onView, onDelete }: Props)
                   <tr key={s.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium">{formatYearMonth(yearMonth)}</td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
-                        {TYPE_LABELS[s.type] || s.type}
-                      </span>
+                      {s.uploadedBy ? (
+                        <div className="flex items-center gap-2">
+                          {s.uploadedBy.picture && (
+                            <img
+                              src={s.uploadedBy.picture}
+                              alt={s.uploadedBy.name}
+                              className="h-6 w-6 rounded-full border border-gray-200"
+                              referrerPolicy="no-referrer"
+                            />
+                          )}
+                          <span className="text-xs text-gray-700">{s.uploadedBy.name.split(" ")[0]}</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-500">
+                      {formatDate(s.uploadedAt)}
                     </td>
                     <td className="px-4 py-3 text-right font-mono">
                       R$ {Math.abs(s.totalOut).toFixed(2)}

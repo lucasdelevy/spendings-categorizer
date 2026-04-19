@@ -45,7 +45,7 @@ async function handleList(
   const statements = await listStatements(user.userId, familyId);
 
   const items = statements.map((s) => {
-    const skParts = s.SK.replace("STMT#", "").split("#");
+    const firstTx = s.transactions[0];
     return {
       id: s.SK.replace("STMT#", ""),
       fileName: s.fileName,
@@ -54,6 +54,7 @@ async function handleList(
       totalOut: s.summary.totalOut,
       categoryCount: s.summary.categories.length,
       transactionCount: s.transactions.length,
+      uploadedBy: firstTx?.uploadedBy || null,
     };
   });
 
