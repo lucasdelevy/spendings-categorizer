@@ -41,13 +41,16 @@ function SourceBadge({ source }: { source?: "bank" | "card" }) {
 function UploaderAvatar({ uploadedBy }: { uploadedBy?: UploadedBy }) {
   if (!uploadedBy) return null;
   return (
-    <img
-      src={uploadedBy.picture}
-      alt={uploadedBy.name}
-      title={uploadedBy.name}
-      className="h-5 w-5 shrink-0 rounded-full border border-gray-200 object-cover"
-      referrerPolicy="no-referrer"
-    />
+    <div className="h-5 w-5 shrink-0" style={{ minWidth: 20, minHeight: 20 }}>
+      <img
+        src={uploadedBy.picture}
+        alt={uploadedBy.name}
+        title={uploadedBy.name}
+        className="h-5 w-5 rounded-full border border-gray-200 object-cover"
+        style={{ aspectRatio: "1 / 1" }}
+        referrerPolicy="no-referrer"
+      />
+    </div>
   );
 }
 
@@ -120,7 +123,7 @@ export default function TransactionTable({ categories, statementType }: Props) {
                 <table className="w-full min-w-[600px] text-sm">
                   <thead>
                     <tr className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      {hasAvatars && <th className="w-8 px-2 py-2" />}
+                      {hasAvatars && <th className="w-8 min-w-[36px] px-2 py-2" />}
                       <th className="px-4 py-2">Data</th>
                       {showSource && (
                         <th className="px-4 py-2">Origem</th>
