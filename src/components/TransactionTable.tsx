@@ -82,7 +82,16 @@ export default function TransactionTable({
   );
   const hasActions = !!(onRecategorize || onRename || onIgnore);
 
-  const allCategoryNames = categories.map((c) => c.category);
+  const visibleCategoryNames = categories.map((c) => c.category);
+  const configCategoryNames = catConfig
+    ? [
+        ...Object.keys(catConfig.bankCategories),
+        ...Object.keys(catConfig.cardCategories),
+      ]
+    : [];
+  const allCategoryNames = Array.from(
+    new Set([...visibleCategoryNames, ...configCategoryNames]),
+  );
 
   const toggle = (cat: string) =>
     setExpanded((prev) => {
