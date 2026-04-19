@@ -18,10 +18,13 @@ export const BANK_CATEGORIES: Record<string, string[]> = {
     "drogaria", "laboratorio", "laboratório", "médico", "medico",
     "dentista", "odonto", "saude", "saúde", "centro clinico",
   ],
-  Transporte: [
+  Carro: [
+    "detran", "your best car", "i park", "estacionamento", "uber",
+    "99app", "multa", "licenciamento", "dpvat",
+  ],
+  Gasolina: [
     "combustível", "combustivel", "posto", "shell", "ipiranga",
-    "your best car", "estacionamento", "uber", "99app",
-    "detran", "multa", "licenciamento", "dpvat",
+    "auto posto", "cascol",
   ],
   "Telecom / Internet": [
     "telecom", "internet", "celular", "telefone", "claro", "vivo",
@@ -92,10 +95,13 @@ export const CARD_CATEGORIES: Record<string, string[]> = {
     "clinico", "clínico", "laboratorio", "laboratório", "dentista",
     "odonto", "bandfarma", "marcelinho", "casa aya",
   ],
-  Transporte: [
+  Carro: [
+    "detran", "your best car", "i park", "estacionamento", "uber",
+    "99app", "multa", "licenciamento", "dpvat",
+  ],
+  Gasolina: [
     "cascol", "combustivel", "combustível", "posto", "shell",
-    "ipiranga", "uber", "99app", "i park", "estacionamento",
-    "auto posto", "your best car",
+    "ipiranga", "auto posto",
   ],
   "Compras / Shopping": [
     "amazon", "leroy merlin", "daiso", "renner", "riachuelo",
@@ -135,7 +141,8 @@ export const CATEGORY_COLORS: Record<string, string> = {
   "Restaurantes / Delivery": "#ef4444",
   "Compras / Shopping": "#8b5cf6",
   "Educação": "#3b82f6",
-  Transporte: "#6366f1",
+  Carro: "#6366f1",
+  Gasolina: "#4f46e5",
   "Saúde": "#ec4899",
   "Doações / Igreja": "#14b8a6",
   "Telecom / Internet": "#06b6d4",
