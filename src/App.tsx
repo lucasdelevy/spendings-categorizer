@@ -61,7 +61,8 @@ function buildFamilyResult(
 
 function remoteToResult(remote: RemoteStatement): StatementResult {
   const catMap = new Map<string, CategorySummary>();
-  for (const t of remote.transactions) {
+  for (let i = 0; i < remote.transactions.length; i++) {
+    const t = { ...remote.transactions[i], _originalIndex: i };
     const existing = catMap.get(t.category);
     if (existing) {
       existing.total += t.amount;

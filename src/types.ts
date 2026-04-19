@@ -17,6 +17,7 @@ export interface Transaction {
   originalDescription: string;
   source?: TransactionSource;
   uploadedBy?: UploadedBy;
+  _originalIndex?: number;
 }
 
 export interface CategoryEntry {

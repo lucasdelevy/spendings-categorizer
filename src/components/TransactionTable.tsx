@@ -103,17 +103,10 @@ export default function TransactionTable({
 
   if (categories.length === 0) return null;
 
-  let runningGlobalIndex = 0;
-  const globalIndexOffset: number[] = [];
-  for (const cat of categories) {
-    globalIndexOffset.push(runningGlobalIndex);
-    runningGlobalIndex += cat.transactions.length;
-  }
-
   return (
     <>
       <div className="space-y-2">
-        {categories.map(({ category, total, count, transactions }, catIdx) => {
+        {categories.map(({ category, total, count, transactions }) => {
           const isOpen = expanded.has(category);
           const color = getCategoryColorFromConfig(category, catConfig ?? null);
 
@@ -182,7 +175,7 @@ export default function TransactionTable({
                     </thead>
                     <tbody className="divide-y divide-gray-50">
                       {transactions.map((t, txIdx) => {
-                        const globalIdx = globalIndexOffset[catIdx] + txIdx;
+                        const globalIdx = t._originalIndex ?? txIdx;
 
                         return (
                           <tr key={txIdx} className="hover:bg-gray-50">
