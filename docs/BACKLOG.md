@@ -4,17 +4,19 @@ Living document of planned features and known tech debt. Update as items are com
 
 ## Priority: High
 
-- [ ] **Complete Google OAuth setup** — Create Google Cloud project, OAuth consent screen, and Client ID. Update Lambda env vars and frontend `.env` with the real Client ID.
+- [x] **Complete Google OAuth setup** — Done. Google Cloud project created, Client ID configured in Lambda env vars and frontend `.env`/GitHub secrets.
 - [ ] **Move JWT_SECRET to Secrets Manager** — Currently a placeholder env var on the Lambda. Should be rotated and stored in AWS Secrets Manager with CDK integration.
 - [ ] **Add CI/CD for backend deploys** — GitHub Actions workflow that builds backend + runs `cdk deploy` on push to main (requires OIDC role for GitHub Actions → AWS).
 
 ## Priority: Medium
 
+- [ ] **Category management** — Move categories and their keyword lists from hardcoded `src/engine/categories.ts` to DynamoDB (per-user). Add a "Categorias" management page where the user can create/edit/delete categories and assign keywords (place names) to each. Also allow the user to click on any transaction in the table and re-categorize it (which updates the keyword mapping for future imports). DDB schema: `PK=USER#<userId>`, `SK=CAT#<categoryName>`, attributes: `keywords[]`, `color`. On first login or if no custom categories exist, seed from the current hardcoded defaults.
 - [ ] **Multi-month trend charts** — Show spending trends over time by querying all saved statements for the user. Line chart by category over months.
 - [ ] **Statement sharing between family members** — Allow multiple users to view the same family statement. Requires a shared-access model in DDB.
 - [ ] **Offline-first with service worker** — Cache the app shell and last-loaded statements for offline viewing.
 - [ ] **Better error handling on Lambda cold starts** — google-auth-library initialization is slow on first invocation. Consider provisioned concurrency or lazy init.
-- [ ] **Statement detail view from Saved Statements** — Clicking a saved statement should load it into the categorization view (pie chart + table) without re-uploading the CSV.
+- [x] **Statement detail view from Saved Statements** — Done. Month-based UX loads saved data directly from DDB into pie chart + table. "Visualizar" button in Gerenciar Meses page.
+- [ ] **Re-upload from Gerenciar Meses** — Add a "Reenviar" button per month in the management page that navigates back to the main view with the uploader open for that month, allowing the user to re-upload CSVs and overwrite saved data.
 
 ## Priority: Low
 

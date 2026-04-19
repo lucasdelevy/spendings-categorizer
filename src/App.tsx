@@ -170,7 +170,7 @@ export default function App() {
 
   const handleDeleteMonth = useCallback(async (id: string) => {
     try {
-      await api.delete(`/statements/${id}`);
+      await api.delete(`/statements/${id.replace("#", "%23")}`);
       const items = await loadSavedMonths();
       const deletedYM = id.split("#")[0];
       if (deletedYM === selectedMonth) {

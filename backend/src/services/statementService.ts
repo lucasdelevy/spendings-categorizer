@@ -1,4 +1,4 @@
-import { PutCommand, GetCommand, DeleteCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, GetCommand, UpdateCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient, TABLE_NAME } from "./dynamoClient.js";
 import type { StatementRecord, StatementSummary, TransactionItem } from "../types.js";
 
@@ -17,6 +17,7 @@ export async function saveStatement(input: SaveStatementInput): Promise<Statemen
     SK: `STMT#${input.yearMonth}#${input.type}`,
     fileName: input.fileName,
     uploadedAt: new Date().toISOString(),
+    status: "active",
     summary: input.summary,
     transactions: input.transactions,
   };
@@ -39,7 +40,9 @@ export async function getStatement(
       Key: { PK: `USER#${userId}`, SK: `STMT#${yearMonth}#${type}` },
     }),
   );
-  return (result.Item as StatementRecord) ?? null;
+  const record = result.Item as StatementRecord | undefined;
+  if (!record || record.status === "overridden") return null;
+  return record;
 }
 
 export async function listStatements(userId: string): Promise<StatementRecord[]> {
@@ -47,24 +50,30 @@ export async function listStatements(userId: string): Promise<StatementRecord[]>
     new QueryCommand({
       TableName: TABLE_NAME,
       KeyConditionExpression: "PK = :pk AND begins_with(SK, :prefix)",
+      FilterExpression: "attribute_not_exists(#st) OR #st = :active",
+      ExpressionAttributeNames: { "#st": "status" },
       ExpressionAttributeValues: {
         ":pk": `USER#${userId}`,
         ":prefix": "STMT#",
+        ":active": "active",
       },
     }),
   );
   return (result.Items as StatementRecord[]) ?? [];
 }
 
-export async function deleteStatement(
+export async function softDeleteStatement(
   userId: string,
   yearMonth: string,
   type: string,
 ): Promise<void> {
   await docClient.send(
-    new DeleteCommand({
+    new UpdateCommand({
       TableName: TABLE_NAME,
       Key: { PK: `USER#${userId}`, SK: `STMT#${yearMonth}#${type}` },
+      UpdateExpression: "SET #st = :overridden",
+      ExpressionAttributeNames: { "#st": "status" },
+      ExpressionAttributeValues: { ":overridden": "overridden" },
     }),
   );
 }

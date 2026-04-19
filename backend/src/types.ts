@@ -15,11 +15,14 @@ export interface SessionRecord {
   createdAt: string;
 }
 
+export type StatementStatus = "active" | "overridden";
+
 export interface StatementRecord {
   PK: string;
   SK: string;
   fileName: string;
   uploadedAt: string;
+  status: StatementStatus;
   summary: StatementSummary;
   transactions: TransactionItem[];
 }

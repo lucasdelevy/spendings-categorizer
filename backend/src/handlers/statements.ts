@@ -6,7 +6,7 @@ import {
   saveStatement,
   getStatement,
   listStatements,
-  deleteStatement,
+  softDeleteStatement,
 } from "../services/statementService.js";
 import type { JWTPayload } from "../types.js";
 
@@ -122,7 +122,7 @@ async function handleDelete(
   const [yearMonth, type] = id.split("#");
   if (!yearMonth || !type) return respond(400, { error: "Invalid statement id" }, origin);
 
-  await deleteStatement(user.userId, yearMonth, type);
+  await softDeleteStatement(user.userId, yearMonth, type);
   return respond(200, { message: "Deleted" }, origin);
 }
 
