@@ -9,7 +9,7 @@ export const BANK_CATEGORIES: Record<string, string[]> = {
   ],
   "Alimentação": [
     "hayashi", "supermercado", "açougue", "acougue",
-    "hortifruti", "padaria", "panificadora", "ultrabox", "rede aqui",
+    "hortifruti", "padaria", "panificadora", "ultrabox",
     "atacadão", "atacadao", "assaí", "assai", "carrefour", "extra",
     "pão de açúcar", "hortifruit", "alimentos",
   ],
@@ -24,7 +24,7 @@ export const BANK_CATEGORIES: Record<string, string[]> = {
   ],
   Gasolina: [
     "combustível", "combustivel", "posto", "shell", "ipiranga",
-    "auto posto", "cascol",
+    "auto posto", "cascol", "rede aqui",
   ],
   "Telecom / Internet": [
     "telecom", "internet", "celular", "telefone", "claro", "vivo",
@@ -77,7 +77,7 @@ export const CARD_CATEGORIES: Record<string, string[]> = {
   ],
   Padaria: ["panificadora", "panificadorapark", "padaria"],
   "Alimentação": [
-    "ultrabox", "rede aqui", "pao de acucar",
+    "ultrabox", "pao de acucar",
     "pão de açúcar", "sams club", "sam's club", "super adega",
     "bellavia", "frutos do goias", "hadco", "emporio vitalia",
     "emporio prime", "atacadão", "atacadao", "assaí", "assai",
@@ -101,7 +101,7 @@ export const CARD_CATEGORIES: Record<string, string[]> = {
   ],
   Gasolina: [
     "cascol", "combustivel", "combustível", "posto", "shell",
-    "ipiranga", "auto posto",
+    "ipiranga", "auto posto", "rede aqui",
   ],
   "Compras / Shopping": [
     "amazon", "leroy merlin", "daiso", "renner", "riachuelo",
