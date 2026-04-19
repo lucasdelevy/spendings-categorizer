@@ -1,0 +1,23 @@
+{
+  "name": "spendings-categorizer-backend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "3.1032.0",
+    "@aws-sdk/lib-dynamodb": "3.1032.0",
+    "google-auth-library": "9.14.2",
+    "jose": "5.9.6",
+    "ulid": "2.3.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "8.10.145",
+    "@types/node": "22.10.2",
+    "esbuild": "0.24.2",
+    "typescript": "5.7.3"
+  }
+}

@@ -4,6 +4,10 @@ import { parseCSV } from "./engine/csvParser";
 import { processBankCSV } from "./engine/bankCategorizer";
 import { processCardCSV } from "./engine/cardCategorizer";
 import { processFamilyStatements } from "./engine/familyCategorizer";
+import { useAuth } from "./auth/AuthContext";
+import LoginPage from "./pages/LoginPage";
+import SavedStatements from "./pages/SavedStatements";
+import SaveStatementButton from "./components/SaveStatementButton";
 import TabBar from "./components/TabBar";
 import CSVUploader from "./components/CSVUploader";
 import FamilyUploader from "./components/FamilyUploader";
@@ -30,6 +34,7 @@ function buildFamilyResult(files: DetectedFile[]): StatementResult | null {
 }
 
 export default function App() {
+  const { user, loading, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<StatementType>("family");
   const [bankResult, setBankResult] = useState<StatementResult | null>(null);
   const [cardResult, setCardResult] = useState<StatementResult | null>(null);
@@ -66,6 +71,18 @@ export default function App() {
     }
   }, []);
 
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
   const currentResult =
     activeTab === "bank"
       ? bankResult
@@ -75,13 +92,29 @@ export default function App() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <header className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-          Meu Extrato
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Categorize seu extrato Nubank automaticamente
-        </p>
+      <header className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            Spendings Categorizer
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Categorize seu extrato Nubank automaticamente
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <img
+            src={user.picture}
+            alt={user.name}
+            className="h-9 w-9 rounded-full border border-gray-200"
+            referrerPolicy="no-referrer"
+          />
+          <button
+            onClick={logout}
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+          >
+            Sair
+          </button>
+        </div>
       </header>
 
       <div className="mb-6">
@@ -115,13 +148,19 @@ export default function App() {
 
       {currentResult && (
         <div className="space-y-6">
-          <SummaryBar
-            type={currentResult.type}
-            totalIn={currentResult.totalIn}
-            totalOut={currentResult.totalOut}
-            balance={currentResult.balance}
-            transactionCount={currentResult.transactions.length}
-          />
+          <div className="flex items-center justify-between">
+            <SummaryBar
+              type={currentResult.type}
+              totalIn={currentResult.totalIn}
+              totalOut={currentResult.totalOut}
+              balance={currentResult.balance}
+              transactionCount={currentResult.transactions.length}
+            />
+            <SaveStatementButton
+              result={currentResult}
+              fileName={activeTab === "family" ? "family-combined" : "statement"}
+            />
+          </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-gray-500">
@@ -144,6 +183,13 @@ export default function App() {
           </div>
         </div>
       )}
+
+      <div className="mt-10">
+        <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-gray-500">
+          Extratos Salvos
+        </h2>
+        <SavedStatements />
+      </div>
     </div>
   );
 }

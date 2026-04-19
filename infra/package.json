@@ -1,0 +1,22 @@
+{
+  "name": "spendings-categorizer-infra",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "cdk": "cdk",
+    "synth": "cdk synth",
+    "deploy": "cdk deploy",
+    "diff": "cdk diff"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.250.0",
+    "constructs": "10.5.0"
+  },
+  "devDependencies": {
+    "aws-cdk": "2.1118.2",
+    "tsx": "4.19.2",
+    "typescript": "5.7.3"
+  }
+}

@@ -2,3 +2,14 @@ node_modules
 dist
 *.local
 .DS_Store
+.env
+.env.local
+
+# Backend build output
+backend/dist
+backend/node_modules
+
+# CDK
+infra/node_modules
+infra/dist
+infra/cdk.out
