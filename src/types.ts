@@ -19,6 +19,20 @@ export interface Transaction {
   uploadedBy?: UploadedBy;
 }
 
+export interface CategoryEntry {
+  keywords: string[];
+  color: string;
+}
+
+export interface CategoryConfig {
+  bankCategories: Record<string, CategoryEntry>;
+  cardCategories: Record<string, CategoryEntry>;
+  bankIgnore: string[];
+  cardIgnore: string[];
+  bankRename: Record<string, string>;
+  cardRename: Record<string, string>;
+}
+
 export interface CategorySummary {
   category: string;
   total: number;

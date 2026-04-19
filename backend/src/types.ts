@@ -87,6 +87,23 @@ export interface TransactionItem {
   uploadedBy?: UploadedBy;
 }
 
+export interface CategoryEntry {
+  keywords: string[];
+  color: string;
+}
+
+export interface CategoryConfigRecord {
+  PK: string;
+  SK: "CATCONFIG";
+  bankCategories: Record<string, CategoryEntry>;
+  cardCategories: Record<string, CategoryEntry>;
+  bankIgnore: string[];
+  cardIgnore: string[];
+  bankRename: Record<string, string>;
+  cardRename: Record<string, string>;
+  updatedAt: string;
+}
+
 export interface JWTPayload {
   userId: string;
   sessionId: string;

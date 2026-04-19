@@ -1,12 +1,13 @@
 import type { RawRow } from "./csvParser";
 import type { Transaction, StatementResult } from "../types";
 import { CARD_CATEGORIES, CARD_IGNORE, CARD_RENAME } from "./categories";
+import type { EngineConfig } from "./categories";
 
 const INSTALLMENT_RE = / - Parcela (\d+\/\d+)$/i;
 
-function categorize(title: string): string {
+function categorize(title: string, cats: Record<string, string[]>): string {
   const lower = title.toLowerCase();
-  for (const [category, keywords] of Object.entries(CARD_CATEGORIES)) {
+  for (const [category, keywords] of Object.entries(cats)) {
     for (const keyword of keywords) {
       if (lower.includes(keyword)) return category;
     }
@@ -14,9 +15,9 @@ function categorize(title: string): string {
   return "Sem Categoria";
 }
 
-function shouldIgnore(title: string): boolean {
+function shouldIgnore(title: string, ignoreList: string[]): boolean {
   const lower = title.toLowerCase();
-  return CARD_IGNORE.some((term) => lower.includes(term));
+  return ignoreList.some((term) => lower.includes(term));
 }
 
 function extractInstallment(title: string): [string, string] {
@@ -27,8 +28,8 @@ function extractInstallment(title: string): [string, string] {
   return [title, ""];
 }
 
-function renamePayee(name: string): string {
-  return CARD_RENAME[name.toLowerCase()] ?? name;
+function renamePayee(name: string, renameMap: Record<string, string>): string {
+  return renameMap[name.toLowerCase()] ?? name;
 }
 
 function findColumn(
@@ -41,7 +42,12 @@ function findColumn(
 export function processCardCSV(
   headers: string[],
   rows: RawRow[],
+  engineConfig?: EngineConfig,
 ): StatementResult {
+  const cats = engineConfig?.categories ?? CARD_CATEGORIES;
+  const ignoreList = engineConfig?.ignore ?? CARD_IGNORE;
+  const renameMap = engineConfig?.rename ?? CARD_RENAME;
+
   const colDate = findColumn(headers, ["date"]);
   const colTitle = findColumn(headers, ["title"]);
   const colAmount = findColumn(headers, ["amount"]);
@@ -54,14 +60,14 @@ export function processCardCSV(
 
   for (const row of rows) {
     const title = (row[colTitle] ?? "").trim();
-    if (!title || shouldIgnore(title)) continue;
+    if (!title || shouldIgnore(title, ignoreList)) continue;
 
     const rawAmount = (row[colAmount] ?? "").trim().replace(",", "");
     const amount = rawAmount ? parseFloat(rawAmount) : 0;
     const date = colDate ? (row[colDate] ?? "").trim() : "";
     const [cleanName, installment] = extractInstallment(title);
-    const category = categorize(title);
-    const payee = renamePayee(cleanName);
+    const category = categorize(title, cats);
+    const payee = renamePayee(cleanName, renameMap);
 
     transactions.push({
       date,

@@ -22,14 +22,14 @@
 └───────┬───────────────────────┬──────────────────┬───────────────┘
         │                       │                  │
         ▼                       ▼                  ▼
-┌────────────────┐  ┌────────────────────┐  ┌────────────────────┐
-│  Auth Lambda    │  │  Statements Lambda  │  │  Families Lambda    │
-│  /auth/google   │  │  /statements        │  │  /families          │
-│  /auth/me       │  │  /statements/{id}   │  │  /families/mine     │
-│  /auth/logout   │  │                     │  │  /families/members  │
-└───────┬────────┘  └─────────┬──────────┘  └─────────┬──────────┘
-        │                      │                       │
-        ▼                      ▼                       ▼
+┌────────────────┐  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
+│  Auth Lambda    │  │ Statements Lambda │  │ Families Lambda   │  │ Categories Lambda │
+│  /auth/google   │  │ /statements       │  │ /families         │  │ /categories       │
+│  /auth/me       │  │ /statements/{id}  │  │ /families/mine    │  │ /categories/      │
+│  /auth/logout   │  │                   │  │ /families/members │  │   recategorize    │
+└───────┬────────┘  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘
+        │                     │                      │                     │
+        ▼                     ▼                      ▼                     ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │  DynamoDB Table: spendings-categorizer                           │
 │  Billing: PAY_PER_REQUEST                                        │
@@ -47,6 +47,7 @@
 | Statement (family) | `FAMILY#<familyId>` | `STMT#<YYYYMM>#<userId>` | fileName, uploadedAt, status, summary, transactions     |
 | Family meta   | `FAMILY#<familyId>`   | `META`                    | name, createdBy, createdAt                              |
 | Family member | `FAMILY#<familyId>`   | `MEMBER#<userId>`         | email, name, picture, role, status, joinedAt            |
+| Category config | `FAMILY#<familyId>` or `USER#<userId>` | `CATCONFIG` | bankCategories, cardCategories, bankIgnore, cardIgnore, bankRename, cardRename, updatedAt |
 | Email lookup  | `EMAILFAM#<email>`    | `LINK`                    | familyId                                                |
 
 - `userId` = Google's `sub` claim (googleId), used directly.
@@ -92,6 +93,9 @@ When reading a month in family mode, all `STMT#<YYYYMM>#*` records are fetched a
 | PUT    | `/families`                | JWT  | Update family name (owner only)            |
 | POST   | `/families/members`        | JWT  | Add member by email (owner only)           |
 | DELETE | `/families/members/{email}`| JWT  | Remove member (owner only)                 |
+| GET    | `/categories`              | JWT  | Get category config (seeds defaults if missing) |
+| PUT    | `/categories`              | JWT  | Replace full category config               |
+| POST   | `/categories/recategorize` | JWT  | Re-categorize a transaction + update keyword rules |
 
 ## Project Structure
 
@@ -105,9 +109,10 @@ spendings-categorizer/
 │   └── types.ts
 ├── backend/                # Lambda handlers
 │   ├── src/
-│   │   ├── handlers/       # auth.ts, statements.ts, families.ts
+│   │   ├── handlers/       # auth.ts, statements.ts, families.ts, categories.ts
+│   │   ├── defaults/       # categories.ts (seed data for category config)
 │   │   ├── middleware/     # JWT auth, CORS
-│   │   └── services/       # DDB operations (userService, statementService, familyService)
+│   │   └── services/       # DDB operations (userService, statementService, familyService, categoryService)
 │   ├── esbuild.config.mjs
 │   └── package.json
 ├── infra/                  # AWS CDK

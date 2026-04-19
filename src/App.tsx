@@ -1,9 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
-import type { StatementType, StatementResult, CategorySummary } from "./types";
+import type { StatementType, StatementResult, CategorySummary, CategoryConfig } from "./types";
 import { parseCSV } from "./engine/csvParser";
 import { processBankCSV } from "./engine/bankCategorizer";
 import { processCardCSV } from "./engine/cardCategorizer";
 import { processFamilyStatements } from "./engine/familyCategorizer";
+import { toBankEngineConfig, toCardEngineConfig } from "./engine/categories";
+import { useCategoryConfig } from "./hooks/useCategoryConfig";
 import { useAuth } from "./auth/AuthContext";
 import { api } from "./auth/api";
 import { currentYearMonth } from "./utils";
@@ -11,6 +13,7 @@ import type { SavedStatementItem } from "./utils";
 import LoginPage from "./pages/LoginPage";
 import ManageMonths from "./pages/SavedStatements";
 import FamilyPage from "./pages/FamilyPage";
+import CategoriesPage from "./pages/CategoriesPage";
 import MonthSelector from "./components/MonthSelector";
 import SaveConfirmBar from "./components/SaveConfirmBar";
 import FamilyUploader from "./components/FamilyUploader";
@@ -33,16 +36,22 @@ interface RemoteStatement {
   transactions: StatementResult["transactions"];
 }
 
-function buildFamilyResult(files: DetectedFile[]): StatementResult | null {
+function buildFamilyResult(
+  files: DetectedFile[],
+  catConfig: CategoryConfig | null,
+): StatementResult | null {
+  const bankEngine = catConfig ? toBankEngineConfig(catConfig) : undefined;
+  const cardEngine = catConfig ? toCardEngineConfig(catConfig) : undefined;
+
   const bankResults: StatementResult[] = [];
   const cardResults: StatementResult[] = [];
 
   for (const f of files) {
     const parsed = parseCSV(f.text);
     if (f.type === "bank") {
-      bankResults.push(processBankCSV(parsed.headers, parsed.rows));
+      bankResults.push(processBankCSV(parsed.headers, parsed.rows, bankEngine));
     } else {
-      cardResults.push(processCardCSV(parsed.headers, parsed.rows));
+      cardResults.push(processCardCSV(parsed.headers, parsed.rows, cardEngine));
     }
   }
 
@@ -82,6 +91,7 @@ function remoteToResult(remote: RemoteStatement): StatementResult {
 
 export default function App() {
   const { user, loading: authLoading, logout } = useAuth();
+  const { config: catConfig, refresh: refreshConfig, save: saveCatConfig } = useCategoryConfig(!!user);
 
   const [savedMonths, setSavedMonths] = useState<SavedStatementItem[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>(currentYearMonth());
@@ -92,6 +102,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [showManage, setShowManage] = useState(false);
   const [showFamily, setShowFamily] = useState(false);
+  const [showCategories, setShowCategories] = useState(false);
   const [showUploadOverlay, setShowUploadOverlay] = useState(false);
 
   const availableMonths = Array.from(
@@ -153,13 +164,13 @@ export default function App() {
     setError(null);
     try {
       setFamilyFiles(files);
-      const built = buildFamilyResult(files);
+      const built = buildFamilyResult(files, catConfig);
       setResult(built);
       setDataSource(built ? "local" : null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao processar CSV");
     }
-  }, []);
+  }, [catConfig]);
 
   const handleSaved = useCallback(async (ym: string) => {
     setSelectedMonth(ym);
@@ -190,6 +201,26 @@ export default function App() {
     }
   }, [selectedMonth, loadSavedMonths]);
 
+  const handleRecategorize = useCallback(async (
+    globalIndex: number,
+    newCategory: string,
+    keyword: string,
+  ) => {
+    if (!result || dataSource !== "remote") return;
+    try {
+      await api.post("/categories/recategorize", {
+        statementId: `${selectedMonth}#family`,
+        transactionIndex: globalIndex,
+        newCategory,
+        keyword,
+      });
+      await refreshConfig();
+      await loadMonthFromRemote(selectedMonth);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao recategorizar");
+    }
+  }, [result, dataSource, selectedMonth, refreshConfig, loadMonthFromRemote]);
+
   const handleMonthChange = useCallback((ym: string) => {
     setSelectedMonth(ym);
     setFamilyFiles([]);
@@ -207,6 +238,16 @@ export default function App() {
   }
 
   if (!user) return <LoginPage />;
+
+  if (showCategories) {
+    return (
+      <CategoriesPage
+        config={catConfig}
+        onSave={async (updated) => { await saveCatConfig(updated); }}
+        onBack={() => setShowCategories(false)}
+      />
+    );
+  }
 
   if (showFamily) {
     return <FamilyPage onBack={() => setShowFamily(false)} />;
@@ -245,6 +286,12 @@ export default function App() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowCategories(true)}
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+          >
+            Categorias
+          </button>
           <button
             onClick={() => setShowFamily(true)}
             className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
@@ -359,6 +406,8 @@ export default function App() {
             <TransactionTable
               categories={result.categories}
               statementType={result.type}
+              catConfig={catConfig}
+              onRecategorize={dataSource === "remote" ? handleRecategorize : undefined}
             />
           </div>
         </div>

@@ -71,3 +71,17 @@ Key changes:
 - Each transaction carries `uploadedBy: { userId, name, picture }` for avatar attribution in the UI.
 - New "Família" management page for creating families and adding/removing members.
 - New Lambda function (`families`) with dedicated API Gateway routes.
+
+## Phase 5: Category Management
+
+Moved category rules from hardcoded frontend constants to DynamoDB, enabling per-family (or per-user) customization.
+
+Key changes:
+- New DDB record `CATCONFIG` (PK = `FAMILY#<familyId>` or `USER#<userId>`, SK = `CATCONFIG`) stores all category rules: bank/card categories with keywords and colors, ignore lists, and rename maps.
+- On first access, config is seeded from the hardcoded defaults so existing behavior is preserved.
+- New "Categorias" management page with Bank/Card tabs, allowing users to create/edit/delete categories, manage keywords (as chips), set colors, manage ignore patterns, and manage payee rename mappings.
+- Categorization engine refactored: `processBankCSV` and `processCardCSV` accept an optional config parameter. When the user's config is loaded from the API, it overrides the hardcoded defaults.
+- Transaction re-categorization: each transaction row in the table has a tag icon button that opens a category picker. Selecting a new category updates the stored statement in DDB and adds the original description as a keyword to the chosen category for future imports.
+- New Lambda function (`categories`) with `GET /categories`, `PUT /categories`, and `POST /categories/recategorize` routes.
+- Added GitHub Actions CD workflow for backend: `deploy-backend.yml` triggers on `backend/**` or `infra/**` changes, uses OIDC to assume an IAM role, and runs `cdk deploy`.
+- Frontend deploy workflow updated with path filters so it only triggers on frontend changes.

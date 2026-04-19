@@ -1,4 +1,8 @@
-export const BANK_CATEGORIES: Record<string, string[]> = {
+import type { CategoryConfigRecord } from "../types.js";
+
+type CatMap = CategoryConfigRecord["bankCategories"];
+
+const BANK_CATEGORIES: Record<string, string[]> = {
   Moradia: [
     "aluguel", "condominio", "condomínio", "iptu", "imobiliaria",
     "imobiliária",
@@ -60,11 +64,7 @@ export const BANK_CATEGORIES: Record<string, string[]> = {
   "Outros Pagamentos": ["c6 bank"],
 };
 
-export const BANK_IGNORE: string[] = [
-  "aplicação rdb", "aplicacao rdb", "resgate rdb",
-];
-
-export const CARD_CATEGORIES: Record<string, string[]> = {
+const CARD_CATEGORIES: Record<string, string[]> = {
   IOF: ["iof de "],
   "Assinaturas / Apps": [
     "cursor ai", "obsidian", "netflix", "spotify", "disney",
@@ -121,20 +121,7 @@ export const CARD_CATEGORIES: Record<string, string[]> = {
   ],
 };
 
-export const BANK_RENAME: Record<string, string> = {
-  "hayashi comercio, importacao de produtos alimenticios ltda":
-    "Frutaria Vargem Bonita",
-  "hayashi alimentos.": "Frutaria Vargem Bonita",
-};
-
-export const CARD_IGNORE: string[] = ["pagamento recebido"];
-
-export const CARD_RENAME: Record<string, string> = {
-  "quintino e zanani": "Gracie Barra Lago Sul",
-  "hayashi alimentos.": "Frutaria Vargem Bonita",
-};
-
-export const CATEGORY_COLORS: Record<string, string> = {
+const COLORS: Record<string, string> = {
   Receitas: "#22c55e",
   "Alimentação": "#f97316",
   Padaria: "#d97706",
@@ -159,63 +146,29 @@ export const CATEGORY_COLORS: Record<string, string> = {
   "Sem Categoria": "#d1d5db",
 };
 
-export function getCategoryColor(category: string): string {
-  return CATEGORY_COLORS[category] ?? "#d1d5db";
-}
-
-import type { CategoryConfig, CategoryEntry } from "../types";
-
-export function getCategoryColorFromConfig(
-  category: string,
-  config: CategoryConfig | null,
-): string {
-  if (!config) return getCategoryColor(category);
-  const entry =
-    config.bankCategories[category] ?? config.cardCategories[category];
-  return entry?.color ?? "#d1d5db";
-}
-
-export interface EngineConfig {
-  categories: Record<string, string[]>;
-  ignore: string[];
-  rename: Record<string, string>;
-}
-
-function toEngineConfig(
-  catMap: Record<string, CategoryEntry>,
-  ignore: string[],
-  rename: Record<string, string>,
-): EngineConfig {
-  const categories: Record<string, string[]> = {};
-  for (const [name, entry] of Object.entries(catMap)) {
-    categories[name] = entry.keywords;
+function toCatMap(raw: Record<string, string[]>): CatMap {
+  const result: CatMap = {};
+  for (const [name, keywords] of Object.entries(raw)) {
+    result[name] = { keywords, color: COLORS[name] ?? "#d1d5db" };
   }
-  return { categories, ignore, rename };
+  return result;
 }
 
-export function toBankEngineConfig(config: CategoryConfig): EngineConfig {
-  return toEngineConfig(config.bankCategories, config.bankIgnore, config.bankRename);
-}
-
-export function toCardEngineConfig(config: CategoryConfig): EngineConfig {
-  return toEngineConfig(config.cardCategories, config.cardIgnore, config.cardRename);
-}
-
-export function buildDefaultConfig(): CategoryConfig {
-  const bc: Record<string, CategoryEntry> = {};
-  for (const [name, keywords] of Object.entries(BANK_CATEGORIES)) {
-    bc[name] = { keywords, color: CATEGORY_COLORS[name] ?? "#d1d5db" };
-  }
-  const cc: Record<string, CategoryEntry> = {};
-  for (const [name, keywords] of Object.entries(CARD_CATEGORIES)) {
-    cc[name] = { keywords, color: CATEGORY_COLORS[name] ?? "#d1d5db" };
-  }
+export function buildDefaultConfig(): Omit<CategoryConfigRecord, "PK" | "SK"> {
   return {
-    bankCategories: bc,
-    cardCategories: cc,
-    bankIgnore: [...BANK_IGNORE],
-    cardIgnore: [...CARD_IGNORE],
-    bankRename: { ...BANK_RENAME },
-    cardRename: { ...CARD_RENAME },
+    bankCategories: toCatMap(BANK_CATEGORIES),
+    cardCategories: toCatMap(CARD_CATEGORIES),
+    bankIgnore: ["aplicação rdb", "aplicacao rdb", "resgate rdb"],
+    cardIgnore: ["pagamento recebido"],
+    bankRename: {
+      "hayashi comercio, importacao de produtos alimenticios ltda":
+        "Frutaria Vargem Bonita",
+      "hayashi alimentos.": "Frutaria Vargem Bonita",
+    },
+    cardRename: {
+      "quintino e zanani": "Gracie Barra Lago Sul",
+      "hayashi alimentos.": "Frutaria Vargem Bonita",
+    },
+    updatedAt: new Date().toISOString(),
   };
 }

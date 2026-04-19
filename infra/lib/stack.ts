@@ -35,7 +35,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "auth.handler",
       code: lambda.Code.fromAsset(backendDist, {
-        exclude: ["statements.*"],
+        exclude: ["statements.*", "categories.*"],
       }),
       environment: sharedEnv,
       timeout: cdk.Duration.seconds(10),
@@ -47,7 +47,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "statements.handler",
       code: lambda.Code.fromAsset(backendDist, {
-        exclude: ["auth.*", "families.*"],
+        exclude: ["auth.*", "families.*", "categories.*"],
       }),
       environment: sharedEnv,
       timeout: cdk.Duration.seconds(10),
@@ -59,7 +59,19 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "families.handler",
       code: lambda.Code.fromAsset(backendDist, {
-        exclude: ["auth.*", "statements.*"],
+        exclude: ["auth.*", "statements.*", "categories.*"],
+      }),
+      environment: sharedEnv,
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 256,
+    });
+
+    const categoriesFunction = new lambda.Function(this, "CategoriesFunction", {
+      functionName: "spendings-categorizer-categories",
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "categories.handler",
+      code: lambda.Code.fromAsset(backendDist, {
+        exclude: ["auth.*", "families.*"],
       }),
       environment: sharedEnv,
       timeout: cdk.Duration.seconds(10),
@@ -69,6 +81,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
     table.grantReadWriteData(authFunction);
     table.grantReadWriteData(statementsFunction);
     table.grantReadWriteData(familiesFunction);
+    table.grantReadWriteData(categoriesFunction);
 
     const httpApi = new apigatewayv2.HttpApi(this, "HttpApi", {
       apiName: "spendings-categorizer-api",
@@ -100,6 +113,10 @@ export class SpendingsCategorizerStack extends cdk.Stack {
     const familiesIntegration = new integrations.HttpLambdaIntegration(
       "FamiliesIntegration",
       familiesFunction,
+    );
+    const categoriesIntegration = new integrations.HttpLambdaIntegration(
+      "CategoriesIntegration",
+      categoriesFunction,
     );
 
     httpApi.addRoutes({
@@ -146,6 +163,17 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       path: "/families/members/{email}",
       methods: [apigatewayv2.HttpMethod.DELETE],
       integration: familiesIntegration,
+    });
+
+    httpApi.addRoutes({
+      path: "/categories",
+      methods: [apigatewayv2.HttpMethod.GET, apigatewayv2.HttpMethod.PUT],
+      integration: categoriesIntegration,
+    });
+    httpApi.addRoutes({
+      path: "/categories/recategorize",
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: categoriesIntegration,
     });
 
     new cdk.CfnOutput(this, "ApiUrl", {

@@ -8,11 +8,11 @@ Living document of planned features and known tech debt. Update as items are com
 - [x] **Soft-delete statements** — Done. Statements are marked `status: "overridden"` instead of hard-deleted.
 - [x] **Family sharing** — Done. Multiple users can share spendings via a Family entity. Per-user uploads merged at read time with avatar attribution.
 - [ ] **Move JWT_SECRET to Secrets Manager** — Currently a placeholder env var on the Lambda. Should be rotated and stored in AWS Secrets Manager with CDK integration.
-- [ ] **Add CI/CD for backend deploys** — GitHub Actions workflow that builds backend + runs `cdk deploy` on push to main (requires OIDC role for GitHub Actions → AWS).
+- [x] **Add CI/CD for backend deploys** — Done. `deploy-backend.yml` workflow triggers on `backend/**`/`infra/**` changes, uses OIDC + CDK deploy. Frontend workflow now has path filters.
 
 ## Priority: Medium
 
-- [ ] **Category management** — Move categories and their keyword lists from hardcoded `src/engine/categories.ts` to DynamoDB (per-family or per-user). Add a "Categorias" management page where the user can create/edit/delete categories and assign keywords (place names) to each. Also allow the user to click on any transaction in the table and re-categorize it (which updates the keyword mapping for future imports). DDB schema: `PK=FAMILY#<familyId>`, `SK=CAT#<categoryName>`, attributes: `keywords[]`, `color`. On first login or if no custom categories exist, seed from the current hardcoded defaults.
+- [x] **Category management** — Done. Categories, ignore lists, and rename maps stored in DDB per-family/user (`CATCONFIG`). "Categorias" page with Bank/Card tabs, keyword chips, color picker, ignore/rename management. Transaction re-categorization via tag-icon picker in the table. New `categories` Lambda.
 - [ ] **Multi-month trend charts** — Show spending trends over time by querying all saved statements for the family. Line chart by category over months.
 - [ ] **Migrate solo statements to family** — When a user creates or joins a family, offer a one-time migration of their existing `USER#<userId>/STMT#*` records into the new `FAMILY#<familyId>` namespace.
 - [ ] **Family ownership transfer** — Allow the current owner to transfer ownership to another active member.
