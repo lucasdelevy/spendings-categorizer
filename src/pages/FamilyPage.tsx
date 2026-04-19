@@ -170,7 +170,7 @@ export default function FamilyPage({ onBack }: Props) {
                       <img
                         src={member.picture}
                         alt={member.name}
-                        className="h-9 w-9 rounded-full border border-gray-200"
+                        className="h-9 w-9 shrink-0 rounded-full border border-gray-200 object-cover"
                         referrerPolicy="no-referrer"
                       />
                     ) : (

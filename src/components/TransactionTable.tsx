@@ -45,7 +45,7 @@ function UploaderAvatar({ uploadedBy }: { uploadedBy?: UploadedBy }) {
       src={uploadedBy.picture}
       alt={uploadedBy.name}
       title={uploadedBy.name}
-      className="h-5 w-5 rounded-full border border-gray-200"
+      className="h-5 w-5 shrink-0 rounded-full border border-gray-200 object-cover"
       referrerPolicy="no-referrer"
     />
   );

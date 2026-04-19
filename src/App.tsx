@@ -260,7 +260,7 @@ export default function App() {
           <img
             src={user.picture}
             alt={user.name}
-            className="h-9 w-9 rounded-full border border-gray-200"
+            className="h-9 w-9 shrink-0 rounded-full border border-gray-200 object-cover"
             referrerPolicy="no-referrer"
           />
           <button

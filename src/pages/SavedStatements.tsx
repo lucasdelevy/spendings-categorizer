@@ -58,7 +58,7 @@ export default function ManageMonths({ items, onBack, onView, onDelete }: Props)
                             <img
                               src={s.uploadedBy.picture}
                               alt={s.uploadedBy.name}
-                              className="h-6 w-6 rounded-full border border-gray-200"
+                              className="h-6 w-6 shrink-0 rounded-full border border-gray-200 object-cover"
                               referrerPolicy="no-referrer"
                             />
                           )}
