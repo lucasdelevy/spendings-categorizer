@@ -170,8 +170,7 @@ export function getCategoryColorFromConfig(
   config: CategoryConfig | null,
 ): string {
   if (!config) return getCategoryColor(category);
-  const entry =
-    config.bankCategories[category] ?? config.cardCategories[category];
+  const entry = config.categories[category];
   return entry?.color ?? "#d1d5db";
 }
 
@@ -181,41 +180,30 @@ export interface EngineConfig {
   rename: Record<string, string>;
 }
 
-function toEngineConfig(
-  catMap: Record<string, CategoryEntry>,
-  ignore: string[],
-  rename: Record<string, string>,
-): EngineConfig {
+export function toEngineConfig(config: CategoryConfig): EngineConfig {
   const categories: Record<string, string[]> = {};
-  for (const [name, entry] of Object.entries(catMap)) {
+  for (const [name, entry] of Object.entries(config.categories)) {
     categories[name] = entry.keywords;
   }
-  return { categories, ignore, rename };
-}
-
-export function toBankEngineConfig(config: CategoryConfig): EngineConfig {
-  return toEngineConfig(config.bankCategories, config.bankIgnore, config.bankRename);
-}
-
-export function toCardEngineConfig(config: CategoryConfig): EngineConfig {
-  return toEngineConfig(config.cardCategories, config.cardIgnore, config.cardRename);
+  return { categories, ignore: config.ignore, rename: config.rename };
 }
 
 export function buildDefaultConfig(): CategoryConfig {
-  const bc: Record<string, CategoryEntry> = {};
+  const categories: Record<string, CategoryEntry> = {};
   for (const [name, keywords] of Object.entries(BANK_CATEGORIES)) {
-    bc[name] = { keywords, color: CATEGORY_COLORS[name] ?? "#d1d5db" };
+    categories[name] = { keywords, color: CATEGORY_COLORS[name] ?? "#d1d5db" };
   }
-  const cc: Record<string, CategoryEntry> = {};
   for (const [name, keywords] of Object.entries(CARD_CATEGORIES)) {
-    cc[name] = { keywords, color: CATEGORY_COLORS[name] ?? "#d1d5db" };
+    if (categories[name]) {
+      const merged = new Set([...categories[name].keywords, ...keywords]);
+      categories[name].keywords = Array.from(merged);
+    } else {
+      categories[name] = { keywords, color: CATEGORY_COLORS[name] ?? "#d1d5db" };
+    }
   }
   return {
-    bankCategories: bc,
-    cardCategories: cc,
-    bankIgnore: [...BANK_IGNORE],
-    cardIgnore: [...CARD_IGNORE],
-    bankRename: { ...BANK_RENAME },
-    cardRename: { ...CARD_RENAME },
+    categories,
+    ignore: [...BANK_IGNORE, ...CARD_IGNORE],
+    rename: { ...BANK_RENAME, ...CARD_RENAME },
   };
 }

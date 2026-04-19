@@ -4,7 +4,7 @@ import { parseCSV } from "./engine/csvParser";
 import { processBankCSV } from "./engine/bankCategorizer";
 import { processCardCSV } from "./engine/cardCategorizer";
 import { processFamilyStatements } from "./engine/familyCategorizer";
-import { toBankEngineConfig, toCardEngineConfig } from "./engine/categories";
+import { toEngineConfig } from "./engine/categories";
 import { useCategoryConfig } from "./hooks/useCategoryConfig";
 import { useAuth } from "./auth/AuthContext";
 import { api } from "./auth/api";
@@ -40,8 +40,7 @@ function buildFamilyResult(
   files: DetectedFile[],
   catConfig: CategoryConfig | null,
 ): StatementResult | null {
-  const bankEngine = catConfig ? toBankEngineConfig(catConfig) : undefined;
-  const cardEngine = catConfig ? toCardEngineConfig(catConfig) : undefined;
+  const engineConfig = catConfig ? toEngineConfig(catConfig) : undefined;
 
   const bankResults: StatementResult[] = [];
   const cardResults: StatementResult[] = [];
@@ -49,9 +48,9 @@ function buildFamilyResult(
   for (const f of files) {
     const parsed = parseCSV(f.text);
     if (f.type === "bank") {
-      bankResults.push(processBankCSV(parsed.headers, parsed.rows, bankEngine));
+      bankResults.push(processBankCSV(parsed.headers, parsed.rows, engineConfig));
     } else {
-      cardResults.push(processCardCSV(parsed.headers, parsed.rows, cardEngine));
+      cardResults.push(processCardCSV(parsed.headers, parsed.rows, engineConfig));
     }
   }
 

@@ -44,12 +44,9 @@ async function handleGet(
   const config = await getConfig(user.userId, userRecord?.familyId);
 
   return respond(200, {
-    bankCategories: config.bankCategories,
-    cardCategories: config.cardCategories,
-    bankIgnore: config.bankIgnore,
-    cardIgnore: config.cardIgnore,
-    bankRename: config.bankRename,
-    cardRename: config.cardRename,
+    categories: config.categories,
+    ignore: config.ignore,
+    rename: config.rename,
   }, origin);
 }
 
@@ -60,29 +57,23 @@ async function handlePut(
   const origin = event.headers?.origin;
   const body = JSON.parse(event.body || "{}");
 
-  const { bankCategories, cardCategories, bankIgnore, cardIgnore, bankRename, cardRename } = body;
-  if (!bankCategories || !cardCategories) {
-    return respond(400, { error: "bankCategories and cardCategories are required" }, origin);
+  const { categories, ignore, rename } = body;
+  if (!categories) {
+    return respond(400, { error: "categories is required" }, origin);
   }
 
   const userRecord = await getUser(user.userId);
   const saved = await saveConfig(user.userId, userRecord?.familyId, {
-    bankCategories,
-    cardCategories,
-    bankIgnore: bankIgnore ?? [],
-    cardIgnore: cardIgnore ?? [],
-    bankRename: bankRename ?? {},
-    cardRename: cardRename ?? {},
+    categories,
+    ignore: ignore ?? [],
+    rename: rename ?? {},
     updatedAt: "",
   });
 
   return respond(200, {
-    bankCategories: saved.bankCategories,
-    cardCategories: saved.cardCategories,
-    bankIgnore: saved.bankIgnore,
-    cardIgnore: saved.cardIgnore,
-    bankRename: saved.bankRename,
-    cardRename: saved.cardRename,
+    categories: saved.categories,
+    ignore: saved.ignore,
+    rename: saved.rename,
   }, origin);
 }
 
@@ -107,11 +98,10 @@ async function handleRecategorize(
     return respond(404, { error: "Statement not found" }, origin);
   }
 
-  const source = record.transactions[localIdx]?.source ?? "bank";
   const originalDesc = record.transactions[localIdx].originalDescription;
 
   if (shouldCreate && color) {
-    await createCategoryEntry(user.userId, familyId, source, newCategory, color);
+    await createCategoryEntry(user.userId, familyId, newCategory, color);
   }
 
   record.transactions[localIdx].category = newCategory;
@@ -151,7 +141,7 @@ async function handleRecategorize(
   }
 
   if (keyword) {
-    await addKeywordToCategory(user.userId, familyId, source, newCategory, keyword);
+    await addKeywordToCategory(user.userId, familyId, newCategory, keyword);
   }
 
   return respond(200, { message: "Recategorized" }, origin);
@@ -179,7 +169,6 @@ async function handleRename(
   }
 
   const tx = record.transactions[localIdx];
-  const source = tx.source ?? "bank";
   const originalDesc = tx.originalDescription;
 
   tx.payee = newPayeeName;
@@ -187,7 +176,7 @@ async function handleRename(
     new PutCommand({ TableName: TABLE_NAME, Item: record }),
   );
 
-  await addRenameMapping(user.userId, familyId, source, originalDesc, newPayeeName);
+  await addRenameMapping(user.userId, familyId, originalDesc, newPayeeName);
 
   return respond(200, { message: "Renamed" }, origin);
 }
@@ -214,7 +203,6 @@ async function handleIgnore(
   }
 
   const tx = record.transactions[localIdx];
-  const source = tx.source ?? "bank";
   const pattern = tx.originalDescription;
 
   record.transactions.splice(localIdx, 1);
@@ -245,7 +233,7 @@ async function handleIgnore(
     new PutCommand({ TableName: TABLE_NAME, Item: record }),
   );
 
-  await addIgnorePattern(user.userId, familyId, source, pattern);
+  await addIgnorePattern(user.userId, familyId, pattern);
 
   return respond(200, { message: "Ignored" }, origin);
 }

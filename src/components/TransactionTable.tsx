@@ -84,10 +84,7 @@ export default function TransactionTable({
 
   const visibleCategoryNames = categories.map((c) => c.category);
   const configCategoryNames = catConfig
-    ? [
-        ...Object.keys(catConfig.bankCategories),
-        ...Object.keys(catConfig.cardCategories),
-      ]
+    ? Object.keys(catConfig.categories)
     : [];
   const allCategoryNames = Array.from(
     new Set([...visibleCategoryNames, ...configCategoryNames]),

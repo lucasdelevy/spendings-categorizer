@@ -95,12 +95,9 @@ export interface CategoryEntry {
 export interface CategoryConfigRecord {
   PK: string;
   SK: "CATCONFIG";
-  bankCategories: Record<string, CategoryEntry>;
-  cardCategories: Record<string, CategoryEntry>;
-  bankIgnore: string[];
-  cardIgnore: string[];
-  bankRename: Record<string, string>;
-  cardRename: Record<string, string>;
+  categories: Record<string, CategoryEntry>;
+  ignore: string[];
+  rename: Record<string, string>;
   updatedAt: string;
 }
 

@@ -26,12 +26,9 @@ export interface CategoryEntry {
 }
 
 export interface CategoryConfig {
-  bankCategories: Record<string, CategoryEntry>;
-  cardCategories: Record<string, CategoryEntry>;
-  bankIgnore: string[];
-  cardIgnore: string[];
-  bankRename: Record<string, string>;
-  cardRename: Record<string, string>;
+  categories: Record<string, CategoryEntry>;
+  ignore: string[];
+  rename: Record<string, string>;
 }
 
 export interface CategorySummary {
