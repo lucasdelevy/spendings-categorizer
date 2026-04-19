@@ -116,8 +116,8 @@ export default function TransactionTable({ categories, statementType }: Props) {
             </button>
 
             {isOpen && (
-              <div className="border-t border-gray-100">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto border-t border-gray-100">
+                <table className="w-full min-w-[600px] text-sm">
                   <thead>
                     <tr className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                       {hasAvatars && <th className="w-8 px-2 py-2" />}

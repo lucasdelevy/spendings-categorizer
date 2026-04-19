@@ -34,8 +34,8 @@ export default function ManageMonths({ items, onBack, onView, onDelete }: Props)
           Nenhum extrato salvo ainda.
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+          <table className="w-full min-w-[500px] text-sm">
             <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
               <tr>
                 <th className="px-4 py-3">Período</th>
