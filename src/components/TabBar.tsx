@@ -7,9 +7,9 @@ interface Props {
 }
 
 const tabs: { key: StatementType; label: string }[] = [
+  { key: "family", label: "Gasto Familiar" },
   { key: "bank", label: "Extrato Bancário" },
   { key: "card", label: "Fatura Cartão" },
-  { key: "family", label: "Gasto Familiar" },
 ];
 
 export default function TabBar({ active, onChange, counts }: Props) {

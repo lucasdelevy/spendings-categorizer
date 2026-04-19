@@ -30,7 +30,7 @@ function buildFamilyResult(files: DetectedFile[]): StatementResult | null {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<StatementType>("bank");
+  const [activeTab, setActiveTab] = useState<StatementType>("family");
   const [bankResult, setBankResult] = useState<StatementResult | null>(null);
   const [cardResult, setCardResult] = useState<StatementResult | null>(null);
   const [familyResult, setFamilyResult] = useState<StatementResult | null>(null);
