@@ -3,26 +3,16 @@ import type { StatementType } from "../types";
 interface Props {
   active: StatementType;
   onChange: (tab: StatementType) => void;
-  bankCount: number;
-  cardCount: number;
+  counts: Record<StatementType, number>;
 }
 
 const tabs: { key: StatementType; label: string }[] = [
   { key: "bank", label: "Extrato Bancário" },
   { key: "card", label: "Fatura Cartão" },
+  { key: "family", label: "Gasto Familiar" },
 ];
 
-export default function TabBar({
-  active,
-  onChange,
-  bankCount,
-  cardCount,
-}: Props) {
-  const counts: Record<StatementType, number> = {
-    bank: bankCount,
-    card: cardCount,
-  };
-
+export default function TabBar({ active, onChange, counts }: Props) {
   return (
     <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
       {tabs.map(({ key, label }) => (

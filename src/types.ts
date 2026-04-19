@@ -1,4 +1,6 @@
-export type StatementType = "bank" | "card";
+export type StatementType = "bank" | "card" | "family";
+
+export type TransactionSource = "bank" | "card";
 
 export interface Transaction {
   date: string;
@@ -7,6 +9,7 @@ export interface Transaction {
   payee: string;
   installment: string;
   originalDescription: string;
+  source?: TransactionSource;
 }
 
 export interface CategorySummary {

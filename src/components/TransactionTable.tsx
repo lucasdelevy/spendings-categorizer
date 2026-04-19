@@ -22,8 +22,25 @@ function formatDate(raw: string): string {
   return raw;
 }
 
+function SourceBadge({ source }: { source?: "bank" | "card" }) {
+  if (!source) return null;
+  const isBank = source === "bank";
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${
+        isBank
+          ? "bg-indigo-100 text-indigo-700"
+          : "bg-amber-100 text-amber-700"
+      }`}
+    >
+      {isBank ? "Banco" : "Cartão"}
+    </span>
+  );
+}
+
 export default function TransactionTable({ categories, statementType }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const showSource = statementType === "family";
 
   const toggle = (cat: string) =>
     setExpanded((prev) => {
@@ -88,12 +105,15 @@ export default function TransactionTable({ categories, statementType }: Props) {
                   <thead>
                     <tr className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                       <th className="px-4 py-2">Data</th>
+                      {showSource && (
+                        <th className="px-4 py-2">Origem</th>
+                      )}
                       <th className="px-4 py-2">
                         {statementType === "bank"
                           ? "Beneficiário"
                           : "Estabelecimento"}
                       </th>
-                      {statementType === "card" && (
+                      {(statementType === "card" || statementType === "family") && (
                         <th className="px-4 py-2">Parcela</th>
                       )}
                       <th className="px-4 py-2 text-right">Valor</th>
@@ -105,13 +125,18 @@ export default function TransactionTable({ categories, statementType }: Props) {
                         <td className="whitespace-nowrap px-4 py-2 text-gray-500">
                           {formatDate(t.date)}
                         </td>
+                        {showSource && (
+                          <td className="px-4 py-2">
+                            <SourceBadge source={t.source} />
+                          </td>
+                        )}
                         <td
                           className="max-w-xs truncate px-4 py-2 text-gray-800"
                           title={t.originalDescription}
                         >
                           {t.payee}
                         </td>
-                        {statementType === "card" && (
+                        {(statementType === "card" || statementType === "family") && (
                           <td className="px-4 py-2 text-gray-500">
                             {t.installment || "—"}
                           </td>

@@ -70,6 +70,7 @@ export function processCardCSV(
       payee,
       installment,
       originalDescription: title,
+      source: "card",
     });
   }
 

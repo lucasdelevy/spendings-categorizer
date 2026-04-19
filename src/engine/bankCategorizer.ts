@@ -84,6 +84,7 @@ export function processBankCSV(
       payee,
       installment: "",
       originalDescription: desc,
+      source: "bank",
     });
   }
 
