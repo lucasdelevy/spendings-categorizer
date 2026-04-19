@@ -3,7 +3,14 @@ import { getCorsHeaders } from "../middleware/cors.js";
 import { verifyJWT, extractBearerToken } from "../middleware/auth.js";
 import { getSession } from "../services/sessionService.js";
 import { getUser } from "../services/userService.js";
-import { getConfig, saveConfig, addKeywordToCategory } from "../services/categoryService.js";
+import {
+  getConfig,
+  saveConfig,
+  addKeywordToCategory,
+  addRenameMapping,
+  addIgnorePattern,
+  createCategoryEntry,
+} from "../services/categoryService.js";
 import { getFamilyMonthStatements, getStatement } from "../services/statementService.js";
 import { PutCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient, TABLE_NAME } from "../services/dynamoClient.js";
@@ -84,7 +91,7 @@ async function handleRecategorize(
 ): Promise<APIGatewayProxyResultV2> {
   const origin = event.headers?.origin;
   const body = JSON.parse(event.body || "{}");
-  const { statementId, transactionIndex, newCategory, keyword } = body;
+  const { statementId, transactionIndex, newCategory, keyword, createCategory: shouldCreate, color } = body;
 
   if (!statementId || transactionIndex === undefined || !newCategory) {
     return respond(400, { error: "statementId, transactionIndex, and newCategory are required" }, origin);
@@ -93,61 +100,154 @@ async function handleRecategorize(
   const userRecord = await getUser(user.userId);
   const familyId = userRecord?.familyId;
 
-  let record: StatementRecord | null = null;
-
-  if (familyId) {
-    const [yearMonth, userId] = statementId.split("#");
-    if (!yearMonth || !userId) {
-      return respond(400, { error: "Invalid statementId" }, origin);
-    }
-
-    if (userId === "family") {
-      const records = await getFamilyMonthStatements(familyId, yearMonth);
-      let globalIdx = transactionIndex as number;
-      for (const r of records) {
-        if (globalIdx < r.transactions.length) {
-          r.transactions[globalIdx].category = newCategory;
-          await docClient.send(
-            new PutCommand({ TableName: TABLE_NAME, Item: r }),
-          );
-          record = r;
-          break;
-        }
-        globalIdx -= r.transactions.length;
-      }
-    } else {
-      record = await getStatement(userId, yearMonth, "", familyId);
-      if (record) {
-        record.transactions[transactionIndex].category = newCategory;
-        await docClient.send(
-          new PutCommand({ TableName: TABLE_NAME, Item: record }),
-        );
-      }
-    }
-  } else {
-    const [yearMonth, type] = statementId.split("#");
-    if (!yearMonth || !type) {
-      return respond(400, { error: "Invalid statementId" }, origin);
-    }
-    record = await getStatement(user.userId, yearMonth, type);
-    if (record) {
-      record.transactions[transactionIndex].category = newCategory;
-      await docClient.send(
-        new PutCommand({ TableName: TABLE_NAME, Item: record }),
-      );
-    }
-  }
+  const { record, localIdx } = await resolveTransaction(statementId, transactionIndex, user.userId, familyId);
 
   if (!record) {
     return respond(404, { error: "Statement not found" }, origin);
   }
 
+  const source = record.transactions[localIdx]?.source ?? "bank";
+
+  if (shouldCreate && color) {
+    await createCategoryEntry(user.userId, familyId, source, newCategory, color);
+  }
+
+  record.transactions[localIdx].category = newCategory;
+  await docClient.send(
+    new PutCommand({ TableName: TABLE_NAME, Item: record }),
+  );
+
   if (keyword) {
-    const source = record.transactions[transactionIndex]?.source ?? "bank";
     await addKeywordToCategory(user.userId, familyId, source, newCategory, keyword);
   }
 
   return respond(200, { message: "Recategorized" }, origin);
+}
+
+async function handleRename(
+  event: APIGatewayProxyEventV2,
+  user: JWTPayload,
+): Promise<APIGatewayProxyResultV2> {
+  const origin = event.headers?.origin;
+  const body = JSON.parse(event.body || "{}");
+  const { statementId, transactionIndex, newPayeeName } = body;
+
+  if (!statementId || transactionIndex === undefined || !newPayeeName) {
+    return respond(400, { error: "statementId, transactionIndex, and newPayeeName are required" }, origin);
+  }
+
+  const userRecord = await getUser(user.userId);
+  const familyId = userRecord?.familyId;
+
+  const { record, localIdx } = await resolveTransaction(statementId, transactionIndex, user.userId, familyId);
+
+  if (!record) {
+    return respond(404, { error: "Statement not found" }, origin);
+  }
+
+  const tx = record.transactions[localIdx];
+  const source = tx.source ?? "bank";
+  const originalDesc = tx.originalDescription;
+
+  tx.payee = newPayeeName;
+  await docClient.send(
+    new PutCommand({ TableName: TABLE_NAME, Item: record }),
+  );
+
+  await addRenameMapping(user.userId, familyId, source, originalDesc, newPayeeName);
+
+  return respond(200, { message: "Renamed" }, origin);
+}
+
+async function handleIgnore(
+  event: APIGatewayProxyEventV2,
+  user: JWTPayload,
+): Promise<APIGatewayProxyResultV2> {
+  const origin = event.headers?.origin;
+  const body = JSON.parse(event.body || "{}");
+  const { statementId, transactionIndex } = body;
+
+  if (!statementId || transactionIndex === undefined) {
+    return respond(400, { error: "statementId and transactionIndex are required" }, origin);
+  }
+
+  const userRecord = await getUser(user.userId);
+  const familyId = userRecord?.familyId;
+
+  const { record, localIdx } = await resolveTransaction(statementId, transactionIndex, user.userId, familyId);
+
+  if (!record) {
+    return respond(404, { error: "Statement not found" }, origin);
+  }
+
+  const tx = record.transactions[localIdx];
+  const source = tx.source ?? "bank";
+  const pattern = tx.originalDescription;
+
+  record.transactions.splice(localIdx, 1);
+
+  let totalIn = 0;
+  let totalOut = 0;
+  const catMap = new Map<string, { category: string; total: number; count: number }>();
+  for (const t of record.transactions) {
+    if (t.amount >= 0) totalIn += t.amount;
+    else totalOut += t.amount;
+    const existing = catMap.get(t.category);
+    if (existing) {
+      existing.total += t.amount;
+      existing.count += 1;
+    } else {
+      catMap.set(t.category, { category: t.category, total: t.amount, count: 1 });
+    }
+  }
+  record.summary = {
+    ...record.summary,
+    totalIn,
+    totalOut,
+    balance: totalIn + totalOut,
+    categories: Array.from(catMap.values()),
+  };
+
+  await docClient.send(
+    new PutCommand({ TableName: TABLE_NAME, Item: record }),
+  );
+
+  await addIgnorePattern(user.userId, familyId, source, pattern);
+
+  return respond(200, { message: "Ignored" }, origin);
+}
+
+async function resolveTransaction(
+  statementId: string,
+  globalIndex: number,
+  userId: string,
+  familyId?: string,
+): Promise<{ record: StatementRecord | null; localIdx: number }> {
+  if (familyId) {
+    const [yearMonth, idPart] = statementId.split("#");
+    if (!yearMonth || !idPart) return { record: null, localIdx: 0 };
+
+    if (idPart === "family") {
+      const records = await getFamilyMonthStatements(familyId, yearMonth);
+      let idx = globalIndex;
+      for (const r of records) {
+        if (idx < r.transactions.length) {
+          return { record: r, localIdx: idx };
+        }
+        idx -= r.transactions.length;
+      }
+      return { record: null, localIdx: 0 };
+    }
+
+    const record = await getStatement(idPart, yearMonth, "", familyId);
+    return { record, localIdx: globalIndex };
+  }
+
+  const [yearMonth, type] = statementId.split("#");
+  if (!yearMonth || !type) return { record: null, localIdx: 0 };
+
+  const record = await getStatement(userId, yearMonth, type);
+  return { record, localIdx: globalIndex };
 }
 
 export async function handler(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {
@@ -166,6 +266,8 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
   if (method === "GET" && path === "/categories") return handleGet(event, user);
   if (method === "PUT" && path === "/categories") return handlePut(event, user);
   if (method === "POST" && path === "/categories/recategorize") return handleRecategorize(event, user);
+  if (method === "POST" && path === "/categories/rename") return handleRename(event, user);
+  if (method === "POST" && path === "/categories/ignore") return handleIgnore(event, user);
 
   return respond(404, { error: "Not found" }, origin);
 }

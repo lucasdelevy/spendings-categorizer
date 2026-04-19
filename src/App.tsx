@@ -201,23 +201,61 @@ export default function App() {
     }
   }, [selectedMonth, loadSavedMonths]);
 
-  const handleRecategorize = useCallback(async (
-    globalIndex: number,
-    newCategory: string,
-    keyword: string,
-  ) => {
+  const handleRecategorize = useCallback(async (payload: {
+    globalIndex: number;
+    newCategory: string;
+    keyword: string;
+    createCategory?: boolean;
+    color?: string;
+  }) => {
     if (!result || dataSource !== "remote") return;
     try {
       await api.post("/categories/recategorize", {
         statementId: `${selectedMonth}#family`,
-        transactionIndex: globalIndex,
-        newCategory,
-        keyword,
+        transactionIndex: payload.globalIndex,
+        newCategory: payload.newCategory,
+        keyword: payload.keyword,
+        createCategory: payload.createCategory,
+        color: payload.color,
       });
       await refreshConfig();
       await loadMonthFromRemote(selectedMonth);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao recategorizar");
+    }
+  }, [result, dataSource, selectedMonth, refreshConfig, loadMonthFromRemote]);
+
+  const handleRename = useCallback(async (payload: {
+    globalIndex: number;
+    newPayeeName: string;
+  }) => {
+    if (!result || dataSource !== "remote") return;
+    try {
+      await api.post("/categories/rename", {
+        statementId: `${selectedMonth}#family`,
+        transactionIndex: payload.globalIndex,
+        newPayeeName: payload.newPayeeName,
+      });
+      await refreshConfig();
+      await loadMonthFromRemote(selectedMonth);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao renomear");
+    }
+  }, [result, dataSource, selectedMonth, refreshConfig, loadMonthFromRemote]);
+
+  const handleIgnore = useCallback(async (payload: {
+    globalIndex: number;
+  }) => {
+    if (!result || dataSource !== "remote") return;
+    try {
+      await api.post("/categories/ignore", {
+        statementId: `${selectedMonth}#family`,
+        transactionIndex: payload.globalIndex,
+      });
+      await refreshConfig();
+      await loadMonthFromRemote(selectedMonth);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Erro ao ignorar transação");
     }
   }, [result, dataSource, selectedMonth, refreshConfig, loadMonthFromRemote]);
 
@@ -408,6 +446,8 @@ export default function App() {
               statementType={result.type}
               catConfig={catConfig}
               onRecategorize={dataSource === "remote" ? handleRecategorize : undefined}
+              onRename={dataSource === "remote" ? handleRename : undefined}
+              onIgnore={dataSource === "remote" ? handleIgnore : undefined}
             />
           </div>
         </div>
