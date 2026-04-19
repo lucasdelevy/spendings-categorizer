@@ -185,6 +185,11 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       methods: [apigatewayv2.HttpMethod.POST],
       integration: categoriesIntegration,
     });
+    httpApi.addRoutes({
+      path: "/categories/apply",
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: categoriesIntegration,
+    });
 
     new cdk.CfnOutput(this, "ApiUrl", {
       value: httpApi.apiEndpoint,

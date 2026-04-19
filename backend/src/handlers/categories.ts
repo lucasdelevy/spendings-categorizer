@@ -10,6 +10,7 @@ import {
   addRenameMapping,
   addIgnorePattern,
   createCategoryEntry,
+  applyCategoryConfig,
 } from "../services/categoryService.js";
 import { getFamilyMonthStatements, getStatement } from "../services/statementService.js";
 import { PutCommand } from "@aws-sdk/lib-dynamodb";
@@ -282,6 +283,25 @@ async function resolveTransaction(
   return { record, localIdx: globalIndex };
 }
 
+async function handleApply(
+  event: APIGatewayProxyEventV2,
+  user: JWTPayload,
+): Promise<APIGatewayProxyResultV2> {
+  const origin = event.headers?.origin;
+  const body = JSON.parse(event.body || "{}");
+  const { yearMonth } = body;
+
+  if (!yearMonth) {
+    return respond(400, { error: "yearMonth is required" }, origin);
+  }
+
+  const userRecord = await getUser(user.userId);
+  const familyId = userRecord?.familyId;
+
+  const changed = await applyCategoryConfig(user.userId, familyId, yearMonth);
+  return respond(200, { message: "Applied", changed }, origin);
+}
+
 export async function handler(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {
   const origin = event.headers?.origin;
 
@@ -300,6 +320,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
   if (method === "POST" && path === "/categories/recategorize") return handleRecategorize(event, user);
   if (method === "POST" && path === "/categories/rename") return handleRename(event, user);
   if (method === "POST" && path === "/categories/ignore") return handleIgnore(event, user);
+  if (method === "POST" && path === "/categories/apply") return handleApply(event, user);
 
   return respond(404, { error: "Not found" }, origin);
 }

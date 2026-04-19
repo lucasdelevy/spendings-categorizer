@@ -202,6 +202,14 @@ export default function App() {
     }
   }, [selectedMonth, loadSavedMonths]);
 
+  const applyConfigToMonth = useCallback(async (ym: string) => {
+    try {
+      await api.post("/categories/apply", { yearMonth: ym });
+    } catch {
+      // non-critical, ignore
+    }
+  }, []);
+
   const handleRecategorize = useCallback(async (payload: {
     globalIndex: number;
     newCategory: string;
@@ -221,12 +229,13 @@ export default function App() {
         color: payload.color,
         applyToSimilar: payload.applyToSimilar,
       });
+      await applyConfigToMonth(selectedMonth);
       await refreshConfig();
       await loadMonthFromRemote(selectedMonth);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao recategorizar");
     }
-  }, [result, dataSource, selectedMonth, refreshConfig, loadMonthFromRemote]);
+  }, [result, dataSource, selectedMonth, refreshConfig, loadMonthFromRemote, applyConfigToMonth]);
 
   const handleRename = useCallback(async (payload: {
     globalIndex: number;
@@ -284,8 +293,14 @@ export default function App() {
     return (
       <CategoriesPage
         config={catConfig}
-        onSave={async (updated) => { await saveCatConfig(updated); }}
-        onBack={() => setShowCategories(false)}
+        onSave={async (updated) => {
+          await saveCatConfig(updated);
+          await applyConfigToMonth(selectedMonth);
+        }}
+        onBack={() => {
+          setShowCategories(false);
+          if (monthHasData) loadMonthFromRemote(selectedMonth);
+        }}
       />
     );
   }
