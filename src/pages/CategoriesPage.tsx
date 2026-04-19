@@ -304,7 +304,9 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
       {/* Categories section */}
       {section === "categories" && (
         <div className="space-y-2">
-          {Object.entries(catMap).map(([name, entry]) => {
+          {Object.entries(catMap)
+            .sort(([a], [b]) => a.localeCompare(b, "pt-BR"))
+            .map(([name, entry]) => {
             const isOpen = expandedCat === name;
             return (
               <div
