@@ -1,6 +1,6 @@
 import type { RawRow } from "./csvParser";
 import type { Transaction, StatementResult } from "../types";
-import { BANK_CATEGORIES, BANK_IGNORE } from "./categories";
+import { BANK_CATEGORIES, BANK_IGNORE, BANK_RENAME } from "./categories";
 
 function categorize(description: string): string {
   const lower = description.toLowerCase();
@@ -75,7 +75,8 @@ export function processBankCSV(
     const amount = parseBrazilianAmount(row[colValor] ?? "");
     const date = colData ? (row[colData] ?? "").trim() : "";
     const category = categorize(desc);
-    const payee = extractPayee(desc);
+    const rawPayee = extractPayee(desc);
+    const payee = BANK_RENAME[rawPayee.toLowerCase()] ?? rawPayee;
 
     transactions.push({
       date,

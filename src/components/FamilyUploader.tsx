@@ -1,107 +1,154 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
+import type { StatementType } from "../types";
+import { parseCSV } from "../engine/csvParser";
 
-interface FileSlot {
-  label: string;
-  id: string;
-  fileName: string | null;
+export interface DetectedFile {
+  name: string;
+  text: string;
+  type: StatementType;
 }
 
 interface Props {
-  slots: FileSlot[];
-  onFileLoaded: (slotId: string, text: string, fileName: string) => void;
+  files: DetectedFile[];
+  onFilesLoaded: (files: DetectedFile[]) => void;
 }
 
-export default function FamilyUploader({ slots, onFileLoaded }: Props) {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {slots.map((slot) => (
-        <SlotCard
-          key={slot.id}
-          slot={slot}
-          onFileLoaded={onFileLoaded}
-        />
-      ))}
-    </div>
-  );
-}
+export default function FamilyUploader({ files, onFilesLoaded }: Props) {
+  const [dragging, setDragging] = useState(false);
 
-function SlotCard({
-  slot,
-  onFileLoaded,
-}: {
-  slot: FileSlot;
-  onFileLoaded: (slotId: string, text: string, fileName: string) => void;
-}) {
-  const handleFile = useCallback(
-    (file: File) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result;
-        if (typeof text === "string") {
-          onFileLoaded(slot.id, text, file.name);
-        }
-      };
-      reader.readAsText(file, "utf-8");
+  const processFiles = useCallback(
+    (incoming: FileList) => {
+      const csvFiles = Array.from(incoming).filter((f) =>
+        f.name.toLowerCase().endsWith(".csv"),
+      );
+      if (csvFiles.length === 0) return;
+
+      const pending = csvFiles.map(
+        (file) =>
+          new Promise<DetectedFile>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const text = e.target?.result;
+              if (typeof text !== "string") {
+                reject(new Error(`Falha ao ler ${file.name}`));
+                return;
+              }
+              try {
+                const parsed = parseCSV(text);
+                resolve({ name: file.name, text, type: parsed.type });
+              } catch (err) {
+                reject(err);
+              }
+            };
+            reader.readAsText(file, "utf-8");
+          }),
+      );
+
+      Promise.all(pending).then((detected) => {
+        onFilesLoaded([...files, ...detected]);
+      });
     },
-    [onFileLoaded, slot.id],
+    [files, onFilesLoaded],
   );
 
   const onDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
-      const file = e.dataTransfer.files[0];
-      if (file?.name.endsWith(".csv")) handleFile(file);
+      setDragging(false);
+      processFiles(e.dataTransfer.files);
     },
-    [handleFile],
+    [processFiles],
   );
 
-  const onDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-  }, []);
-
-  const onChange = useCallback(
+  const onInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) handleFile(file);
+      if (e.target.files) processFiles(e.target.files);
     },
-    [handleFile],
+    [processFiles],
   );
 
-  const isBank = slot.id.startsWith("bank");
+  const bankFiles = files.filter((f) => f.type === "bank");
+  const cardFiles = files.filter((f) => f.type === "card");
+  const hasFiles = files.length > 0;
 
   return (
-    <div
-      onDrop={onDrop}
-      onDragOver={onDragOver}
-      className={`
-        flex flex-col items-center justify-center rounded-lg border-2 border-dashed
-        px-4 py-6 text-center transition-colors
-        ${slot.fileName ? "border-green-300 bg-green-50" : "border-gray-300 bg-white hover:border-gray-400"}
-      `}
-    >
+    <div className="space-y-3">
       <div
-        className={`mb-2 flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white ${
-          isBank ? "bg-indigo-500" : "bg-amber-500"
-        }`}
+        onDrop={onDrop}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        className={`
+          relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed
+          px-6 py-10 text-center transition-colors
+          ${dragging ? "border-indigo-500 bg-indigo-50" : "border-gray-300 bg-white hover:border-gray-400"}
+        `}
       >
-        {isBank ? "B" : "C"}
+        <svg
+          className="mb-3 h-10 w-10 text-gray-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+          />
+        </svg>
+
+        <p className="text-sm text-gray-600">
+          Arraste todos os CSVs de uma vez ou{" "}
+          <label className="cursor-pointer font-medium text-indigo-600 hover:text-indigo-500">
+            selecione
+            <input
+              type="file"
+              accept=".csv"
+              multiple
+              className="sr-only"
+              onChange={onInputChange}
+            />
+          </label>
+        </p>
+        <p className="mt-1 text-xs text-gray-400">
+          Extratos bancários e faturas de cartão — detectados automaticamente
+        </p>
       </div>
 
-      <p className="text-sm font-medium text-gray-700">{slot.label}</p>
-
-      {slot.fileName ? (
-        <p className="mt-1 text-xs text-green-600">{slot.fileName}</p>
-      ) : (
-        <label className="mt-1 cursor-pointer text-xs text-indigo-600 hover:text-indigo-500">
-          Selecionar arquivo
-          <input
-            type="file"
-            accept=".csv"
-            className="sr-only"
-            onChange={onChange}
-          />
-        </label>
+      {hasFiles && (
+        <div className="flex flex-wrap gap-2">
+          {bankFiles.map((f) => (
+            <FileBadge key={f.name} name={f.name} type="bank" />
+          ))}
+          {cardFiles.map((f) => (
+            <FileBadge key={f.name} name={f.name} type="card" />
+          ))}
+        </div>
       )}
     </div>
+  );
+}
+
+function FileBadge({ name, type }: { name: string; type: StatementType }) {
+  const isBank = type === "bank";
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
+        isBank
+          ? "bg-indigo-50 text-indigo-700"
+          : "bg-amber-50 text-amber-700"
+      }`}
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${isBank ? "bg-indigo-500" : "bg-amber-500"}`}
+      />
+      {name}
+      <span className="text-[10px] opacity-60">
+        {isBank ? "Banco" : "Cartão"}
+      </span>
+    </span>
   );
 }
