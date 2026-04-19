@@ -91,7 +91,7 @@ async function handleRecategorize(
 ): Promise<APIGatewayProxyResultV2> {
   const origin = event.headers?.origin;
   const body = JSON.parse(event.body || "{}");
-  const { statementId, transactionIndex, newCategory, keyword, createCategory: shouldCreate, color } = body;
+  const { statementId, transactionIndex, newCategory, keyword, createCategory: shouldCreate, color, applyToSimilar } = body;
 
   if (!statementId || transactionIndex === undefined || !newCategory) {
     return respond(400, { error: "statementId, transactionIndex, and newCategory are required" }, origin);
@@ -107,15 +107,47 @@ async function handleRecategorize(
   }
 
   const source = record.transactions[localIdx]?.source ?? "bank";
+  const originalDesc = record.transactions[localIdx].originalDescription;
 
   if (shouldCreate && color) {
     await createCategoryEntry(user.userId, familyId, source, newCategory, color);
   }
 
   record.transactions[localIdx].category = newCategory;
+
+  if (applyToSimilar && originalDesc) {
+    const descLower = originalDesc.toLowerCase();
+    for (const tx of record.transactions) {
+      if (tx.originalDescription.toLowerCase() === descLower) {
+        tx.category = newCategory;
+      }
+    }
+  }
+
   await docClient.send(
     new PutCommand({ TableName: TABLE_NAME, Item: record }),
   );
+
+  if (applyToSimilar && familyId && originalDesc) {
+    const [yearMonth] = statementId.split("#");
+    const allRecords = await getFamilyMonthStatements(familyId, yearMonth);
+    const descLower = originalDesc.toLowerCase();
+    for (const r of allRecords) {
+      if (r.PK === record.PK && r.SK === record.SK) continue;
+      let changed = false;
+      for (const tx of r.transactions) {
+        if (tx.originalDescription.toLowerCase() === descLower) {
+          tx.category = newCategory;
+          changed = true;
+        }
+      }
+      if (changed) {
+        await docClient.send(
+          new PutCommand({ TableName: TABLE_NAME, Item: r }),
+        );
+      }
+    }
+  }
 
   if (keyword) {
     await addKeywordToCategory(user.userId, familyId, source, newCategory, keyword);

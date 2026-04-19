@@ -207,6 +207,7 @@ export default function App() {
     keyword: string;
     createCategory?: boolean;
     color?: string;
+    applyToSimilar?: boolean;
   }) => {
     if (!result || dataSource !== "remote") return;
     try {
@@ -217,6 +218,7 @@ export default function App() {
         keyword: payload.keyword,
         createCategory: payload.createCategory,
         color: payload.color,
+        applyToSimilar: payload.applyToSimilar,
       });
       await refreshConfig();
       await loadMonthFromRemote(selectedMonth);

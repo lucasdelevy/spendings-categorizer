@@ -10,6 +10,7 @@ export interface RecategorizePayload {
   keyword: string;
   createCategory?: boolean;
   color?: string;
+  applyToSimilar?: boolean;
 }
 
 export interface RenamePayload {
@@ -57,6 +58,7 @@ export default function TransactionActionModal({
   const [tab, setTab] = useState<Tab>("recategorize");
   const [newCatName, setNewCatName] = useState("");
   const [newCatColor, setNewCatColor] = useState(PRESET_COLORS[0]);
+  const [applyToSimilar, setApplyToSimilar] = useState(true);
   const [renameName, setRenameName] = useState(transaction.payee);
   const [loading, setLoading] = useState(false);
 
@@ -66,6 +68,7 @@ export default function TransactionActionModal({
       globalIndex,
       newCategory: category,
       keyword: transaction.originalDescription.toLowerCase(),
+      applyToSimilar,
     });
   };
 
@@ -78,6 +81,7 @@ export default function TransactionActionModal({
       keyword: transaction.originalDescription.toLowerCase(),
       createCategory: true,
       color: newCatColor,
+      applyToSimilar,
     });
   };
 
@@ -148,6 +152,15 @@ export default function TransactionActionModal({
             <>
               {tab === "recategorize" && (
                 <div className="space-y-3">
+                  <label className="flex items-center gap-2 text-sm text-gray-600">
+                    <input
+                      type="checkbox"
+                      checked={applyToSimilar}
+                      onChange={(e) => setApplyToSimilar(e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    Aplicar a transações similares
+                  </label>
                   <div className="max-h-48 overflow-y-auto">
                     {allCategories
                       .filter((c) => c !== currentCategory)
