@@ -2,7 +2,7 @@ import type { RawRow } from "./csvParser";
 import type { Transaction, StatementResult } from "../types";
 import { CARD_CATEGORIES, CARD_IGNORE, CARD_RENAME } from "./categories";
 
-const PARCELA_RE = / - Parcela (\d+\/\d+)$/i;
+const INSTALLMENT_RE = / - Parcela (\d+\/\d+)$/i;
 
 function categorize(title: string): string {
   const lower = title.toLowerCase();
@@ -20,9 +20,9 @@ function shouldIgnore(title: string): boolean {
 }
 
 function extractInstallment(title: string): [string, string] {
-  const match = PARCELA_RE.exec(title);
+  const match = INSTALLMENT_RE.exec(title);
   if (match) {
-    return [title.replace(PARCELA_RE, "").trim(), match[1]];
+    return [title.replace(INSTALLMENT_RE, "").trim(), match[1]];
   }
   return [title, ""];
 }
