@@ -118,12 +118,14 @@ export const CARD_CATEGORIES: Record<string, string[]> = {
 export const BANK_RENAME: Record<string, string> = {
   "hayashi comercio, importacao de produtos alimenticios ltda":
     "Frutaria Vargem Bonita",
+  "hayashi alimentos.": "Frutaria Vargem Bonita",
 };
 
 export const CARD_IGNORE: string[] = ["pagamento recebido"];
 
 export const CARD_RENAME: Record<string, string> = {
   "quintino e zanani": "Gracie Barra Lago Sul",
+  "hayashi alimentos.": "Frutaria Vargem Bonita",
 };
 
 export const CATEGORY_COLORS: Record<string, string> = {
