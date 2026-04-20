@@ -191,6 +191,29 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       integration: categoriesIntegration,
     });
 
+    const defaultStage = httpApi.defaultStage!.node
+      .defaultChild as apigatewayv2.CfnStage;
+
+    defaultStage.defaultRouteSettings = {
+      throttlingBurstLimit: 100,
+      throttlingRateLimit: 50,
+    };
+
+    defaultStage.routeSettings = {
+      "POST /auth/google": {
+        throttlingBurstLimit: 10,
+        throttlingRateLimit: 5,
+      },
+      "POST /auth/logout": {
+        throttlingBurstLimit: 10,
+        throttlingRateLimit: 5,
+      },
+      "GET /auth/me": {
+        throttlingBurstLimit: 20,
+        throttlingRateLimit: 10,
+      },
+    };
+
     new cdk.CfnOutput(this, "ApiUrl", {
       value: httpApi.apiEndpoint,
       description: "HTTP API Gateway endpoint URL",

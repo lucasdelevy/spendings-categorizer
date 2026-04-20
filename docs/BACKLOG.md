@@ -21,12 +21,13 @@ Living document of planned features and known tech debt. Update as items are com
 - [ ] **Better error handling on Lambda cold starts** — google-auth-library initialization is slow on first invocation. Consider provisioned concurrency or lazy init.
 - [x] **Statement detail view from Saved Statements** — Done. Month-based UX loads saved data directly from DDB into pie chart + table. "Visualizar" button in Gerenciar Meses page.
 - [ ] **Re-upload from Gerenciar Meses** — Add a "Reenviar" button per month in the management page that navigates back to the main view with the uploader open for that month, allowing the user to re-upload CSVs and overwrite saved data.
+- [x] **Transaction table filters** — Done. Collapsible filter bar on the transaction table with amount range, date range, and owner multi-select. Filters combine and recompute category totals/counts in real time.
 
 ## Priority: Low
 
 - [ ] **Code splitting** — Vite build warns about chunk size (563 KB). Split recharts into a lazy-loaded chunk.
 - [ ] **Custom domain for API** — Set up a custom domain on API Gateway (e.g., `api.spendings.lucasdelevy.dev`) with ACM certificate.
-- [ ] **Rate limiting** — Add throttling on API Gateway to prevent abuse (free tier is generous but not unlimited).
+- [x] **Rate limiting** — Done. Stage-level default throttling (50 req/s, burst 100) on API Gateway with stricter per-route limits on auth endpoints (5 req/s for login/logout, 10 req/s for session check).
 - [ ] **Add support for other banks** — Currently Nubank-specific CSV formats. Add parsers for Itaú, Bradesco, Inter, etc.
 - [ ] **Export categorized data** — Download categorized statements as CSV or PDF report.
 - [ ] **Dark mode** — Respect `prefers-color-scheme` and add a toggle in the header.
