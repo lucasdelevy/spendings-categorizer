@@ -73,3 +73,10 @@ The frontend is a Vite React app hosted on GitHub Pages.
 - **Category config** (`SK: "CATCONFIG"`): holds keyword-to-category mappings, ignore patterns, and rename rules
 - **Statements** (`SK: "<yearMonth>#<type>"`): hold parsed transactions with their current category assignment
 - **`applyCategoryConfig`**: re-runs keyword matching on all transactions for a month; uses longest-keyword-wins strategy
+
+## Feature Log Convention
+
+Every major feature must be documented in two places:
+
+1. **`docs/HISTORY.md`** — Append a new `## Phase N: Title` section describing the feature, key decisions, and technical changes.
+2. **About page (`src/pages/AboutPage.tsx`)** — Add a corresponding entry to the `featureLog` array with i18n keys, and add the translated title/description to both `src/i18n/en.ts` and `src/i18n/pt-BR.ts` under `about.features.*`.

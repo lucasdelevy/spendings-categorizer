@@ -15,6 +15,7 @@ interface Props {
   onCategories: () => void;
   onFamily: () => void;
   onManage: () => void;
+  onAbout: () => void;
   user: User;
   onLogout: () => void;
 }
@@ -25,6 +26,7 @@ export default function SideMenu({
   onCategories,
   onFamily,
   onManage,
+  onAbout,
   user,
   onLogout,
 }: Props) {
@@ -118,6 +120,16 @@ export default function SideMenu({
 
         {/* Spacer */}
         <div className="flex-1" />
+
+        {/* About */}
+        <div className="px-3 pb-3">
+          <button onClick={() => handleNav(onAbout)} className={navItem}>
+            <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {t("app.about")}
+          </button>
+        </div>
 
         {/* User section */}
         <div className="border-t border-gray-200 p-4 dark:border-gray-700">

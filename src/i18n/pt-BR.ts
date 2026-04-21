@@ -5,6 +5,7 @@ const ptBR = {
     categories: "Categorias",
     family: "Família",
     manageMonths: "Gerenciar Meses",
+    about: "Sobre Aletheia",
     logout: "Sair",
     uploadStatements: "Enviar meus extratos",
     uploadOverlayDescription:
@@ -24,6 +25,7 @@ const ptBR = {
     recategorize: "Erro ao recategorizar",
     rename: "Erro ao renomear",
     ignoreTransaction: "Erro ao ignorar transação",
+    hideTransaction: "Erro ao ocultar transação",
     save: "Erro ao salvar",
     createFamily: "Erro ao criar família",
     addMember: "Erro ao adicionar membro",
@@ -142,6 +144,8 @@ const ptBR = {
     installment: "Parcela",
     amount: "Valor",
     actions: "Ações",
+    hide: "Ocultar",
+    unhide: "Mostrar",
     bank: "Banco",
     card: "Cartão",
     noResults: "Nenhuma transação encontrada com os filtros selecionados.",
@@ -164,6 +168,47 @@ const ptBR = {
       "Ao ignorar, esta transação será removida do extrato salvo e a descrição será adicionada à lista de ignorados. Importações futuras com a mesma descrição serão automaticamente ignoradas.",
     descriptionToIgnore: "Descrição a ignorar",
     confirmAndRemove: "Confirmar e remover",
+  },
+
+  about: {
+    title: "Sobre a Aletheia",
+    back: "← Voltar",
+    nameTitle: "Por que \"Aletheia\"?",
+    nameExplanation:
+      "Na mitologia grega, Aletheia (ἀλήθεια) é o espírito da verdade e da revelação — literalmente \"des-ocultamento.\" A palavra vem de a-lethe: a negação de Lete, o rio do esquecimento no submundo. Alcançar Aletheia é lembrar o que foi esquecido, revelar o que estava oculto.",
+    nameQuote:
+      "Este app revela os padrões de gastos ocultos em extratos bancários e faturas de cartão — verdades que, sem exame, deslizam para as águas do Lete.",
+    featureLogTitle: "Histórico de Funcionalidades",
+    phase: "Fase {{number}}",
+    features: {
+      phase1Title: "Scripts Python",
+      phase1Desc:
+        "Scripts CLI para categorizar CSVs do Nubank (banco e cartão) com matching por keyword, listas de ignorar e renomeação de beneficiários.",
+      phase2Title: "App React Estático",
+      phase2Desc:
+        "Migrado para app React + Vite no GitHub Pages. Todo processamento no cliente com gráficos de pizza e tabela de transações.",
+      phase3Title: "Backend na Nuvem",
+      phase3Desc:
+        "Backend com AWS Lambda + DynamoDB e login com Google. Extratos persistem entre sessões com armazenamento por upsert.",
+      phase31Title: "Soft-Delete e Gerenciamento de Meses",
+      phase31Desc:
+        "Extratos são excluídos logicamente (soft-delete). Adicionada página de Gerenciar Meses para visualizar, navegar e excluir períodos salvos.",
+      phase4Title: "Compartilhamento Familiar",
+      phase4Desc:
+        "Múltiplos usuários compartilham gastos combinados via entidade Família. Uploads por usuário mesclados na leitura com atribuição por avatar.",
+      phase5Title: "Gerenciamento de Categorias",
+      phase5Desc:
+        "Categorias, listas de ignorar e mapeamentos de renomeação armazenados por família no DynamoDB. Recategorização na tabela aprende keywords automaticamente.",
+      phase6Title: "Filtros de Transações",
+      phase6Desc:
+        "Barra de filtros retrátil com faixa de valor, período e multi-seleção de membro. Filtros recalculam totais em tempo real.",
+      phase7Title: "Modo Escuro e i18n",
+      phase7Desc:
+        "Modo escuro via classes Tailwind com detecção de preferência do sistema. Traduções completas em EN e PT-BR via react-i18next.",
+      phase8Title: "Menu Lateral e Rebranding",
+      phase8Desc:
+        "Menu hamburger lateral, fundo com padrão de pontos, favicon customizado. Rebatizado para Aletheia com reflexo em grego espelhado.",
+    },
   },
 
   sidebar: {

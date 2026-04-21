@@ -15,6 +15,7 @@ import LoginPage from "./pages/LoginPage";
 import ManageMonths from "./pages/SavedStatements";
 import FamilyPage from "./pages/FamilyPage";
 import CategoriesPage from "./pages/CategoriesPage";
+import AboutPage from "./pages/AboutPage";
 import MonthSelector from "./components/MonthSelector";
 import SaveConfirmBar from "./components/SaveConfirmBar";
 import FamilyUploader from "./components/FamilyUploader";
@@ -23,6 +24,7 @@ import SummaryBar from "./components/SummaryBar";
 import SpendingPieChart from "./components/SpendingPieChart";
 import DailySpendingChart from "./components/DailySpendingChart";
 import TransactionTable from "./components/TransactionTable";
+import type { HidePayload } from "./components/TransactionTable";
 import SideMenu from "./components/SideMenu";
 
 interface RemoteStatement {
@@ -67,14 +69,16 @@ function remoteToResult(remote: RemoteStatement): StatementResult {
     const t = { ...remote.transactions[i], _originalIndex: i };
     const existing = catMap.get(t.category);
     if (existing) {
-      existing.total += t.amount;
-      existing.count += 1;
+      if (!t.hidden) {
+        existing.total += t.amount;
+        existing.count += 1;
+      }
       existing.transactions.push(t);
     } else {
       catMap.set(t.category, {
         category: t.category,
-        total: t.amount,
-        count: 1,
+        total: t.hidden ? 0 : t.amount,
+        count: t.hidden ? 0 : 1,
         transactions: [t],
       });
     }
@@ -82,7 +86,7 @@ function remoteToResult(remote: RemoteStatement): StatementResult {
 
   return {
     type: remote.summary.type,
-    transactions: remote.transactions,
+    transactions: remote.transactions.map((t, i) => ({ ...t, _originalIndex: i })),
     categories: Array.from(catMap.values()).sort(
       (a, b) => Math.abs(b.total) - Math.abs(a.total),
     ),
@@ -107,6 +111,7 @@ export default function App() {
   const [showManage, setShowManage] = useState(false);
   const [showFamily, setShowFamily] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   const [showUploadOverlay, setShowUploadOverlay] = useState(false);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [chartTab, setChartTab] = useState<"category" | "daily">("category");
@@ -281,6 +286,19 @@ export default function App() {
     }
   }, [result, dataSource, selectedMonth, refreshConfig, loadMonthFromRemote]);
 
+  const handleHide = useCallback(async (payload: HidePayload) => {
+    if (!result || dataSource !== "remote") return;
+    try {
+      await api.post("/categories/hide", {
+        statementId: `${selectedMonth}#family`,
+        transactionIndex: payload.globalIndex,
+      });
+      await loadMonthFromRemote(selectedMonth);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("error.hideTransaction"));
+    }
+  }, [result, dataSource, selectedMonth, loadMonthFromRemote]);
+
   const handleMonthChange = useCallback((ym: string) => {
     setSelectedMonth(ym);
     setFamilyFiles([]);
@@ -305,7 +323,9 @@ export default function App() {
       ? "family"
       : showManage
         ? "manage"
-        : "dashboard";
+        : showAbout
+          ? "about"
+          : "dashboard";
 
   const showUploader = activePage === "dashboard" && ((!monthHasData && dataSource !== "local") || showUploadOverlay);
   const showConfirmBar = activePage === "dashboard" && dataSource === "local" && result !== null;
@@ -322,9 +342,10 @@ export default function App() {
       <SideMenu
         open={sideMenuOpen}
         onClose={() => setSideMenuOpen(false)}
-        onCategories={() => { setShowFamily(false); setShowManage(false); setShowCategories(true); }}
-        onFamily={() => { setShowCategories(false); setShowManage(false); setShowFamily(true); }}
-        onManage={() => { setShowCategories(false); setShowFamily(false); setShowManage(true); }}
+        onCategories={() => { setShowFamily(false); setShowManage(false); setShowAbout(false); setShowCategories(true); }}
+        onFamily={() => { setShowCategories(false); setShowManage(false); setShowAbout(false); setShowFamily(true); }}
+        onManage={() => { setShowCategories(false); setShowFamily(false); setShowAbout(false); setShowManage(true); }}
+        onAbout={() => { setShowCategories(false); setShowFamily(false); setShowManage(false); setShowAbout(true); }}
         user={user}
         onLogout={logout}
       />
@@ -375,6 +396,10 @@ export default function App() {
           onView={(ym) => { setShowManage(false); handleMonthChange(ym); }}
           onDelete={handleDeleteMonth}
         />
+      )}
+
+      {activePage === "about" && (
+        <AboutPage onBack={() => setShowAbout(false)} />
       )}
 
       {activePage === "dashboard" && (
@@ -446,7 +471,7 @@ export default function App() {
                 totalIn={result.totalIn}
                 totalOut={result.totalOut}
                 balance={result.balance}
-                transactionCount={result.transactions.length}
+                transactionCount={result.transactions.filter((t) => !t.hidden).length}
               />
 
               <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
@@ -480,7 +505,7 @@ export default function App() {
                     />
                   ) : (
                     <DailySpendingChart
-                      transactions={result.transactions}
+                      transactions={result.transactions.filter((t) => !t.hidden)}
                     />
                   )}
                 </div>
@@ -497,6 +522,7 @@ export default function App() {
                   onRecategorize={dataSource === "remote" ? handleRecategorize : undefined}
                   onRename={dataSource === "remote" ? handleRename : undefined}
                   onIgnore={dataSource === "remote" ? handleIgnore : undefined}
+                  onHide={dataSource === "remote" ? handleHide : undefined}
                 />
               </div>
             </div>

@@ -5,6 +5,7 @@ const en = {
     categories: "Categories",
     family: "Family",
     manageMonths: "Manage Months",
+    about: "About Aletheia",
     logout: "Sign Out",
     uploadStatements: "Upload my statements",
     uploadOverlayDescription:
@@ -24,6 +25,7 @@ const en = {
     recategorize: "Error recategorizing",
     rename: "Error renaming",
     ignoreTransaction: "Error ignoring transaction",
+    hideTransaction: "Error toggling transaction visibility",
     save: "Error saving",
     createFamily: "Error creating family",
     addMember: "Error adding member",
@@ -141,6 +143,8 @@ const en = {
     installment: "Installment",
     amount: "Amount",
     actions: "Actions",
+    hide: "Hide",
+    unhide: "Unhide",
     bank: "Bank",
     card: "Card",
     noResults: "No transactions found matching the selected filters.",
@@ -163,6 +167,47 @@ const en = {
       "By ignoring, this transaction will be removed from the saved statement and the description will be added to the ignore list. Future imports with the same description will be automatically ignored.",
     descriptionToIgnore: "Description to ignore",
     confirmAndRemove: "Confirm and remove",
+  },
+
+  about: {
+    title: "About Aletheia",
+    back: "← Back",
+    nameTitle: "Why \"Aletheia\"?",
+    nameExplanation:
+      "In Greek mythology, Aletheia (ἀλήθεια) is the spirit of truth and disclosure — literally \"un-concealment.\" The word comes from a-lethe: the negation of Lethe, the river of forgetfulness in the underworld. To reach Aletheia is to remember what was forgotten, to reveal what was hidden.",
+    nameQuote:
+      "This app reveals the spending patterns concealed in bank statements and credit card bills — truths that, left unexamined, slip into the waters of Lethe.",
+    featureLogTitle: "Feature Log",
+    phase: "Phase {{number}}",
+    features: {
+      phase1Title: "Python Scripts",
+      phase1Desc:
+        "CLI scripts for categorizing Nubank bank and credit card CSVs with keyword matching, ignore lists, and payee renaming.",
+      phase2Title: "React Static App",
+      phase2Desc:
+        "Migrated to a React + Vite web app on GitHub Pages. All processing client-side with pie charts and transaction tables.",
+      phase3Title: "Cloud Backend",
+      phase3Desc:
+        "Added AWS Lambda + DynamoDB backend with Google Sign-In. Statements persist across sessions with upsert-friendly storage.",
+      phase31Title: "Soft-Delete & Month Management",
+      phase31Desc:
+        "Statements are soft-deleted instead of removed. Added a Manage Months page for viewing, navigating, and deleting saved periods.",
+      phase4Title: "Family Sharing",
+      phase4Desc:
+        "Multiple users share combined spendings via a Family entity. Per-user uploads merged at read time with avatar attribution.",
+      phase5Title: "Category Management",
+      phase5Desc:
+        "Categories, ignore lists, and rename maps stored per-family in DynamoDB. In-table recategorization auto-learns new keywords.",
+      phase6Title: "Transaction Filters",
+      phase6Desc:
+        "Collapsible filter bar with amount range, date range, and member multi-select. Filters recompute totals in real time.",
+      phase7Title: "Dark Mode & i18n",
+      phase7Desc:
+        "Class-based Tailwind dark mode with system preference detection. Full EN and PT-BR translations via react-i18next.",
+      phase8Title: "Sidebar Navigation & Rebrand",
+      phase8Desc:
+        "Hamburger side menu, dot-grid background, custom favicon. Rebranded to Aletheia with mirrored Greek script reflection.",
+    },
   },
 
   sidebar: {
