@@ -1,7 +1,6 @@
 const en = {
   app: {
     title: "Aletheia",
-    subtitle: "Reveal what was concealed",
     categories: "Categories",
     family: "Family",
     manageMonths: "Manage Months",

@@ -1,7 +1,6 @@
 const ptBR = {
   app: {
     title: "Aletheia",
-    subtitle: "Revele o que estava oculto",
     categories: "Categorias",
     family: "Família",
     manageMonths: "Gerenciar Meses",

@@ -389,9 +389,6 @@ export default function App() {
             {t("app.title")}
             <span className="inline-block scale-x-[-1] text-2xl font-light tracking-wide opacity-10">Ἀλήθεια</span>
           </h1>
-          <p className="mt-1 text-sm italic text-gray-400 dark:text-gray-500">
-            {t("app.subtitle")}
-          </p>
         </div>
       </header>
 
