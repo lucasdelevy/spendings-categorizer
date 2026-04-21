@@ -1,8 +1,15 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { CategorySummary, StatementType, CategoryConfig, Transaction, UploadedBy } from "../types";
 import { getCategoryColorFromConfig } from "../engine/categories";
 import TransactionActionModal from "./TransactionActionModal";
 import type { RecategorizePayload, RenamePayload, IgnorePayload } from "./TransactionActionModal";
+import TransactionFilters, {
+  EMPTY_FILTERS,
+  filtersActive,
+  matchesFilters,
+  collectOwners,
+} from "./TransactionFilters";
+import type { FilterState } from "./TransactionFilters";
 
 interface Props {
   categories: CategorySummary[];
@@ -76,11 +83,36 @@ export default function TransactionTable({
 }: Props) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [modalTarget, setModalTarget] = useState<ModalTarget | null>(null);
+  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const showSource = statementType === "family";
-  const hasAvatars = categories.some((c) =>
+  const hasActions = !!(onRecategorize || onRename || onIgnore);
+
+  const allTransactions = useMemo(
+    () => categories.flatMap((c) => c.transactions),
+    [categories],
+  );
+  const owners = useMemo(() => collectOwners(allTransactions), [allTransactions]);
+
+  const isFiltering = filtersActive(filters);
+
+  const filteredCategories = useMemo(() => {
+    if (!isFiltering) return categories;
+    return categories
+      .map((cat) => {
+        const txs = cat.transactions.filter((t) => matchesFilters(t, filters));
+        return {
+          ...cat,
+          transactions: txs,
+          count: txs.length,
+          total: txs.reduce((sum, t) => sum + t.amount, 0),
+        };
+      })
+      .filter((cat) => cat.transactions.length > 0);
+  }, [categories, filters, isFiltering]);
+
+  const hasAvatars = filteredCategories.some((c) =>
     c.transactions.some((t) => t.uploadedBy?.picture),
   );
-  const hasActions = !!(onRecategorize || onRename || onIgnore);
 
   const visibleCategoryNames = categories.map((c) => c.category);
   const configCategoryNames = catConfig
@@ -102,8 +134,20 @@ export default function TransactionTable({
 
   return (
     <>
+      <TransactionFilters
+        filters={filters}
+        onChange={setFilters}
+        owners={owners}
+      />
+
+      {isFiltering && filteredCategories.length === 0 && (
+        <p className="py-6 text-center text-sm text-gray-400">
+          Nenhuma transação encontrada com os filtros selecionados.
+        </p>
+      )}
+
       <div className="space-y-2">
-        {categories.map(({ category, total, count, transactions }) => {
+        {filteredCategories.map(({ category, total, count, transactions }) => {
           const isOpen = expanded.has(category);
           const color = getCategoryColorFromConfig(category, catConfig ?? null);
 
