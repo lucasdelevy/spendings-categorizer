@@ -9,6 +9,7 @@ import {
   listStatements,
   softDeleteByFullSK,
 } from "../services/statementService.js";
+import { findDuplicates } from "../services/dedupService.js";
 import type { JWTPayload, TransactionItem } from "../types.js";
 
 function respond(statusCode: number, body: unknown, origin?: string): APIGatewayProxyResultV2 {
@@ -145,6 +146,32 @@ async function handleSave(
 
   const userRecord = await getUser(user.userId);
   const familyId = userRecord?.familyId;
+  const uploadedBy = {
+    userId: user.userId,
+    name: userRecord?.name || "",
+    picture: userRecord?.picture || "",
+  };
+
+  const existingRecords = await getMonthStatements(user.userId, yearMonth, familyId);
+  const existingTxs: TransactionItem[] = [];
+  for (const r of existingRecords) {
+    existingTxs.push(...r.transactions);
+  }
+
+  const { newTransactions, duplicateCount } = findDuplicates(
+    transactions as TransactionItem[],
+    existingTxs,
+  );
+
+  if (newTransactions.length === 0) {
+    return respond(200, {
+      message: "All transactions already exist",
+      duplicateCount,
+      importedCount: 0,
+    }, origin);
+  }
+
+  const recomputedSummary = recomputeSummary(type, newTransactions);
 
   const record = await saveStatement({
     userId: user.userId,
@@ -152,20 +179,45 @@ async function handleSave(
     yearMonth,
     type,
     fileName,
-    summary,
-    transactions,
-    uploadedBy: {
-      userId: user.userId,
-      name: userRecord?.name || "",
-      picture: userRecord?.picture || "",
-    },
+    summary: recomputedSummary,
+    transactions: newTransactions,
+    uploadedBy,
   });
 
   return respond(201, {
     id: record.SK.replace("STMT#", ""),
     fileName: record.fileName,
     uploadedAt: record.uploadedAt,
+    duplicateCount,
+    importedCount: newTransactions.length,
   }, origin);
+}
+
+function recomputeSummary(type: string, txs: TransactionItem[]) {
+  let totalIn = 0;
+  let totalOut = 0;
+  const catMap = new Map<string, { category: string; total: number; count: number }>();
+
+  for (const tx of txs) {
+    if (tx.amount >= 0) totalIn += tx.amount;
+    else totalOut += tx.amount;
+
+    const existing = catMap.get(tx.category);
+    if (existing) {
+      existing.total += tx.amount;
+      existing.count += 1;
+    } else {
+      catMap.set(tx.category, { category: tx.category, total: tx.amount, count: 1 });
+    }
+  }
+
+  return {
+    type: type as "bank" | "card" | "family",
+    totalIn,
+    totalOut,
+    balance: totalIn + totalOut,
+    categories: Array.from(catMap.values()),
+  };
 }
 
 async function handleDelete(

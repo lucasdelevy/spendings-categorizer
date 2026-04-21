@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { CategorySummary, StatementType, CategoryConfig, Transaction, UploadedBy } from "../types";
+import type { CategorySummary, StatementType, CategoryConfig, Transaction, TransactionOrigin, UploadedBy } from "../types";
 import { getCategoryColorFromConfig } from "../engine/categories";
 import { formatBRL, resolveLocale } from "../i18n";
 import TransactionActionModal from "./TransactionActionModal";
@@ -28,16 +28,21 @@ interface Props {
 }
 
 function formatDate(raw: string): string {
+  let date: Date;
   if (raw.includes("-")) {
     const [y, m, d] = raw.split("-");
-    const date = new Date(Number(y), Number(m) - 1, Number(d));
-    return date.toLocaleDateString(resolveLocale(), {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+    date = new Date(Number(y), Number(m) - 1, Number(d));
+  } else if (raw.includes("/")) {
+    const [d, m, y] = raw.split("/");
+    date = new Date(Number(y), Number(m) - 1, Number(d));
+  } else {
+    return raw;
   }
-  return raw;
+  return date.toLocaleDateString(resolveLocale(), {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
 function SourceBadge({ source, label }: { source?: "bank" | "card"; label: string }) {
@@ -69,6 +74,15 @@ function UploaderAvatar({ uploadedBy }: { uploadedBy?: UploadedBy }) {
         referrerPolicy="no-referrer"
       />
     </div>
+  );
+}
+
+function OriginLabel({ origin }: { origin?: TransactionOrigin }) {
+  const label = origin === "openfinance" ? "API" : "CSV";
+  return (
+    <span className="select-none text-[10px] font-medium uppercase leading-none text-gray-400/40 dark:text-gray-500/40">
+      {label}
+    </span>
   );
 }
 
@@ -280,6 +294,7 @@ export default function TransactionTable({
                             {(hasActions || onHide) && (
                               <td className="px-2 py-2">
                                 <div className="flex items-center gap-0.5">
+                                  <OriginLabel origin={tx.origin} />
                                   {onHide && (
                                     <button
                                       onClick={() => onHide({ globalIndex: globalIdx })}

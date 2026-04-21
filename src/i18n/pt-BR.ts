@@ -214,6 +214,9 @@ const ptBR = {
       phase10Title: "Redesign do Navegador de Meses",
       phase10Desc:
         "Dropdown substituído por título centralizado do mês, setas de navegação e linha do tempo com pontos. Suporte a swipe no trackpad, gestos touch e setas do teclado. Cache em memória para troca instantânea de mês.",
+      phase11Title: "Integração Pierre Open Finance",
+      phase11Desc:
+        "Sincronização automática de transações via API Pierre Finance a cada 5 minutos. Deduplicação entre fontes evita duplicação entre uploads CSV e dados do Open Finance. Cada transação exibe sua origem (API ou CSV).",
     },
   },
 
@@ -231,6 +234,7 @@ const ptBR = {
     min: "Mín",
     max: "Máx",
     date: "Data",
+    custom: "Personalizado",
     member: "Membro",
   },
 } as const;

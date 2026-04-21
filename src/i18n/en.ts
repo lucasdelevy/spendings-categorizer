@@ -213,6 +213,9 @@ const en = {
       phase10Title: "Month Navigator Redesign",
       phase10Desc:
         "Replaced the dropdown with a centered month title, chevron arrows, and a dot timeline. Supports trackpad swipe, touch gestures, and keyboard arrows. In-memory cache for instant month switching.",
+      phase11Title: "Pierre Open Finance Integration",
+      phase11Desc:
+        "Automatic transaction sync via Pierre Finance API every 5 minutes. Cross-source deduplication prevents double-counting between CSV uploads and Open Finance data. Each transaction shows its origin (API or CSV).",
     },
   },
 
@@ -230,6 +233,7 @@ const en = {
     min: "Min",
     max: "Max",
     date: "Date",
+    custom: "Custom",
     member: "Member",
   },
 } as const;

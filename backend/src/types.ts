@@ -76,6 +76,8 @@ export interface CategorySummaryItem {
   count: number;
 }
 
+export type TransactionOrigin = "csv" | "openfinance";
+
 export interface TransactionItem {
   date: string;
   amount: number;
@@ -86,6 +88,8 @@ export interface TransactionItem {
   source?: "bank" | "card";
   uploadedBy?: UploadedBy;
   hidden?: boolean;
+  origin?: TransactionOrigin;
+  externalId?: string;
 }
 
 export interface CategoryEntry {

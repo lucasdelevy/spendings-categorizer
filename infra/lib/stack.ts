@@ -3,6 +3,8 @@ import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigatewayv2 from "aws-cdk-lib/aws-apigatewayv2";
 import * as integrations from "aws-cdk-lib/aws-apigatewayv2-integrations";
+import * as events from "aws-cdk-lib/aws-events";
+import * as targets from "aws-cdk-lib/aws-events-targets";
 import type { Construct } from "constructs";
 import * as path from "path";
 import { fileURLToPath } from "url";
@@ -78,10 +80,32 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       memorySize: 256,
     });
 
+    const pierreFunction = new lambda.Function(this, "PierreFunction", {
+      functionName: "spendings-categorizer-pierre",
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "pierre.handler",
+      code: lambda.Code.fromAsset(backendDist, {
+        exclude: ["auth.*", "families.*", "categories.*"],
+      }),
+      environment: {
+        ...sharedEnv,
+        PIERRE_API_KEY: process.env.PIERRE_API_KEY || "",
+        PIERRE_USER_ID: process.env.PIERRE_USER_ID || "",
+      },
+      timeout: cdk.Duration.seconds(30),
+      memorySize: 256,
+    });
+
+    new events.Rule(this, "PierreSyncSchedule", {
+      schedule: events.Schedule.rate(cdk.Duration.minutes(5)),
+      targets: [new targets.LambdaFunction(pierreFunction)],
+    });
+
     table.grantReadWriteData(authFunction);
     table.grantReadWriteData(statementsFunction);
     table.grantReadWriteData(familiesFunction);
     table.grantReadWriteData(categoriesFunction);
+    table.grantReadWriteData(pierreFunction);
 
     const httpApi = new apigatewayv2.HttpApi(this, "HttpApi", {
       apiName: "spendings-categorizer-api",
@@ -118,7 +142,6 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       "CategoriesIntegration",
       categoriesFunction,
     );
-
     httpApi.addRoutes({
       path: "/auth/google",
       methods: [apigatewayv2.HttpMethod.POST],
@@ -194,6 +217,16 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       path: "/categories/apply",
       methods: [apigatewayv2.HttpMethod.POST],
       integration: categoriesIntegration,
+    });
+
+    const pierreIntegration = new integrations.HttpLambdaIntegration(
+      "PierreIntegration",
+      pierreFunction,
+    );
+    httpApi.addRoutes({
+      path: "/pierre/sync",
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: pierreIntegration,
     });
 
     const defaultStage = httpApi.defaultStage!.node

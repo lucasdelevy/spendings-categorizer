@@ -2,6 +2,8 @@ export type StatementType = "bank" | "card" | "family";
 
 export type TransactionSource = "bank" | "card";
 
+export type TransactionOrigin = "csv" | "openfinance";
+
 export interface UploadedBy {
   userId: string;
   name: string;
@@ -18,6 +20,7 @@ export interface Transaction {
   source?: TransactionSource;
   uploadedBy?: UploadedBy;
   hidden?: boolean;
+  origin?: TransactionOrigin;
   _originalIndex?: number;
 }
 

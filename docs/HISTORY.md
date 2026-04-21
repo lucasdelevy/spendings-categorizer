@@ -152,3 +152,18 @@ Key changes:
 - Keyboard arrow keys: `←`/`→` navigate months from anywhere on the dashboard (skipped when focus is inside form inputs).
 - In-memory month cache (`Map<string, StatementResult>` in a `useRef`): previously loaded months are served instantly from cache on navigation, avoiding redundant API calls. Cache is invalidated per-month on mutations (save, recategorize, rename, ignore, hide, delete) and cleared entirely when category config changes.
 - `formatYearMonth` updated from `month: "short"` to `month: "long"` for full month names across all locales.
+
+## Phase 11: Pierre Open Finance Integration
+
+Integrated Pierre Finance API for automatic transaction syncing via Open Finance, running alongside existing CSV uploads.
+
+Key changes:
+- New Lambda function (`spendings-categorizer-pierre`) with two trigger modes: EventBridge scheduled rule (every 5 minutes) for automatic sync, and `POST /pierre/sync` API Gateway route for manual sync.
+- New `pierreService` handles Pierre API communication: fetches transactions, triggers manual bank sync, and maps Pierre's data model to `TransactionItem`.
+- New `dedupService` provides shared cross-source deduplication used by both Pierre sync and CSV upload. Uses (date, amount) grouping with word-level Jaccard description similarity (threshold 0.3) to match transactions regardless of origin.
+- Pierre sync runs two-pass dedup: Pass 1 uses `externalId` for Pierre-vs-Pierre exact matching, Pass 2 uses fingerprint matching for Pierre-vs-CSV overlap detection.
+- CSV upload (`POST /statements`) now also deduplicates incoming transactions against existing data before saving, preventing double-counting when Pierre has already synced the same transactions.
+- New `origin` field (`"csv" | "openfinance"`) on `TransactionItem` and `Transaction` types distinguishes transaction sources. New `externalId` field stores Pierre's transaction UUID for reliable re-sync dedup.
+- Subtle origin indicator ("API" / "CSV") added to each transaction row in the UI, positioned near the hide button with low-opacity styling.
+- Owner guard on the manual sync endpoint: only the user whose Google `sub` matches `PIERRE_USER_ID` env var can trigger manual syncs. EventBridge path is internal-only.
+- Each sync covers current month + previous month to catch late-posting transactions near month boundaries, with a 1-day startDate buffer to work around Pierre's date filtering behavior.
