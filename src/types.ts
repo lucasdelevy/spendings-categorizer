@@ -17,6 +17,7 @@ export interface Transaction {
   originalDescription: string;
   source?: TransactionSource;
   uploadedBy?: UploadedBy;
+  hidden?: boolean;
   _originalIndex?: number;
 }
 

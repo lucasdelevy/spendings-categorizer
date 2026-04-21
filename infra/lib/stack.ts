@@ -186,6 +186,11 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       integration: categoriesIntegration,
     });
     httpApi.addRoutes({
+      path: "/categories/hide",
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: categoriesIntegration,
+    });
+    httpApi.addRoutes({
       path: "/categories/apply",
       methods: [apigatewayv2.HttpMethod.POST],
       integration: categoriesIntegration,
@@ -201,16 +206,16 @@ export class SpendingsCategorizerStack extends cdk.Stack {
 
     defaultStage.routeSettings = {
       "POST /auth/google": {
-        throttlingBurstLimit: 10,
-        throttlingRateLimit: 5,
+        ThrottlingBurstLimit: 10,
+        ThrottlingRateLimit: 5,
       },
       "POST /auth/logout": {
-        throttlingBurstLimit: 10,
-        throttlingRateLimit: 5,
+        ThrottlingBurstLimit: 10,
+        ThrottlingRateLimit: 5,
       },
       "GET /auth/me": {
-        throttlingBurstLimit: 20,
-        throttlingRateLimit: 10,
+        ThrottlingBurstLimit: 20,
+        ThrottlingRateLimit: 10,
       },
     };
 

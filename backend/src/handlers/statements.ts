@@ -88,12 +88,14 @@ async function handleGet(
   let totalIn = 0;
   let totalOut = 0;
   for (const t of allTransactions) {
+    if (t.hidden) continue;
     if (t.amount >= 0) totalIn += t.amount;
     else totalOut += t.amount;
   }
 
   const catMap = new Map<string, { category: string; total: number; count: number }>();
   for (const t of allTransactions) {
+    if (t.hidden) continue;
     const existing = catMap.get(t.category);
     if (existing) {
       existing.total += t.amount;

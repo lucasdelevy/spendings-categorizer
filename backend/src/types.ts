@@ -85,6 +85,7 @@ export interface TransactionItem {
   originalDescription: string;
   source?: "bank" | "card";
   uploadedBy?: UploadedBy;
+  hidden?: boolean;
 }
 
 export interface CategoryEntry {

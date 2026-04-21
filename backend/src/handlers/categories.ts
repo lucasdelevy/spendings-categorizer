@@ -238,6 +238,65 @@ async function handleIgnore(
   return respond(200, { message: "Ignored" }, origin);
 }
 
+async function handleHide(
+  event: APIGatewayProxyEventV2,
+  user: JWTPayload,
+): Promise<APIGatewayProxyResultV2> {
+  const origin = event.headers?.origin;
+  const body = JSON.parse(event.body || "{}");
+  const { statementId, transactionIndex } = body;
+
+  if (!statementId || transactionIndex === undefined) {
+    return respond(400, { error: "statementId and transactionIndex are required" }, origin);
+  }
+
+  const userRecord = await getUser(user.userId);
+  const familyId = userRecord?.familyId;
+
+  const { record, localIdx } = await resolveTransaction(statementId, transactionIndex, user.userId, familyId);
+
+  if (!record) {
+    return respond(404, { error: "Statement not found" }, origin);
+  }
+
+  const tx = record.transactions[localIdx];
+  tx.hidden = !tx.hidden;
+
+  let totalIn = 0;
+  let totalOut = 0;
+  const catMap = new Map<string, { category: string; total: number; count: number }>();
+  for (const t of record.transactions) {
+    if (!t.hidden) {
+      if (t.amount >= 0) totalIn += t.amount;
+      else totalOut += t.amount;
+    }
+    const existing = catMap.get(t.category);
+    if (existing) {
+      if (!t.hidden) existing.total += t.amount;
+      existing.count += 1;
+    } else {
+      catMap.set(t.category, {
+        category: t.category,
+        total: t.hidden ? 0 : t.amount,
+        count: 1,
+      });
+    }
+  }
+  record.summary = {
+    ...record.summary,
+    totalIn,
+    totalOut,
+    balance: totalIn + totalOut,
+    categories: Array.from(catMap.values()),
+  };
+
+  await docClient.send(
+    new PutCommand({ TableName: TABLE_NAME, Item: record }),
+  );
+
+  return respond(200, { message: "Toggled", hidden: tx.hidden }, origin);
+}
+
 async function resolveTransaction(
   statementId: string,
   globalIndex: number,
@@ -295,6 +354,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
   if (method === "POST" && path === "/categories/recategorize") return handleRecategorize(event, user);
   if (method === "POST" && path === "/categories/rename") return handleRename(event, user);
   if (method === "POST" && path === "/categories/ignore") return handleIgnore(event, user);
+  if (method === "POST" && path === "/categories/hide") return handleHide(event, user);
   if (method === "POST" && path === "/categories/apply") return handleApply(event, user);
 
   return respond(404, { error: "Not found" }, origin);

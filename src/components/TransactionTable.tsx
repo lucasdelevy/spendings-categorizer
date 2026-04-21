@@ -13,6 +13,10 @@ import TransactionFilters, {
 } from "./TransactionFilters";
 import type { FilterState } from "./TransactionFilters";
 
+export interface HidePayload {
+  globalIndex: number;
+}
+
 interface Props {
   categories: CategorySummary[];
   statementType: StatementType;
@@ -20,6 +24,7 @@ interface Props {
   onRecategorize?: (payload: RecategorizePayload) => void;
   onRename?: (payload: RenamePayload) => void;
   onIgnore?: (payload: IgnorePayload) => void;
+  onHide?: (payload: HidePayload) => void;
 }
 
 function formatDate(raw: string): string {
@@ -80,6 +85,7 @@ export default function TransactionTable({
   onRecategorize,
   onRename,
   onIgnore,
+  onHide,
 }: Props) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -97,18 +103,23 @@ export default function TransactionTable({
   const isFiltering = filtersActive(filters);
 
   const filteredCategories = useMemo(() => {
-    if (!isFiltering) return categories;
-    return categories
-      .map((cat) => {
-        const txs = cat.transactions.filter((t) => matchesFilters(t, filters));
-        return {
-          ...cat,
-          transactions: txs,
-          count: txs.length,
-          total: txs.reduce((sum, t) => sum + t.amount, 0),
-        };
-      })
-      .filter((cat) => cat.transactions.length > 0);
+    const base = isFiltering
+      ? categories
+          .map((cat) => {
+            const txs = cat.transactions.filter((t) => matchesFilters(t, filters));
+            return { ...cat, transactions: txs, count: txs.length };
+          })
+          .filter((cat) => cat.transactions.length > 0)
+      : categories;
+
+    return base.map((cat) => ({
+      ...cat,
+      total: cat.transactions.reduce(
+        (sum, t) => (t.hidden ? sum : sum + t.amount),
+        0,
+      ),
+      count: cat.transactions.filter((t) => !t.hidden).length,
+    }));
   }, [categories, filters, isFiltering]);
 
   const hasAvatars = filteredCategories.some((c) =>
@@ -151,6 +162,7 @@ export default function TransactionTable({
         {filteredCategories.map(({ category, total, count, transactions }) => {
           const isOpen = expanded.has(category);
           const color = getCategoryColorFromConfig(category, catConfig ?? null);
+          const hiddenCount = transactions.filter((t) => t.hidden).length;
 
           return (
             <div
@@ -170,6 +182,14 @@ export default function TransactionTable({
                   <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">
                     {count}x
                   </span>
+                  {hiddenCount > 0 && (
+                    <span className="inline-flex items-center gap-0.5 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-400 dark:bg-gray-700 dark:text-gray-500">
+                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                      </svg>
+                      {hiddenCount}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   <span
@@ -212,15 +232,19 @@ export default function TransactionTable({
                           <th className="px-4 py-2">{t("table.installment")}</th>
                         )}
                         <th className="px-4 py-2 text-right">{t("table.amount")}</th>
-                        {hasActions && <th className="w-8 px-2 py-2" />}
+                        {(hasActions || onHide) && <th className="w-8 px-2 py-2" />}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                       {transactions.map((tx, txIdx) => {
                         const globalIdx = tx._originalIndex ?? txIdx;
+                        const isHidden = !!tx.hidden;
 
                         return (
-                          <tr key={txIdx} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <tr
+                            key={txIdx}
+                            className={`${isHidden ? "opacity-40" : "hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+                          >
                             {hasAvatars && (
                               <td className="px-2 py-2">
                                 <UploaderAvatar uploadedBy={tx.uploadedBy} />
@@ -238,7 +262,7 @@ export default function TransactionTable({
                               </td>
                             )}
                             <td
-                              className="max-w-xs truncate px-4 py-2 text-gray-800 dark:text-gray-200"
+                              className={`max-w-xs truncate px-4 py-2 ${isHidden ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-800 dark:text-gray-200"}`}
                               title={tx.originalDescription}
                             >
                               {tx.payee}
@@ -249,27 +273,49 @@ export default function TransactionTable({
                               </td>
                             )}
                             <td
-                              className={`whitespace-nowrap px-4 py-2 text-right tabular-nums ${tx.amount >= 0 ? "text-green-600" : "text-gray-800 dark:text-gray-200"}`}
+                              className={`whitespace-nowrap px-4 py-2 text-right tabular-nums ${isHidden ? "line-through text-gray-400 dark:text-gray-500" : tx.amount >= 0 ? "text-green-600" : "text-gray-800 dark:text-gray-200"}`}
                             >
                               {formatBRL(tx.amount)}
                             </td>
-                            {hasActions && (
+                            {(hasActions || onHide) && (
                               <td className="px-2 py-2">
-                                <button
-                                  onClick={() =>
-                                    setModalTarget({
-                                      transaction: tx,
-                                      globalIndex: globalIdx,
-                                      category,
-                                    })
-                                  }
-                                  className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-indigo-600 dark:hover:bg-gray-600"
-                                  title={t("table.actions")}
-                                >
-                                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
-                                  </svg>
-                                </button>
+                                <div className="flex items-center gap-0.5">
+                                  {onHide && (
+                                    <button
+                                      onClick={() => onHide({ globalIndex: globalIdx })}
+                                      className={`rounded p-1 transition ${isHidden ? "text-indigo-500 hover:bg-indigo-50 hover:text-indigo-700 dark:hover:bg-indigo-900" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-600"}`}
+                                      title={isHidden ? t("table.unhide") : t("table.hide")}
+                                    >
+                                      {isHidden ? (
+                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                      ) : (
+                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                                        </svg>
+                                      )}
+                                    </button>
+                                  )}
+                                  {hasActions && !isHidden && (
+                                    <button
+                                      onClick={() =>
+                                        setModalTarget({
+                                          transaction: tx,
+                                          globalIndex: globalIdx,
+                                          category,
+                                        })
+                                      }
+                                      className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-indigo-600 dark:hover:bg-gray-600"
+                                      title={t("table.actions")}
+                                    >
+                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
+                                      </svg>
+                                    </button>
+                                  )}
+                                </div>
                               </td>
                             )}
                           </tr>
