@@ -472,6 +472,7 @@ export default function App() {
                 totalOut={result.totalOut}
                 balance={result.balance}
                 transactionCount={result.transactions.filter((t) => !t.hidden).length}
+                hiddenCount={result.transactions.filter((t) => t.hidden).length}
               />
 
               <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">

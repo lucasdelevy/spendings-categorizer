@@ -8,6 +8,7 @@ interface Props {
   totalOut: number;
   balance: number;
   transactionCount: number;
+  hiddenCount: number;
 }
 
 export default function SummaryBar({
@@ -16,6 +17,7 @@ export default function SummaryBar({
   totalOut,
   balance,
   transactionCount,
+  hiddenCount,
 }: Props) {
   const { t } = useTranslation();
 
@@ -38,12 +40,21 @@ export default function SummaryBar({
           color="text-gray-900"
           badge={t("summary.transactionsCount", { count: transactionCount })}
         />
+        {hiddenCount > 0 && (
+          <Card
+            label={t("summary.hidden")}
+            value={String(hiddenCount)}
+            color="text-gray-400"
+          />
+        )}
       </div>
     );
   }
 
+  const cols = hiddenCount > 0 ? "grid-cols-2 gap-3 sm:grid-cols-5" : "grid-cols-2 gap-3 sm:grid-cols-4";
+
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className={`grid ${cols}`}>
       <Card
         label={t("summary.income")}
         value={formatBRL(totalIn)}
@@ -64,6 +75,13 @@ export default function SummaryBar({
         value={String(transactionCount)}
         color="text-gray-900"
       />
+      {hiddenCount > 0 && (
+        <Card
+          label={t("summary.hidden")}
+          value={String(hiddenCount)}
+          color="text-gray-400"
+        />
+      )}
     </div>
   );
 }

@@ -134,6 +134,7 @@ const ptBR = {
     expenses: "Saídas",
     balance: "Saldo",
     transactions: "Transações",
+    hidden: "Ocultas",
   },
 
   table: {
@@ -208,6 +209,9 @@ const ptBR = {
       phase8Title: "Menu Lateral e Rebranding",
       phase8Desc:
         "Menu hamburger lateral, fundo com padrão de pontos, favicon customizado. Rebatizado para Aletheia com reflexo em grego espelhado.",
+      phase9Title: "Ocultar/Mostrar Transações",
+      phase9Desc:
+        "Botão por transação que oculta a linha e a exclui dos totais, gráficos e subtotais por categoria. Contagem de ocultas exibida nos cabeçalhos de categoria e no resumo.",
     },
   },
 

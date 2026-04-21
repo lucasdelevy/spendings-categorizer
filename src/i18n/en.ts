@@ -133,6 +133,7 @@ const en = {
     expenses: "Expenses",
     balance: "Balance",
     transactions: "Transactions",
+    hidden: "Hidden",
   },
 
   table: {
@@ -207,6 +208,9 @@ const en = {
       phase8Title: "Sidebar Navigation & Rebrand",
       phase8Desc:
         "Hamburger side menu, dot-grid background, custom favicon. Rebranded to Aletheia with mirrored Greek script reflection.",
+      phase9Title: "Hide/Unhide Transactions",
+      phase9Desc:
+        "Per-transaction hide toggle that grays out rows and excludes them from totals, charts, and category subtotals. Hidden count shown in category headers and summary bar.",
     },
   },
 

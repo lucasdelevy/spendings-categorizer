@@ -56,6 +56,11 @@ const featureLog: FeatureEntry[] = [
     title: "about.features.phase8Title",
     description: "about.features.phase8Desc",
   },
+  {
+    phase: "9",
+    title: "about.features.phase9Title",
+    description: "about.features.phase9Desc",
+  },
 ];
 
 export default function AboutPage({ onBack }: Props) {

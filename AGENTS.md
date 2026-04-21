@@ -76,7 +76,9 @@ The frontend is a Vite React app hosted on GitHub Pages.
 
 ## Feature Log Convention
 
-Every major feature must be documented in two places:
+Every major feature must be documented in four files:
 
 1. **`docs/HISTORY.md`** — Append a new `## Phase N: Title` section describing the feature, key decisions, and technical changes.
-2. **About page (`src/pages/AboutPage.tsx`)** — Add a corresponding entry to the `featureLog` array with i18n keys, and add the translated title/description to both `src/i18n/en.ts` and `src/i18n/pt-BR.ts` under `about.features.*`.
+2. **`src/pages/AboutPage.tsx`** — Add a corresponding entry to the `featureLog` array (with `phase`, `title`, and `description` i18n keys following the `about.features.phaseNTitle` / `about.features.phaseNDesc` pattern).
+3. **`src/i18n/en.ts`** — Add the English title and description under `about.features.phaseNTitle` / `about.features.phaseNDesc`.
+4. **`src/i18n/pt-BR.ts`** — Add the Portuguese title and description under the same keys.

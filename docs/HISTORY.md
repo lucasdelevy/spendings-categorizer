@@ -1,4 +1,4 @@
-# App History
+# App History — Spendings Categorizer (Aletheia)
 
 ## Phase 1: Python Scripts (stateless, CLI)
 
@@ -85,3 +85,57 @@ Key changes:
 - New Lambda function (`categories`) with `GET /categories`, `PUT /categories`, and `POST /categories/recategorize` routes.
 - Added GitHub Actions CD workflow for backend: `deploy-backend.yml` triggers on `backend/**` or `infra/**` changes, uses OIDC to assume an IAM role, and runs `cdk deploy`.
 - Frontend deploy workflow updated with path filters so it only triggers on frontend changes.
+
+## Phase 6: Transaction Filters
+
+Added a collapsible filter bar to the transaction table for more granular analysis.
+
+Key changes:
+- New `TransactionFilters` component with amount range (min/max), date range, and owner multi-select.
+- Filters are combinable and recompute category totals/counts in real time.
+- Filter panel toggles via a button in the table header, collapses to save space when not in use.
+
+## Phase 7: Dark Mode & i18n
+
+Added dark mode support and internationalization across the entire app.
+
+Dark mode:
+- Tailwind CSS class-based dark mode (`darkMode: "class"`) with a `ThemeContext` provider.
+- Persists preference in `localStorage`, defaults to system preference via `prefers-color-scheme`.
+- Sun/moon toggle; all pages and components styled with `dark:` utility classes.
+
+i18n:
+- `react-i18next` with full EN and PT-BR translation files covering all pages and components.
+- Language switcher with flag emojis (Brazilian flag for PT-BR, US flag for EN-US).
+- Browser language auto-detection via `i18next-browser-languagedetector`.
+
+## Phase 8: Sidebar Navigation & Rebrand to Aletheia
+
+Redesigned navigation and established the app's visual identity.
+
+Navigation:
+- Replaced the crowded header button row with a hamburger-triggered side menu that slides in from the left.
+- Side menu sections: preferences (language switcher + dark mode toggle with label), page navigation (Categories, Family, Manage Months with icons), and user profile (avatar, name, email, logout) pinned to the bottom.
+- Sidebar and header are consistent across all pages (dashboard, categories, family, manage months). Sub-pages removed their standalone wrappers and render inside the shared layout.
+
+Rebrand:
+- App renamed from "Spendings Categorizer" to **Aletheia** (ἀλήθεια — Greek for "unconcealment").
+- Tagline: "Reveal what was concealed" (EN) / "Revele o que estava oculto" (PT-BR), displayed in italic with faded color.
+- Mirrored Greek script "Ἀλήθεια" rendered as a ghosted reflection next to the title at 10% opacity.
+- Custom favicon: indigo rounded square with a white serif Α (Greek capital alpha).
+- Subtle dot-grid background pattern using indigo at ~4.5% opacity (light) / ~7% (dark), fixed position.
+- Repository and package name remain `spendings-categorizer`; docs reference "Spendings Categorizer (Aletheia)".
+
+## Phase 9: Hide/Unhide Transactions
+
+Added a per-transaction hide toggle that grays out individual transactions and excludes them from all financial calculations.
+
+Key changes:
+- New `hidden?: boolean` field on `TransactionItem` (backend) and `Transaction` (frontend) types.
+- Eye-slash button on each transaction row toggles visibility. Hidden rows render at 40% opacity with strikethrough on payee and amount.
+- Hidden transactions are excluded from category subtotals, summary bar totals (income, expenses, balance), pie chart, and daily spending chart.
+- New `POST /categories/hide` backend endpoint toggles the `hidden` flag and recalculates the stored summary.
+- Backend `GET /statements/{id}` skips hidden transactions when computing totals but still returns them in the response for rendering.
+- Category accordion headers show a hidden-count badge (eye-slash icon + number) when any transactions in that category are hidden.
+- Summary bar gains a conditional "Hidden" card showing the total hidden count, which appears only when at least one transaction is hidden.
+- CDK stack updated with new API Gateway route; also fixed `routeSettings` casing (`ThrottlingBurstLimit`/`ThrottlingRateLimit`) to satisfy updated CloudFormation validation.
