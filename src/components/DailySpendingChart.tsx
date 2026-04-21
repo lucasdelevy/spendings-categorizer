@@ -60,10 +60,13 @@ export default function DailySpendingChart({ transactions }: Props) {
 
   if (data.length === 0) return null;
 
+  const minWidth = Math.max(data.length * 28, 400);
+
   return (
-    <div className="h-72 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} margin={{ top: 8, right: 48, bottom: 24, left: 0 }}>
+    <div className="h-80 w-full overflow-x-auto">
+      <div style={{ minWidth, height: "100%" }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={data} margin={{ top: 8, right: 48, bottom: 24, left: 0 }}>
           <CartesianGrid
             strokeDasharray="3 3"
             stroke={isDark ? "#374151" : "#e5e7eb"}
@@ -136,7 +139,8 @@ export default function DailySpendingChart({ transactions }: Props) {
             dot={false}
           />
         </ComposedChart>
-      </ResponsiveContainer>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
