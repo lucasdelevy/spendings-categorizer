@@ -12,6 +12,7 @@ const ptBR = {
     cancel: "Cancelar",
     spendingByCategory: "Gastos por Categoria",
     dailySpending: "Gastos Diários",
+    cumulative: "Acumulado",
     tabCategory: "Por Categoria",
     tabDaily: "Por Dia",
     transactions: "Transações",

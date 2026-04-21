@@ -12,6 +12,7 @@ const en = {
     cancel: "Cancel",
     spendingByCategory: "Spending by Category",
     dailySpending: "Daily Spending",
+    cumulative: "Accumulated",
     tabCategory: "By Category",
     tabDaily: "By Day",
     transactions: "Transactions",

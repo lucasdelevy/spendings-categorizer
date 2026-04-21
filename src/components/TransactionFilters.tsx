@@ -172,8 +172,8 @@ export default function TransactionFilters({
 
       {open && (
         <div className="mt-2 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-          <div className="flex flex-wrap gap-6">
-            <div className="min-w-[180px] flex-1">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
               <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 {t("filters.amount")}
               </label>
@@ -200,7 +200,7 @@ export default function TransactionFilters({
               </div>
             </div>
 
-            <div className="min-w-[180px] flex-1">
+            <div>
               <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 {t("filters.date")}
               </label>
@@ -221,8 +221,8 @@ export default function TransactionFilters({
               </div>
             </div>
 
-            {owners.length > 1 && (
-              <div className="min-w-[180px] flex-1">
+            {owners.length > 0 && (
+              <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                   {t("filters.member")}
                 </label>
