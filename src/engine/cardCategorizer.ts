@@ -69,7 +69,8 @@ export function processCardCSV(
     if (!title || shouldIgnore(title, ignoreList)) continue;
 
     const rawAmount = (row[colAmount] ?? "").trim().replace(",", "");
-    const amount = rawAmount ? parseFloat(rawAmount) : 0;
+    const parsed = rawAmount ? parseFloat(rawAmount) : 0;
+    const amount = parsed === 0 ? 0 : -parsed;
     const date = colDate ? (row[colDate] ?? "").trim() : "";
     const [cleanName, installment] = extractInstallment(title);
     const category = categorize(title, cats);

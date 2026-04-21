@@ -26,12 +26,12 @@ export default function SummaryBar({
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Card
           label={t("summary.totalExpenses")}
-          value={formatBRL(totalIn)}
+          value={formatBRL(totalOut)}
           color="text-red-600"
         />
         <Card
           label={t("summary.credits")}
-          value={formatBRL(totalOut)}
+          value={formatBRL(totalIn)}
           color="text-green-600"
         />
         <Card

@@ -11,7 +11,7 @@ export function processFamilyStatements(
   );
 
   const cardTransactions = cardResults.flatMap((r) =>
-    r.transactions.filter((t) => t.amount > 0),
+    r.transactions.filter((t) => t.amount < 0),
   );
 
   const all = [...bankTransactions, ...cardTransactions];
@@ -25,26 +25,19 @@ export function processFamilyStatements(
   let totalOut = 0;
 
   for (const t of all) {
-    const expenseAmount = t.source === "card" ? -t.amount : t.amount;
-
-    if (expenseAmount >= 0) totalIn += expenseAmount;
-    else totalOut += expenseAmount;
-
-    const normalized: Transaction = {
-      ...t,
-      amount: expenseAmount,
-    };
+    if (t.amount >= 0) totalIn += t.amount;
+    else totalOut += t.amount;
 
     const existing = catMap.get(t.category);
     if (existing) {
-      existing.total += expenseAmount;
+      existing.total += t.amount;
       existing.count += 1;
-      existing.transactions.push(normalized);
+      existing.transactions.push(t);
     } else {
       catMap.set(t.category, {
-        total: expenseAmount,
+        total: t.amount,
         count: 1,
-        transactions: [normalized],
+        transactions: [t],
       });
     }
   }
@@ -60,10 +53,7 @@ export function processFamilyStatements(
     }))
     .sort((a, b) => Math.abs(b.total) - Math.abs(a.total));
 
-  const transactions = all.map((t) => ({
-    ...t,
-    amount: t.source === "card" ? -t.amount : t.amount,
-  }));
+  const transactions = [...all];
 
   return {
     type: "family",
