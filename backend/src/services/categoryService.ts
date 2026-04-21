@@ -105,9 +105,23 @@ export async function addKeywordToCategory(
   if (!entry) return;
 
   const lower = keyword.toLowerCase();
-  if (entry.keywords.includes(lower)) return;
 
-  entry.keywords.push(lower);
+  let changed = false;
+  for (const [name, cat] of Object.entries(config.categories)) {
+    if (name === categoryName) continue;
+    const idx = cat.keywords.indexOf(lower);
+    if (idx !== -1) {
+      cat.keywords.splice(idx, 1);
+      changed = true;
+    }
+  }
+
+  if (!entry.keywords.includes(lower)) {
+    entry.keywords.push(lower);
+    changed = true;
+  }
+
+  if (!changed) return;
 
   await docClient.send(
     new UpdateCommand({

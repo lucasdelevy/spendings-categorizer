@@ -125,6 +125,7 @@ export default function App() {
     setLoadingData(true);
     setError(null);
     try {
+      await api.post("/categories/apply", { yearMonth: ym }).catch(() => {});
       const remote = await api.get<RemoteStatement>(`/statements/${ym}%23family`);
       setResult(remoteToResult(remote));
       setDataSource("remote");
@@ -228,13 +229,12 @@ export default function App() {
         color: payload.color,
         applyToSimilar: payload.applyToSimilar,
       });
-      await applyConfigToMonth(selectedMonth);
       await refreshConfig();
       await loadMonthFromRemote(selectedMonth);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erro ao recategorizar");
     }
-  }, [result, dataSource, selectedMonth, refreshConfig, loadMonthFromRemote, applyConfigToMonth]);
+  }, [result, dataSource, selectedMonth, refreshConfig, loadMonthFromRemote]);
 
   const handleRename = useCallback(async (payload: {
     globalIndex: number;
