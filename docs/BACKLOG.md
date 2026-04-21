@@ -31,7 +31,7 @@ Living document of planned features and known tech debt. Update as items are com
 - [ ] **Add support for other banks** — Currently Nubank-specific CSV formats. Add parsers for Itaú, Bradesco, Inter, etc.
 - [ ] **Export categorized data** — Download categorized statements as CSV or PDF report.
 - [x] **Dark mode** — Done. Class-based Tailwind dark mode with ThemeContext (localStorage-persisted, respects `prefers-color-scheme` as default). Sun/moon toggle in header. All pages and components styled.
-- [ ] **i18n** — Support English UI in addition to Portuguese.
+- [x] **i18n** — Done. react-i18next with EN and PT-BR translations across all pages/components. Language switcher in header and login page.
 
 ## Tech Debt
 
