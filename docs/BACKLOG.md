@@ -1,4 +1,4 @@
-# Backlog & Tech Debt
+# Backlog & Tech Debt — Spendings Categorizer (Aletheia)
 
 Living document of planned features and known tech debt. Update as items are completed or new ones are identified.
 

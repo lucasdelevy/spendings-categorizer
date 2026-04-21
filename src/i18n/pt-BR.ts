@@ -1,7 +1,7 @@
 const ptBR = {
   app: {
-    title: "Spendings Categorizer",
-    subtitle: "Categorize seu extrato Nubank automaticamente",
+    title: "Aletheia",
+    subtitle: "Revele o que estava oculto",
     categories: "Categorias",
     family: "Família",
     manageMonths: "Gerenciar Meses",

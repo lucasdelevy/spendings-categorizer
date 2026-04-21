@@ -333,10 +333,11 @@ export default function App() {
           </svg>
         </button>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+          <h1 className="flex items-baseline gap-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
             {t("app.title")}
+            <span className="inline-block scale-x-[-1] text-2xl font-light tracking-wide opacity-10">Ἀλήθεια</span>
           </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm italic text-gray-400 dark:text-gray-500">
             {t("app.subtitle")}
           </p>
         </div>

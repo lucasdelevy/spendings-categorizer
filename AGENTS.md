@@ -1,4 +1,4 @@
-# Agents Guide
+# Agents Guide — Spendings Categorizer (Aletheia)
 
 ## Project Structure
 
