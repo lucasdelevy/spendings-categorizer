@@ -212,6 +212,9 @@ const ptBR = {
       phase9Title: "Ocultar/Mostrar Transações",
       phase9Desc:
         "Botão por transação que oculta a linha e a exclui dos totais, gráficos e subtotais por categoria. Contagem de ocultas exibida nos cabeçalhos de categoria e no resumo.",
+      phase10Title: "Redesign do Navegador de Meses",
+      phase10Desc:
+        "Dropdown substituído por título centralizado do mês, setas de navegação e linha do tempo com pontos. Suporte a swipe no trackpad, gestos touch e setas do teclado. Cache em memória para troca instantânea de mês.",
     },
   },
 

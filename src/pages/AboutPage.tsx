@@ -12,44 +12,14 @@ interface FeatureEntry {
 
 const featureLog: FeatureEntry[] = [
   {
-    phase: "1",
-    title: "about.features.phase1Title",
-    description: "about.features.phase1Desc",
+    phase: "10",
+    title: "about.features.phase10Title",
+    description: "about.features.phase10Desc",
   },
   {
-    phase: "2",
-    title: "about.features.phase2Title",
-    description: "about.features.phase2Desc",
-  },
-  {
-    phase: "3",
-    title: "about.features.phase3Title",
-    description: "about.features.phase3Desc",
-  },
-  {
-    phase: "3.1",
-    title: "about.features.phase31Title",
-    description: "about.features.phase31Desc",
-  },
-  {
-    phase: "4",
-    title: "about.features.phase4Title",
-    description: "about.features.phase4Desc",
-  },
-  {
-    phase: "5",
-    title: "about.features.phase5Title",
-    description: "about.features.phase5Desc",
-  },
-  {
-    phase: "6",
-    title: "about.features.phase6Title",
-    description: "about.features.phase6Desc",
-  },
-  {
-    phase: "7",
-    title: "about.features.phase7Title",
-    description: "about.features.phase7Desc",
+    phase: "9",
+    title: "about.features.phase9Title",
+    description: "about.features.phase9Desc",
   },
   {
     phase: "8",
@@ -57,9 +27,44 @@ const featureLog: FeatureEntry[] = [
     description: "about.features.phase8Desc",
   },
   {
-    phase: "9",
-    title: "about.features.phase9Title",
-    description: "about.features.phase9Desc",
+    phase: "7",
+    title: "about.features.phase7Title",
+    description: "about.features.phase7Desc",
+  },
+  {
+    phase: "6",
+    title: "about.features.phase6Title",
+    description: "about.features.phase6Desc",
+  },
+  {
+    phase: "5",
+    title: "about.features.phase5Title",
+    description: "about.features.phase5Desc",
+  },
+  {
+    phase: "4",
+    title: "about.features.phase4Title",
+    description: "about.features.phase4Desc",
+  },
+  {
+    phase: "3.1",
+    title: "about.features.phase31Title",
+    description: "about.features.phase31Desc",
+  },
+  {
+    phase: "3",
+    title: "about.features.phase3Title",
+    description: "about.features.phase3Desc",
+  },
+  {
+    phase: "2",
+    title: "about.features.phase2Title",
+    description: "about.features.phase2Desc",
+  },
+  {
+    phase: "1",
+    title: "about.features.phase1Title",
+    description: "about.features.phase1Desc",
   },
 ];
 

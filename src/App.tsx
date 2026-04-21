@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { StatementType, StatementResult, CategorySummary, CategoryConfig } from "./types";
 import { parseCSV } from "./engine/csvParser";
@@ -116,6 +116,8 @@ export default function App() {
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [chartTab, setChartTab] = useState<"category" | "daily">("category");
 
+  const monthCache = useRef<Map<string, StatementResult>>(new Map());
+
   const availableMonths = Array.from(
     new Set(savedMonths.map((s) => s.id.split("#")[0])),
   ).sort((a, b) => b.localeCompare(a));
@@ -132,13 +134,23 @@ export default function App() {
     }
   }, []);
 
-  const loadMonthFromRemote = useCallback(async (ym: string) => {
+  const loadMonthFromRemote = useCallback(async (ym: string, skipCache = false) => {
+    if (!skipCache) {
+      const cached = monthCache.current.get(ym);
+      if (cached) {
+        setResult(cached);
+        setDataSource("remote");
+        return;
+      }
+    }
     setLoadingData(true);
     setError(null);
     try {
       await api.post("/categories/apply", { yearMonth: ym }).catch(() => {});
       const remote = await api.get<RemoteStatement>(`/statements/${ym}%23family`);
-      setResult(remoteToResult(remote));
+      const parsed = remoteToResult(remote);
+      monthCache.current.set(ym, parsed);
+      setResult(parsed);
       setDataSource("remote");
     } catch {
       setResult(null);
@@ -188,25 +200,27 @@ export default function App() {
     setSelectedMonth(ym);
     setFamilyFiles([]);
     setShowUploadOverlay(false);
+    monthCache.current.delete(ym);
     const items = await loadSavedMonths();
     const months = Array.from(new Set(items.map((s) => s.id.split("#")[0])));
     if (months.includes(ym)) {
-      await loadMonthFromRemote(ym);
+      await loadMonthFromRemote(ym, true);
     }
   }, [loadSavedMonths, loadMonthFromRemote]);
 
   const handleDeleteMonth = useCallback(async (id: string) => {
     try {
       await api.delete(`/statements/${id.replace(/#/g, "%23")}`);
-      const items = await loadSavedMonths();
       const deletedYM = id.split("#")[0];
+      monthCache.current.delete(deletedYM);
+      const items = await loadSavedMonths();
       const remainingMonths = Array.from(
         new Set(items.map((s) => s.id.split("#")[0])),
       ).sort((a, b) => b.localeCompare(a));
 
       if (deletedYM === selectedMonth) {
         if (remainingMonths.includes(selectedMonth)) {
-          await loadMonthFromRemote(selectedMonth);
+          await loadMonthFromRemote(selectedMonth, true);
         } else {
           setSelectedMonth(remainingMonths[0] ?? currentYearMonth());
           setResult(null);
@@ -246,7 +260,8 @@ export default function App() {
         applyToSimilar: payload.applyToSimilar,
       });
       await refreshConfig();
-      await loadMonthFromRemote(selectedMonth);
+      monthCache.current.delete(selectedMonth);
+      await loadMonthFromRemote(selectedMonth, true);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("error.recategorize"));
     }
@@ -264,7 +279,8 @@ export default function App() {
         newPayeeName: payload.newPayeeName,
       });
       await refreshConfig();
-      await loadMonthFromRemote(selectedMonth);
+      monthCache.current.delete(selectedMonth);
+      await loadMonthFromRemote(selectedMonth, true);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("error.rename"));
     }
@@ -280,7 +296,8 @@ export default function App() {
         transactionIndex: payload.globalIndex,
       });
       await refreshConfig();
-      await loadMonthFromRemote(selectedMonth);
+      monthCache.current.delete(selectedMonth);
+      await loadMonthFromRemote(selectedMonth, true);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("error.ignoreTransaction"));
     }
@@ -293,7 +310,8 @@ export default function App() {
         statementId: `${selectedMonth}#family`,
         transactionIndex: payload.globalIndex,
       });
-      await loadMonthFromRemote(selectedMonth);
+      monthCache.current.delete(selectedMonth);
+      await loadMonthFromRemote(selectedMonth, true);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("error.hideTransaction"));
     }
@@ -302,9 +320,15 @@ export default function App() {
   const handleMonthChange = useCallback((ym: string) => {
     setSelectedMonth(ym);
     setFamilyFiles([]);
-    setResult(null);
-    setDataSource(null);
     setShowUploadOverlay(false);
+    const cached = monthCache.current.get(ym);
+    if (cached) {
+      setResult(cached);
+      setDataSource("remote");
+    } else {
+      setResult(null);
+      setDataSource(null);
+    }
   }, []);
 
   if (authLoading) {
@@ -376,6 +400,7 @@ export default function App() {
           config={catConfig}
           onSave={async (updated) => {
             await saveCatConfig(updated);
+            monthCache.current.clear();
             await applyConfigToMonth(selectedMonth);
           }}
           onBack={() => {
@@ -404,16 +429,14 @@ export default function App() {
 
       {activePage === "dashboard" && (
         <>
-          <div className="mb-6 flex items-center gap-4">
+          <div className="mb-6 flex justify-center">
             <MonthSelector
               months={selectorMonths}
               selected={selectedMonth}
               onChange={handleMonthChange}
               allowNew
+              loading={loadingData}
             />
-            {loadingData && (
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
-            )}
           </div>
 
           {canAddFiles && (

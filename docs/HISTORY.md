@@ -139,3 +139,16 @@ Key changes:
 - Category accordion headers show a hidden-count badge (eye-slash icon + number) when any transactions in that category are hidden.
 - Summary bar gains a conditional "Hidden" card showing the total hidden count, which appears only when at least one transaction is hidden.
 - CDK stack updated with new API Gateway route; also fixed `routeSettings` casing (`ThrottlingBurstLimit`/`ThrottlingRateLimit`) to satisfy updated CloudFormation validation.
+
+## Phase 10: Month Navigator Redesign
+
+Replaced the native `<select>` dropdown for month selection with a centered, gesture-driven month navigator.
+
+Key changes:
+- Large centered month title (full name, e.g. "April 2026") with left/right chevron arrows for sequential navigation.
+- Dot timeline indicator below the title: one dot per available month, active month shown as an elongated indigo pill, other months as small gray circles that are directly clickable.
+- Touch swipe support for mobile: horizontal swipe on the month area navigates to adjacent months (50px threshold).
+- macOS trackpad integration: two-finger horizontal swipe fires month navigation via accumulated `wheel` `deltaX`, with 80px threshold and 400ms cooldown to prevent multi-fire.
+- Keyboard arrow keys: `←`/`→` navigate months from anywhere on the dashboard (skipped when focus is inside form inputs).
+- In-memory month cache (`Map<string, StatementResult>` in a `useRef`): previously loaded months are served instantly from cache on navigation, avoiding redundant API calls. Cache is invalidated per-month on mutations (save, recategorize, rename, ignore, hide, delete) and cleared entirely when category config changes.
+- `formatYearMonth` updated from `month: "short"` to `month: "long"` for full month names across all locales.

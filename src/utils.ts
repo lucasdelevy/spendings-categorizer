@@ -17,7 +17,7 @@ export function formatYearMonth(ym: string): string {
   const year = parseInt(ym.slice(0, 4), 10);
   const d = new Date(year, month - 1);
   const locale = resolveLocale();
-  const monthStr = d.toLocaleDateString(locale, { month: "short" });
+  const monthStr = d.toLocaleDateString(locale, { month: "long" });
   return `${monthStr.charAt(0).toUpperCase()}${monthStr.slice(1)} ${year}`;
 }
 

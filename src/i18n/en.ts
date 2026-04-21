@@ -211,6 +211,9 @@ const en = {
       phase9Title: "Hide/Unhide Transactions",
       phase9Desc:
         "Per-transaction hide toggle that grays out rows and excludes them from totals, charts, and category subtotals. Hidden count shown in category headers and summary bar.",
+      phase10Title: "Month Navigator Redesign",
+      phase10Desc:
+        "Replaced the dropdown with a centered month title, chevron arrows, and a dot timeline. Supports trackpad swipe, touch gestures, and keyboard arrows. In-memory cache for instant month switching.",
     },
   },
 
