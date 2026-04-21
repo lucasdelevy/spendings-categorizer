@@ -22,17 +22,19 @@ export default function ManageMonths({ items, onBack, onView, onDelete }: Props)
   const { t } = useTranslation();
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-          {t("manage.title")}
-        </h1>
-        <button
-          onClick={onBack}
-          className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-        >
-          {t("manage.back")}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            {t("manage.back")}
+          </button>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+            {t("manage.title")}
+          </h1>
+        </div>
       </div>
 
       {items.length === 0 ? (
@@ -108,6 +110,6 @@ export default function ManageMonths({ items, onBack, onView, onDelete }: Props)
           </table>
         </div>
       )}
-    </div>
+    </>
   );
 }

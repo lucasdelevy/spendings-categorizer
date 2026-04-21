@@ -161,6 +161,13 @@ const ptBR = {
     confirmAndRemove: "Confirmar e remover",
   },
 
+  sidebar: {
+    settings: "Configurações",
+    language: "Idioma",
+    darkMode: "Modo escuro",
+    navigation: "Navegação",
+  },
+
   filters: {
     title: "Filtros",
     clear: "Limpar filtros",

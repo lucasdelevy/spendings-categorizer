@@ -4,19 +4,34 @@ export default function LanguageSwitcher() {
   const { i18n } = useTranslation();
   const isEN = i18n.language === "en" || i18n.language.startsWith("en-");
 
-  const toggle = () => {
-    const next = isEN ? "pt-BR" : "en";
-    i18n.changeLanguage(next);
-    document.documentElement.lang = next === "en" ? "en" : "pt-BR";
+  const set = (lang: "en" | "pt-BR") => {
+    i18n.changeLanguage(lang);
+    document.documentElement.lang = lang === "en" ? "en" : "pt-BR";
   };
 
+  const base =
+    "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition";
+  const active =
+    "bg-indigo-50 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300";
+  const inactive =
+    "text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700";
+
   return (
-    <button
-      onClick={toggle}
-      className="rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-      title={isEN ? "Mudar para Português" : "Switch to English"}
-    >
-      {isEN ? "PT" : "EN"}
-    </button>
+    <div className="flex gap-1">
+      <button
+        onClick={() => set("pt-BR")}
+        className={`${base} ${!isEN ? active : inactive}`}
+      >
+        <span className="text-base leading-none">{"\u{1F1E7}\u{1F1F7}"}</span>
+        PT
+      </button>
+      <button
+        onClick={() => set("en")}
+        className={`${base} ${isEN ? active : inactive}`}
+      >
+        <span className="text-base leading-none">{"\u{1F1FA}\u{1F1F8}"}</span>
+        EN
+      </button>
+    </div>
   );
 }

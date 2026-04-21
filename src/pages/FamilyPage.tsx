@@ -88,26 +88,26 @@ export default function FamilyPage({ onBack }: Props) {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-8">
-        <div className="flex items-center justify-center py-12">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
-        </div>
+      <div className="flex items-center justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-          {t("family.title")}
-        </h1>
-        <button
-          onClick={onBack}
-          className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-        >
-          {t("family.back")}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            {t("family.back")}
+          </button>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+            {t("family.title")}
+          </h1>
+        </div>
       </div>
 
       {error && (
@@ -240,6 +240,6 @@ export default function FamilyPage({ onBack }: Props) {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

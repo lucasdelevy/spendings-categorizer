@@ -226,8 +226,8 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
   const sortLocale = i18n.language.startsWith("pt") ? "pt-BR" : "en";
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <header className="mb-6 flex items-center justify-between">
+    <>
+      <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
@@ -248,7 +248,7 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
             {saving ? t("categories.saving") : t("categories.saveChanges")}
           </button>
         )}
-      </header>
+      </div>
 
       <div className="mb-6 flex gap-2">
         {(["categories", "ignore", "rename"] as Section[]).map((s) => (
@@ -430,7 +430,7 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
           <RenameAddForm onAdd={addRename} />
         </div>
       )}
-    </div>
+    </>
   );
 }
 

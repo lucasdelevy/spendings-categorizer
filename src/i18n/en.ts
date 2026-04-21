@@ -160,6 +160,13 @@ const en = {
     confirmAndRemove: "Confirm and remove",
   },
 
+  sidebar: {
+    settings: "Settings",
+    language: "Language",
+    darkMode: "Dark mode",
+    navigation: "Navigation",
+  },
+
   filters: {
     title: "Filters",
     clear: "Clear filters",

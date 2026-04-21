@@ -22,8 +22,7 @@ import type { DetectedFile } from "./components/FamilyUploader";
 import SummaryBar from "./components/SummaryBar";
 import SpendingPieChart from "./components/SpendingPieChart";
 import TransactionTable from "./components/TransactionTable";
-import DarkModeToggle from "./components/DarkModeToggle";
-import LanguageSwitcher from "./components/LanguageSwitcher";
+import SideMenu from "./components/SideMenu";
 
 interface RemoteStatement {
   id: string;
@@ -108,6 +107,7 @@ export default function App() {
   const [showFamily, setShowFamily] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [showUploadOverlay, setShowUploadOverlay] = useState(false);
+  const [sideMenuOpen, setSideMenuOpen] = useState(false);
 
   const availableMonths = Array.from(
     new Set(savedMonths.map((s) => s.id.split("#")[0])),
@@ -292,41 +292,18 @@ export default function App() {
 
   if (!user) return <LoginPage />;
 
-  if (showCategories) {
-    return (
-      <CategoriesPage
-        config={catConfig}
-        onSave={async (updated) => {
-          await saveCatConfig(updated);
-          await applyConfigToMonth(selectedMonth);
-        }}
-        onBack={() => {
-          setShowCategories(false);
-          if (monthHasData) loadMonthFromRemote(selectedMonth);
-        }}
-      />
-    );
-  }
+  const activePage = showCategories
+    ? "categories"
+    : showFamily
+      ? "family"
+      : showManage
+        ? "manage"
+        : "dashboard";
 
-  if (showFamily) {
-    return <FamilyPage onBack={() => setShowFamily(false)} />;
-  }
-
-  if (showManage) {
-    return (
-      <ManageMonths
-        items={savedMonths}
-        onBack={() => setShowManage(false)}
-        onView={(ym) => { setShowManage(false); handleMonthChange(ym); }}
-        onDelete={handleDeleteMonth}
-      />
-    );
-  }
-
-  const showUploader = (!monthHasData && dataSource !== "local") || showUploadOverlay;
-  const showConfirmBar = dataSource === "local" && result !== null;
-  const showResults = result !== null && !showUploadOverlay;
-  const canAddFiles = user.familyId && monthHasData && dataSource === "remote" && !showUploadOverlay;
+  const showUploader = activePage === "dashboard" && ((!monthHasData && dataSource !== "local") || showUploadOverlay);
+  const showConfirmBar = activePage === "dashboard" && dataSource === "local" && result !== null;
+  const showResults = activePage === "dashboard" && result !== null && !showUploadOverlay;
+  const canAddFiles = activePage === "dashboard" && user.familyId && monthHasData && dataSource === "remote" && !showUploadOverlay;
 
   const selectorMonths = [
     ...availableMonths,
@@ -335,7 +312,26 @@ export default function App() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <header className="mb-8 flex items-center justify-between">
+      <SideMenu
+        open={sideMenuOpen}
+        onClose={() => setSideMenuOpen(false)}
+        onCategories={() => { setShowFamily(false); setShowManage(false); setShowCategories(true); }}
+        onFamily={() => { setShowCategories(false); setShowManage(false); setShowFamily(true); }}
+        onManage={() => { setShowCategories(false); setShowFamily(false); setShowManage(true); }}
+        user={user}
+        onLogout={logout}
+      />
+
+      <header className="mb-8 flex items-center gap-4">
+        <button
+          onClick={() => setSideMenuOpen(true)}
+          className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+          aria-label="Menu"
+        >
+          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
             {t("app.title")}
@@ -344,136 +340,133 @@ export default function App() {
             {t("app.subtitle")}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <LanguageSwitcher />
-          <button
-            onClick={() => setShowCategories(true)}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-          >
-            {t("app.categories")}
-          </button>
-          <button
-            onClick={() => setShowFamily(true)}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-          >
-            {t("app.family")}
-          </button>
-          <button
-            onClick={() => setShowManage(true)}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-          >
-            {t("app.manageMonths")}
-          </button>
-          <DarkModeToggle />
-          <img
-            src={user.picture}
-            alt={user.name}
-            className="h-9 w-9 shrink-0 rounded-full border border-gray-200 object-cover dark:border-gray-600"
-            referrerPolicy="no-referrer"
-          />
-          <button
-            onClick={logout}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-          >
-            {t("app.logout")}
-          </button>
-        </div>
       </header>
 
-      <div className="mb-6 flex items-center gap-4">
-        <MonthSelector
-          months={selectorMonths}
-          selected={selectedMonth}
-          onChange={handleMonthChange}
-          allowNew
+      {activePage === "categories" && (
+        <CategoriesPage
+          config={catConfig}
+          onSave={async (updated) => {
+            await saveCatConfig(updated);
+            await applyConfigToMonth(selectedMonth);
+          }}
+          onBack={() => {
+            setShowCategories(false);
+            if (monthHasData) loadMonthFromRemote(selectedMonth);
+          }}
         />
-        {loadingData && (
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
-        )}
-      </div>
-
-      {canAddFiles && (
-        <div className="mb-6">
-          <button
-            onClick={() => setShowUploadOverlay(true)}
-            className="flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 dark:hover:bg-indigo-900"
-          >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            {t("app.uploadStatements")}
-          </button>
-        </div>
       )}
 
-      {showUploader && (
-        <div className="mb-6">
-          {showUploadOverlay && (
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {t("app.uploadOverlayDescription")}
-              </p>
+      {activePage === "family" && (
+        <FamilyPage onBack={() => setShowFamily(false)} />
+      )}
+
+      {activePage === "manage" && (
+        <ManageMonths
+          items={savedMonths}
+          onBack={() => setShowManage(false)}
+          onView={(ym) => { setShowManage(false); handleMonthChange(ym); }}
+          onDelete={handleDeleteMonth}
+        />
+      )}
+
+      {activePage === "dashboard" && (
+        <>
+          <div className="mb-6 flex items-center gap-4">
+            <MonthSelector
+              months={selectorMonths}
+              selected={selectedMonth}
+              onChange={handleMonthChange}
+              allowNew
+            />
+            {loadingData && (
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+            )}
+          </div>
+
+          {canAddFiles && (
+            <div className="mb-6">
               <button
-                onClick={() => { setShowUploadOverlay(false); setFamilyFiles([]); setDataSource(null); }}
-                className="text-sm text-gray-500 underline hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                onClick={() => setShowUploadOverlay(true)}
+                className="flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 dark:hover:bg-indigo-900"
               >
-                {t("app.cancel")}
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                {t("app.uploadStatements")}
               </button>
             </div>
           )}
-          <FamilyUploader
-            files={familyFiles}
-            onFilesLoaded={handleFamilyFiles}
-          />
-        </div>
-      )}
 
-      {showConfirmBar && result && (
-        <div className="mb-6">
-          <SaveConfirmBar result={result} onSaved={handleSaved} />
-        </div>
-      )}
+          {showUploader && (
+            <div className="mb-6">
+              {showUploadOverlay && (
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {t("app.uploadOverlayDescription")}
+                  </p>
+                  <button
+                    onClick={() => { setShowUploadOverlay(false); setFamilyFiles([]); setDataSource(null); }}
+                    className="text-sm text-gray-500 underline hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    {t("app.cancel")}
+                  </button>
+                </div>
+              )}
+              <FamilyUploader
+                files={familyFiles}
+                onFilesLoaded={handleFamilyFiles}
+              />
+            </div>
+          )}
 
-      {error && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
-          {error}
-        </div>
-      )}
+          {showConfirmBar && result && (
+            <div className="mb-6">
+              <SaveConfirmBar result={result} onSaved={handleSaved} />
+            </div>
+          )}
 
-      {showResults && result && (
-        <div className="space-y-6">
-          <SummaryBar
-            type={result.type}
-            totalIn={result.totalIn}
-            totalOut={result.totalOut}
-            balance={result.balance}
-            transactionCount={result.transactions.length}
-          />
+          {error && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+              {error}
+            </div>
+          )}
 
-          <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-            <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              {t("app.spendingByCategory")}
-            </h2>
-            <SpendingPieChart
-              categories={result.categories}
-              showExpensesOnly
-            />
-          </div>
+          {showResults && result && (
+            <div className="space-y-6">
+              <SummaryBar
+                type={result.type}
+                totalIn={result.totalIn}
+                totalOut={result.totalOut}
+                balance={result.balance}
+                transactionCount={result.transactions.length}
+              />
 
-          <div>
-            <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              {t("app.transactions")}
-            </h2>
-            <TransactionTable
-              categories={result.categories}
-              statementType={result.type}
-              catConfig={catConfig}
-              onRecategorize={dataSource === "remote" ? handleRecategorize : undefined}
-              onRename={dataSource === "remote" ? handleRename : undefined}
-              onIgnore={dataSource === "remote" ? handleIgnore : undefined}
-            />
-          </div>
-        </div>
+              <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+                <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  {t("app.spendingByCategory")}
+                </h2>
+                <SpendingPieChart
+                  categories={result.categories}
+                  showExpensesOnly
+                />
+              </div>
+
+              <div>
+                <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  {t("app.transactions")}
+                </h2>
+                <TransactionTable
+                  categories={result.categories}
+                  statementType={result.type}
+                  catConfig={catConfig}
+                  onRecategorize={dataSource === "remote" ? handleRecategorize : undefined}
+                  onRename={dataSource === "remote" ? handleRename : undefined}
+                  onIgnore={dataSource === "remote" ? handleIgnore : undefined}
+                />
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
