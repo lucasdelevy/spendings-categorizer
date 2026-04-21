@@ -1,7 +1,4 @@
-const MONTH_NAMES = [
-  "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
-  "Jul", "Ago", "Set", "Out", "Nov", "Dez",
-];
+import { resolveLocale } from "./i18n";
 
 export function extractYearMonth(dateStr: string): string {
   if (dateStr.includes("/")) {
@@ -12,13 +9,16 @@ export function extractYearMonth(dateStr: string): string {
     const parts = dateStr.split("-");
     return `${parts[0]}${parts[1]}`;
   }
-  throw new Error(`Formato de data não reconhecido: ${dateStr}`);
+  throw new Error(`Unrecognized date format: ${dateStr}`);
 }
 
 export function formatYearMonth(ym: string): string {
   const month = parseInt(ym.slice(4, 6), 10);
-  const year = ym.slice(0, 4);
-  return `${MONTH_NAMES[month - 1] ?? ym.slice(4, 6)} ${year}`;
+  const year = parseInt(ym.slice(0, 4), 10);
+  const d = new Date(year, month - 1);
+  const locale = resolveLocale();
+  const monthStr = d.toLocaleDateString(locale, { month: "short" });
+  return `${monthStr.charAt(0).toUpperCase()}${monthStr.slice(1)} ${year}`;
 }
 
 export function currentYearMonth(): string {

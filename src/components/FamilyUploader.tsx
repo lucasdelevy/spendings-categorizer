@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { StatementType } from "../types";
 import { parseCSV } from "../engine/csvParser";
 
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function FamilyUploader({ files, onFilesLoaded }: Props) {
+  const { t } = useTranslation();
   const [dragging, setDragging] = useState(false);
 
   const processFiles = useCallback(
@@ -30,7 +32,7 @@ export default function FamilyUploader({ files, onFilesLoaded }: Props) {
             reader.onload = (e) => {
               const text = e.target?.result;
               if (typeof text !== "string") {
-                reject(new Error(`Falha ao ler ${file.name}`));
+                reject(new Error(t("error.readFile", { fileName: file.name })));
                 return;
               }
               try {
@@ -48,7 +50,7 @@ export default function FamilyUploader({ files, onFilesLoaded }: Props) {
         onFilesLoaded([...files, ...detected]);
       });
     },
-    [files, onFilesLoaded],
+    [files, onFilesLoaded, t],
   );
 
   const onDrop = useCallback(
@@ -83,7 +85,7 @@ export default function FamilyUploader({ files, onFilesLoaded }: Props) {
         className={`
           relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed
           px-6 py-10 text-center transition-colors
-          ${dragging ? "border-indigo-500 bg-indigo-50" : "border-gray-300 bg-white hover:border-gray-400"}
+          ${dragging ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950" : "border-gray-300 bg-white hover:border-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:hover:border-gray-500"}
         `}
       >
         <svg
@@ -100,10 +102,10 @@ export default function FamilyUploader({ files, onFilesLoaded }: Props) {
           />
         </svg>
 
-        <p className="text-sm text-gray-600">
-          Arraste todos os CSVs de uma vez ou{" "}
-          <label className="cursor-pointer font-medium text-indigo-600 hover:text-indigo-500">
-            selecione
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {t("uploader.dragOrSelect")}{" "}
+          <label className="cursor-pointer font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+            {t("uploader.select")}
             <input
               type="file"
               accept=".csv"
@@ -114,7 +116,7 @@ export default function FamilyUploader({ files, onFilesLoaded }: Props) {
           </label>
         </p>
         <p className="mt-1 text-xs text-gray-400">
-          Extratos bancários e faturas de cartão — detectados automaticamente
+          {t("uploader.autoDetect")}
         </p>
       </div>
 
@@ -133,13 +135,14 @@ export default function FamilyUploader({ files, onFilesLoaded }: Props) {
 }
 
 function FileBadge({ name, type }: { name: string; type: StatementType }) {
+  const { t } = useTranslation();
   const isBank = type === "bank";
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
         isBank
-          ? "bg-indigo-50 text-indigo-700"
-          : "bg-amber-50 text-amber-700"
+          ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+          : "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
       }`}
     >
       <span
@@ -147,7 +150,7 @@ function FileBadge({ name, type }: { name: string; type: StatementType }) {
       />
       {name}
       <span className="text-[10px] opacity-60">
-        {isBank ? "Banco" : "Cartão"}
+        {isBank ? t("uploader.bank") : t("uploader.card")}
       </span>
     </span>
   );

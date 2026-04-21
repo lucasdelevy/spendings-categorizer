@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type { CategorySummary, StatementType, CategoryConfig, Transaction, UploadedBy } from "../types";
 import { getCategoryColorFromConfig } from "../engine/categories";
+import { formatBRL, resolveLocale } from "../i18n";
 import TransactionActionModal from "./TransactionActionModal";
 import type { RecategorizePayload, RenamePayload, IgnorePayload } from "./TransactionActionModal";
 import TransactionFilters, {
@@ -20,33 +22,31 @@ interface Props {
   onIgnore?: (payload: IgnorePayload) => void;
 }
 
-function formatBRL(value: number): string {
-  return value.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
-
 function formatDate(raw: string): string {
   if (raw.includes("-")) {
     const [y, m, d] = raw.split("-");
-    return `${d}/${m}/${y}`;
+    const date = new Date(Number(y), Number(m) - 1, Number(d));
+    return date.toLocaleDateString(resolveLocale(), {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
   }
   return raw;
 }
 
-function SourceBadge({ source }: { source?: "bank" | "card" }) {
+function SourceBadge({ source, label }: { source?: "bank" | "card"; label: string }) {
   if (!source) return null;
   const isBank = source === "bank";
   return (
     <span
       className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold leading-none ${
         isBank
-          ? "bg-indigo-100 text-indigo-700"
-          : "bg-amber-100 text-amber-700"
+          ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300"
+          : "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
       }`}
     >
-      {isBank ? "Banco" : "Cartão"}
+      {label}
     </span>
   );
 }
@@ -59,7 +59,7 @@ function UploaderAvatar({ uploadedBy }: { uploadedBy?: UploadedBy }) {
         src={uploadedBy.picture}
         alt={uploadedBy.name}
         title={uploadedBy.name}
-        className="h-5 w-5 rounded-full border border-gray-200 object-cover"
+        className="h-5 w-5 rounded-full border border-gray-200 object-cover dark:border-gray-600"
         style={{ aspectRatio: "1 / 1" }}
         referrerPolicy="no-referrer"
       />
@@ -81,6 +81,7 @@ export default function TransactionTable({
   onRename,
   onIgnore,
 }: Props) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [modalTarget, setModalTarget] = useState<ModalTarget | null>(null);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
@@ -142,7 +143,7 @@ export default function TransactionTable({
 
       {isFiltering && filteredCategories.length === 0 && (
         <p className="py-6 text-center text-sm text-gray-400">
-          Nenhuma transação encontrada com os filtros selecionados.
+          {t("table.noResults")}
         </p>
       )}
 
@@ -154,19 +155,19 @@ export default function TransactionTable({
           return (
             <div
               key={category}
-              className="overflow-hidden rounded-lg border border-gray-200 bg-white"
+              className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
             >
               <button
                 onClick={() => toggle(category)}
-                className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-gray-50"
+                className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 <div className="flex items-center gap-3">
                   <span
                     className="h-3 w-3 rounded-full"
                     style={{ backgroundColor: color }}
                   />
-                  <span className="font-medium text-gray-900">{category}</span>
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{category}</span>
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">
                     {count}x
                   </span>
                 </div>
@@ -193,74 +194,77 @@ export default function TransactionTable({
               </button>
 
               {isOpen && (
-                <div className="overflow-x-auto border-t border-gray-100">
+                <div className="overflow-x-auto border-t border-gray-100 dark:border-gray-700">
                   <table className="w-full min-w-[600px] text-sm">
                     <thead>
-                      <tr className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                      <tr className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:bg-gray-900 dark:text-gray-400">
                         {hasAvatars && <th className="w-8 min-w-[36px] px-2 py-2" />}
-                        <th className="px-4 py-2">Data</th>
+                        <th className="px-4 py-2">{t("table.date")}</th>
                         {showSource && (
-                          <th className="px-4 py-2">Origem</th>
+                          <th className="px-4 py-2">{t("table.source")}</th>
                         )}
                         <th className="px-4 py-2">
                           {statementType === "bank"
-                            ? "Beneficiário"
-                            : "Estabelecimento"}
+                            ? t("table.payee")
+                            : t("table.merchant")}
                         </th>
                         {(statementType === "card" || statementType === "family") && (
-                          <th className="px-4 py-2">Parcela</th>
+                          <th className="px-4 py-2">{t("table.installment")}</th>
                         )}
-                        <th className="px-4 py-2 text-right">Valor</th>
+                        <th className="px-4 py-2 text-right">{t("table.amount")}</th>
                         {hasActions && <th className="w-8 px-2 py-2" />}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {transactions.map((t, txIdx) => {
-                        const globalIdx = t._originalIndex ?? txIdx;
+                    <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                      {transactions.map((tx, txIdx) => {
+                        const globalIdx = tx._originalIndex ?? txIdx;
 
                         return (
-                          <tr key={txIdx} className="hover:bg-gray-50">
+                          <tr key={txIdx} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                             {hasAvatars && (
                               <td className="px-2 py-2">
-                                <UploaderAvatar uploadedBy={t.uploadedBy} />
+                                <UploaderAvatar uploadedBy={tx.uploadedBy} />
                               </td>
                             )}
-                            <td className="whitespace-nowrap px-4 py-2 text-gray-500">
-                              {formatDate(t.date)}
+                            <td className="whitespace-nowrap px-4 py-2 text-gray-500 dark:text-gray-400">
+                              {formatDate(tx.date)}
                             </td>
                             {showSource && (
                               <td className="px-4 py-2">
-                                <SourceBadge source={t.source} />
+                                <SourceBadge
+                                  source={tx.source}
+                                  label={tx.source === "bank" ? t("table.bank") : t("table.card")}
+                                />
                               </td>
                             )}
                             <td
-                              className="max-w-xs truncate px-4 py-2 text-gray-800"
-                              title={t.originalDescription}
+                              className="max-w-xs truncate px-4 py-2 text-gray-800 dark:text-gray-200"
+                              title={tx.originalDescription}
                             >
-                              {t.payee}
+                              {tx.payee}
                             </td>
                             {(statementType === "card" || statementType === "family") && (
-                              <td className="px-4 py-2 text-gray-500">
-                                {t.installment || "—"}
+                              <td className="px-4 py-2 text-gray-500 dark:text-gray-400">
+                                {tx.installment || "—"}
                               </td>
                             )}
                             <td
-                              className={`whitespace-nowrap px-4 py-2 text-right tabular-nums ${t.amount >= 0 ? "text-green-600" : "text-gray-800"}`}
+                              className={`whitespace-nowrap px-4 py-2 text-right tabular-nums ${tx.amount >= 0 ? "text-green-600" : "text-gray-800 dark:text-gray-200"}`}
                             >
-                              {formatBRL(t.amount)}
+                              {formatBRL(tx.amount)}
                             </td>
                             {hasActions && (
                               <td className="px-2 py-2">
                                 <button
                                   onClick={() =>
                                     setModalTarget({
-                                      transaction: t,
+                                      transaction: tx,
                                       globalIndex: globalIdx,
                                       category,
                                     })
                                   }
-                                  className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-indigo-600"
-                                  title="Ações"
+                                  className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-indigo-600 dark:hover:bg-gray-600"
+                                  title={t("table.actions")}
                                 >
                                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />

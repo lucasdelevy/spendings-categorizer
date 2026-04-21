@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "./AuthContext";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 export default function GoogleSignIn() {
+  const { t } = useTranslation();
   const { login } = useAuth();
   const buttonRef = useRef<HTMLDivElement>(null);
   const [scriptReady, setScriptReady] = useState(!!window.google);
@@ -47,7 +49,7 @@ export default function GoogleSignIn() {
   if (!scriptReady) {
     return (
       <div className="flex justify-center py-2 text-sm text-gray-400">
-        Carregando...
+        {t("login.loading")}
       </div>
     );
   }

@@ -1,4 +1,6 @@
+import { useTranslation } from "react-i18next";
 import type { StatementType } from "../types";
+import { formatBRL } from "../i18n";
 
 interface Props {
   type: StatementType;
@@ -8,13 +10,6 @@ interface Props {
   transactionCount: number;
 }
 
-function formatBRL(value: number): string {
-  return value.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
-
 export default function SummaryBar({
   type,
   totalIn,
@@ -22,24 +17,26 @@ export default function SummaryBar({
   balance,
   transactionCount,
 }: Props) {
+  const { t } = useTranslation();
+
   if (type === "card") {
     return (
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Card
-          label="Total Gastos"
+          label={t("summary.totalExpenses")}
           value={formatBRL(totalIn)}
           color="text-red-600"
         />
         <Card
-          label="Créditos"
+          label={t("summary.credits")}
           value={formatBRL(totalOut)}
           color="text-green-600"
         />
         <Card
-          label="Total Fatura"
+          label={t("summary.totalBill")}
           value={formatBRL(balance)}
           color="text-gray-900"
-          badge={`${transactionCount} transações`}
+          badge={t("summary.transactionsCount", { count: transactionCount })}
         />
       </div>
     );
@@ -48,22 +45,22 @@ export default function SummaryBar({
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       <Card
-        label="Entradas"
+        label={t("summary.income")}
         value={formatBRL(totalIn)}
         color="text-green-600"
       />
       <Card
-        label="Saídas"
+        label={t("summary.expenses")}
         value={formatBRL(totalOut)}
         color="text-red-600"
       />
       <Card
-        label="Saldo"
+        label={t("summary.balance")}
         value={formatBRL(balance)}
         color={balance >= 0 ? "text-green-600" : "text-red-600"}
       />
       <Card
-        label="Transações"
+        label={t("summary.transactions")}
         value={String(transactionCount)}
         color="text-gray-900"
       />
@@ -83,11 +80,11 @@ function Card({
   badge?: string;
 }) {
   return (
-    <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
-      <p className="text-xs font-medium uppercase tracking-wider text-gray-500">
+    <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
+      <p className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
         {label}
       </p>
-      <p className={`mt-1 text-lg font-semibold tabular-nums ${color}`}>
+      <p className={`mt-1 text-lg font-semibold tabular-nums ${color} ${color === "text-gray-900" ? "dark:text-gray-100" : ""}`}>
         {value}
       </p>
       {badge && <p className="mt-0.5 text-xs text-gray-400">{badge}</p>}

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import type { StatementType, StatementResult, CategorySummary, CategoryConfig } from "./types";
 import { parseCSV } from "./engine/csvParser";
 import { processBankCSV } from "./engine/bankCategorizer";
@@ -21,6 +22,8 @@ import type { DetectedFile } from "./components/FamilyUploader";
 import SummaryBar from "./components/SummaryBar";
 import SpendingPieChart from "./components/SpendingPieChart";
 import TransactionTable from "./components/TransactionTable";
+import DarkModeToggle from "./components/DarkModeToggle";
+import LanguageSwitcher from "./components/LanguageSwitcher";
 
 interface RemoteStatement {
   id: string;
@@ -90,6 +93,7 @@ function remoteToResult(remote: RemoteStatement): StatementResult {
 }
 
 export default function App() {
+  const { t } = useTranslation();
   const { user, loading: authLoading, logout } = useAuth();
   const { config: catConfig, refresh: refreshConfig, save: saveCatConfig } = useCategoryConfig(!!user);
 
@@ -169,7 +173,7 @@ export default function App() {
       setResult(built);
       setDataSource(built ? "local" : null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao processar CSV");
+      setError(e instanceof Error ? e.message : t("error.processCsv"));
     }
   }, [catConfig]);
 
@@ -198,7 +202,7 @@ export default function App() {
         setDataSource(null);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao excluir");
+      setError(e instanceof Error ? e.message : t("error.delete"));
     }
   }, [selectedMonth, loadSavedMonths]);
 
@@ -232,7 +236,7 @@ export default function App() {
       await refreshConfig();
       await loadMonthFromRemote(selectedMonth);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao recategorizar");
+      setError(e instanceof Error ? e.message : t("error.recategorize"));
     }
   }, [result, dataSource, selectedMonth, refreshConfig, loadMonthFromRemote]);
 
@@ -250,7 +254,7 @@ export default function App() {
       await refreshConfig();
       await loadMonthFromRemote(selectedMonth);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao renomear");
+      setError(e instanceof Error ? e.message : t("error.rename"));
     }
   }, [result, dataSource, selectedMonth, refreshConfig, loadMonthFromRemote]);
 
@@ -266,7 +270,7 @@ export default function App() {
       await refreshConfig();
       await loadMonthFromRemote(selectedMonth);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erro ao ignorar transação");
+      setError(e instanceof Error ? e.message : t("error.ignoreTransaction"));
     }
   }, [result, dataSource, selectedMonth, refreshConfig, loadMonthFromRemote]);
 
@@ -280,7 +284,7 @@ export default function App() {
 
   if (authLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
       </div>
     );
@@ -333,43 +337,45 @@ export default function App() {
     <div className="mx-auto max-w-4xl px-4 py-8">
       <header className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-            Spendings Categorizer
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+            {t("app.title")}
           </h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Categorize seu extrato Nubank automaticamente
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {t("app.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <LanguageSwitcher />
           <button
             onClick={() => setShowCategories(true)}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
           >
-            Categorias
+            {t("app.categories")}
           </button>
           <button
             onClick={() => setShowFamily(true)}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
           >
-            Família
+            {t("app.family")}
           </button>
           <button
             onClick={() => setShowManage(true)}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
           >
-            Gerenciar Meses
+            {t("app.manageMonths")}
           </button>
+          <DarkModeToggle />
           <img
             src={user.picture}
             alt={user.name}
-            className="h-9 w-9 shrink-0 rounded-full border border-gray-200 object-cover"
+            className="h-9 w-9 shrink-0 rounded-full border border-gray-200 object-cover dark:border-gray-600"
             referrerPolicy="no-referrer"
           />
           <button
             onClick={logout}
-            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
           >
-            Sair
+            {t("app.logout")}
           </button>
         </div>
       </header>
@@ -390,12 +396,12 @@ export default function App() {
         <div className="mb-6">
           <button
             onClick={() => setShowUploadOverlay(true)}
-            className="flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100"
+            className="flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 dark:hover:bg-indigo-900"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Enviar meus extratos
+            {t("app.uploadStatements")}
           </button>
         </div>
       )}
@@ -404,14 +410,14 @@ export default function App() {
         <div className="mb-6">
           {showUploadOverlay && (
             <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm text-gray-600">
-                Envie seus extratos para este mês. Eles serão combinados com os dos outros membros.
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {t("app.uploadOverlayDescription")}
               </p>
               <button
                 onClick={() => { setShowUploadOverlay(false); setFamilyFiles([]); setDataSource(null); }}
-                className="text-sm text-gray-500 underline hover:text-gray-700"
+                className="text-sm text-gray-500 underline hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               >
-                Cancelar
+                {t("app.cancel")}
               </button>
             </div>
           )}
@@ -429,7 +435,7 @@ export default function App() {
       )}
 
       {error && (
-        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
           {error}
         </div>
       )}
@@ -444,9 +450,9 @@ export default function App() {
             transactionCount={result.transactions.length}
           />
 
-          <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-gray-500">
-              Gastos por Categoria
+          <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+            <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              {t("app.spendingByCategory")}
             </h2>
             <SpendingPieChart
               categories={result.categories}
@@ -455,8 +461,8 @@ export default function App() {
           </div>
 
           <div>
-            <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-gray-500">
-              Transações
+            <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              {t("app.transactions")}
             </h2>
             <TransactionTable
               categories={result.categories}

@@ -1,10 +1,12 @@
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   onFileLoaded: (text: string, fileName: string) => void;
 }
 
 export default function CSVUploader({ onFileLoaded }: Props) {
+  const { t } = useTranslation();
   const [dragging, setDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
 
@@ -76,14 +78,14 @@ export default function CSVUploader({ onFileLoaded }: Props) {
       {fileName ? (
         <p className="text-sm text-gray-700">
           <span className="font-medium text-indigo-600">{fileName}</span>{" "}
-          carregado
+          {t("uploader.loaded")}
         </p>
       ) : (
         <>
           <p className="text-sm text-gray-600">
-            Arraste seu arquivo CSV aqui ou{" "}
+            {t("uploader.dragCsv")}{" "}
             <label className="cursor-pointer font-medium text-indigo-600 hover:text-indigo-500">
-              selecione
+              {t("uploader.select")}
               <input
                 type="file"
                 accept=".csv"
@@ -93,7 +95,7 @@ export default function CSVUploader({ onFileLoaded }: Props) {
             </label>
           </p>
           <p className="mt-1 text-xs text-gray-400">
-            Extrato Nubank (.csv)
+            {t("uploader.nubankCsv")}
           </p>
         </>
       )}

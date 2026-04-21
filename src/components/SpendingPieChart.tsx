@@ -1,23 +1,20 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import type { CategorySummary } from "../types";
 import { getCategoryColor } from "../engine/categories";
+import { formatBRL } from "../i18n";
+import { useTheme } from "../theme/ThemeContext";
 
 interface Props {
   categories: CategorySummary[];
   showExpensesOnly?: boolean;
 }
 
-function formatBRL(value: number): string {
-  return value.toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
-}
-
 export default function SpendingPieChart({
   categories,
   showExpensesOnly = true,
 }: Props) {
+  const { resolved } = useTheme();
+  const isDark = resolved === "dark";
   const data = categories
     .filter((c) => {
       if (!showExpensesOnly) return c.total !== 0;
@@ -57,9 +54,12 @@ export default function SpendingPieChart({
               formatter={(value: number) => formatBRL(value)}
               contentStyle={{
                 borderRadius: "8px",
-                border: "1px solid #e5e7eb",
+                border: `1px solid ${isDark ? "#374151" : "#e5e7eb"}`,
                 fontSize: "13px",
+                backgroundColor: isDark ? "#1f2937" : "#ffffff",
+                color: isDark ? "#e5e7eb" : "#111827",
               }}
+              itemStyle={{ color: isDark ? "#d1d5db" : "#374151" }}
             />
           </PieChart>
         </ResponsiveContainer>
@@ -74,7 +74,7 @@ export default function SpendingPieChart({
                 className="inline-block h-3 w-3 rounded-full"
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="text-gray-700">
+              <span className="text-gray-700 dark:text-gray-300">
                 {entry.name}{" "}
                 <span className="text-gray-400">({pct}%)</span>
               </span>

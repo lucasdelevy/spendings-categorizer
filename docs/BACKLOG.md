@@ -30,7 +30,7 @@ Living document of planned features and known tech debt. Update as items are com
 - [x] **Rate limiting** — Done. Stage-level default throttling (50 req/s, burst 100) on API Gateway with stricter per-route limits on auth endpoints (5 req/s for login/logout, 10 req/s for session check).
 - [ ] **Add support for other banks** — Currently Nubank-specific CSV formats. Add parsers for Itaú, Bradesco, Inter, etc.
 - [ ] **Export categorized data** — Download categorized statements as CSV or PDF report.
-- [ ] **Dark mode** — Respect `prefers-color-scheme` and add a toggle in the header.
+- [x] **Dark mode** — Done. Class-based Tailwind dark mode with ThemeContext (localStorage-persisted, respects `prefers-color-scheme` as default). Sun/moon toggle in header. All pages and components styled.
 - [ ] **i18n** — Support English UI in addition to Portuguese.
 
 ## Tech Debt
