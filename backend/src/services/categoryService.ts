@@ -2,7 +2,7 @@ import { PutCommand, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient, TABLE_NAME } from "./dynamoClient.js";
 import { buildDefaultConfig } from "../defaults/categories.js";
 import type { CategoryConfigRecord, CategoryEntry, StatementRecord, TransactionItem } from "../types.js";
-import { getFamilyMonthStatements, getStatement } from "./statementService.js";
+import { getMonthStatements } from "./statementService.js";
 
 function pk(userId: string, familyId?: string): string {
   return familyId ? `FAMILY#${familyId}` : `USER#${userId}`;
@@ -233,14 +233,7 @@ export async function applyCategoryConfig(
 ): Promise<number> {
   const config = await getConfig(userId, familyId);
 
-  let records: StatementRecord[];
-  if (familyId) {
-    records = await getFamilyMonthStatements(familyId, yearMonth);
-  } else {
-    const bankRec = await getStatement(userId, yearMonth, "bank");
-    const cardRec = await getStatement(userId, yearMonth, "card");
-    records = [bankRec, cardRec].filter((r): r is StatementRecord => r !== null);
-  }
+  const records = await getMonthStatements(userId, yearMonth, familyId);
 
   let totalChanged = 0;
 

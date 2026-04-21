@@ -11,6 +11,9 @@ const en = {
       "Upload your statements for this month. They will be combined with other members' statements.",
     cancel: "Cancel",
     spendingByCategory: "Spending by Category",
+    dailySpending: "Daily Spending",
+    tabCategory: "By Category",
+    tabDaily: "By Day",
     transactions: "Transactions",
   },
 
@@ -91,6 +94,7 @@ const en = {
     date: "Date",
     expenses: "Expenses",
     transactions: "Transactions",
+    file: "File",
     view: "View",
     deleteTitle: "Delete",
   },

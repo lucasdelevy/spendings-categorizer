@@ -47,6 +47,7 @@ export default function ManageMonths({ items, onBack, onView, onDelete }: Props)
             <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:bg-gray-900 dark:text-gray-400">
               <tr>
                 <th className="px-4 py-3">{t("manage.period")}</th>
+                <th className="px-4 py-3">{t("manage.file")}</th>
                 <th className="px-4 py-3">{t("manage.owner")}</th>
                 <th className="px-4 py-3">{t("manage.date")}</th>
                 <th className="px-4 py-3 text-right">{t("manage.expenses")}</th>
@@ -60,6 +61,18 @@ export default function ManageMonths({ items, onBack, onView, onDelete }: Props)
                 return (
                   <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-4 py-3 font-medium">{formatYearMonth(yearMonth)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-xs text-gray-700 dark:text-gray-300">{s.fileName}</span>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+                          s.type === "bank"
+                            ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+                            : "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                        }`}>
+                          {s.type}
+                        </span>
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       {s.uploadedBy ? (
                         <div className="flex items-center gap-2">

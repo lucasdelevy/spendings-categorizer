@@ -2,14 +2,21 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../auth/api";
 import { extractYearMonth, formatYearMonth } from "../utils";
-import type { StatementResult } from "../types";
+import { parseCSV } from "../engine/csvParser";
+import { processBankCSV } from "../engine/bankCategorizer";
+import { processCardCSV } from "../engine/cardCategorizer";
+import { toEngineConfig } from "../engine/categories";
+import type { StatementResult, CategoryConfig } from "../types";
+import type { DetectedFile } from "./FamilyUploader";
 
 interface Props {
   result: StatementResult;
+  files: DetectedFile[];
+  catConfig: CategoryConfig | null;
   onSaved: (yearMonth: string) => void;
 }
 
-export default function SaveConfirmBar({ result, onSaved }: Props) {
+export default function SaveConfirmBar({ result, files, catConfig, onSaved }: Props) {
   const { t } = useTranslation();
   const detected = detectMonth(result);
   const [yearMonth, setYearMonth] = useState(detected);
@@ -20,23 +27,34 @@ export default function SaveConfirmBar({ result, onSaved }: Props) {
     setSaving(true);
     setError(null);
     try {
-      await api.post("/statements", {
-        yearMonth,
-        type: result.type,
-        fileName: "family-combined",
-        summary: {
-          type: result.type,
-          totalIn: result.totalIn,
-          totalOut: result.totalOut,
-          balance: result.balance,
-          categories: result.categories.map((c) => ({
-            category: c.category,
-            total: c.total,
-            count: c.count,
-          })),
-        },
-        transactions: result.transactions,
+      const engineConfig = catConfig ? toEngineConfig(catConfig) : undefined;
+
+      const saves = files.map((f) => {
+        const parsed = parseCSV(f.text);
+        const fileResult = f.type === "bank"
+          ? processBankCSV(parsed.headers, parsed.rows, engineConfig)
+          : processCardCSV(parsed.headers, parsed.rows, engineConfig);
+
+        return api.post("/statements", {
+          yearMonth,
+          type: f.type,
+          fileName: f.name,
+          summary: {
+            type: f.type,
+            totalIn: fileResult.totalIn,
+            totalOut: fileResult.totalOut,
+            balance: fileResult.balance,
+            categories: fileResult.categories.map((c) => ({
+              category: c.category,
+              total: c.total,
+              count: c.count,
+            })),
+          },
+          transactions: fileResult.transactions,
+        });
       });
+
+      await Promise.all(saves);
       onSaved(yearMonth);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("error.save"));

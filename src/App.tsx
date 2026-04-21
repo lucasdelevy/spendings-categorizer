@@ -21,6 +21,7 @@ import FamilyUploader from "./components/FamilyUploader";
 import type { DetectedFile } from "./components/FamilyUploader";
 import SummaryBar from "./components/SummaryBar";
 import SpendingPieChart from "./components/SpendingPieChart";
+import DailySpendingChart from "./components/DailySpendingChart";
 import TransactionTable from "./components/TransactionTable";
 import SideMenu from "./components/SideMenu";
 
@@ -108,6 +109,7 @@ export default function App() {
   const [showCategories, setShowCategories] = useState(false);
   const [showUploadOverlay, setShowUploadOverlay] = useState(false);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
+  const [chartTab, setChartTab] = useState<"category" | "daily">("category");
 
   const availableMonths = Array.from(
     new Set(savedMonths.map((s) => s.id.split("#")[0])),
@@ -190,21 +192,26 @@ export default function App() {
 
   const handleDeleteMonth = useCallback(async (id: string) => {
     try {
-      await api.delete(`/statements/${id.replace("#", "%23")}`);
+      await api.delete(`/statements/${id.replace(/#/g, "%23")}`);
       const items = await loadSavedMonths();
       const deletedYM = id.split("#")[0];
+      const remainingMonths = Array.from(
+        new Set(items.map((s) => s.id.split("#")[0])),
+      ).sort((a, b) => b.localeCompare(a));
+
       if (deletedYM === selectedMonth) {
-        const remaining = Array.from(
-          new Set(items.map((s) => s.id.split("#")[0])),
-        ).sort((a, b) => b.localeCompare(a));
-        setSelectedMonth(remaining[0] ?? currentYearMonth());
-        setResult(null);
-        setDataSource(null);
+        if (remainingMonths.includes(selectedMonth)) {
+          await loadMonthFromRemote(selectedMonth);
+        } else {
+          setSelectedMonth(remainingMonths[0] ?? currentYearMonth());
+          setResult(null);
+          setDataSource(null);
+        }
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : t("error.delete"));
     }
-  }, [selectedMonth, loadSavedMonths]);
+  }, [selectedMonth, loadSavedMonths, loadMonthFromRemote]);
 
   const applyConfigToMonth = useCallback(async (ym: string) => {
     try {
@@ -422,7 +429,7 @@ export default function App() {
 
           {showConfirmBar && result && (
             <div className="mb-6">
-              <SaveConfirmBar result={result} onSaved={handleSaved} />
+              <SaveConfirmBar result={result} files={familyFiles} catConfig={catConfig} onSaved={handleSaved} />
             </div>
           )}
 
@@ -442,14 +449,41 @@ export default function App() {
                 transactionCount={result.transactions.length}
               />
 
-              <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-                <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  {t("app.spendingByCategory")}
-                </h2>
-                <SpendingPieChart
-                  categories={result.categories}
-                  showExpensesOnly
-                />
+              <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                <div className="flex border-b border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={() => setChartTab("category")}
+                    className={`px-5 py-3 text-sm font-medium transition ${
+                      chartTab === "category"
+                        ? "border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400"
+                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                    }`}
+                  >
+                    {t("app.tabCategory")}
+                  </button>
+                  <button
+                    onClick={() => setChartTab("daily")}
+                    className={`px-5 py-3 text-sm font-medium transition ${
+                      chartTab === "daily"
+                        ? "border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400"
+                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                    }`}
+                  >
+                    {t("app.tabDaily")}
+                  </button>
+                </div>
+                <div className="p-6">
+                  {chartTab === "category" ? (
+                    <SpendingPieChart
+                      categories={result.categories}
+                      showExpensesOnly
+                    />
+                  ) : (
+                    <DailySpendingChart
+                      transactions={result.transactions}
+                    />
+                  )}
+                </div>
               </div>
 
               <div>

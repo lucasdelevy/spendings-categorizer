@@ -17,9 +17,8 @@ export async function saveStatement(input: SaveStatementInput): Promise<Statemen
   const pk = input.familyId
     ? `FAMILY#${input.familyId}`
     : `USER#${input.userId}`;
-  const sk = input.familyId
-    ? `STMT#${input.yearMonth}#${input.userId}`
-    : `STMT#${input.yearMonth}#${input.type}`;
+  const ts = Date.now().toString(36);
+  const sk = `STMT#${input.yearMonth}#${input.type}#${ts}`;
 
   const transactions = input.transactions.map((t) => ({
     ...t,
@@ -43,25 +42,10 @@ export async function saveStatement(input: SaveStatementInput): Promise<Statemen
   return record;
 }
 
-export async function getStatement(
-  userId: string,
-  yearMonth: string,
-  type: string,
-  familyId?: string,
+export async function getStatementByFullSK(
+  pk: string,
+  sk: string,
 ): Promise<StatementRecord | null> {
-  if (familyId) {
-    return getStatementByKey(
-      `FAMILY#${familyId}`,
-      `STMT#${yearMonth}#${userId}`,
-    );
-  }
-  return getStatementByKey(
-    `USER#${userId}`,
-    `STMT#${yearMonth}#${type}`,
-  );
-}
-
-async function getStatementByKey(pk: string, sk: string): Promise<StatementRecord | null> {
   const result = await docClient.send(
     new GetCommand({
       TableName: TABLE_NAME,
@@ -73,10 +57,13 @@ async function getStatementByKey(pk: string, sk: string): Promise<StatementRecor
   return record;
 }
 
-export async function getFamilyMonthStatements(
-  familyId: string,
+export async function getMonthStatements(
+  userId: string,
   yearMonth: string,
+  familyId?: string,
 ): Promise<StatementRecord[]> {
+  const pk = familyId ? `FAMILY#${familyId}` : `USER#${userId}`;
+
   const result = await docClient.send(
     new QueryCommand({
       TableName: TABLE_NAME,
@@ -84,7 +71,7 @@ export async function getFamilyMonthStatements(
       FilterExpression: "attribute_not_exists(#st) OR #st = :active",
       ExpressionAttributeNames: { "#st": "status" },
       ExpressionAttributeValues: {
-        ":pk": `FAMILY#${familyId}`,
+        ":pk": pk,
         ":prefix": `STMT#${yearMonth}#`,
         ":active": "active",
       },
@@ -112,17 +99,7 @@ export async function listStatements(userId: string, familyId?: string): Promise
   return (result.Items as StatementRecord[]) ?? [];
 }
 
-export async function softDeleteStatement(
-  userId: string,
-  yearMonth: string,
-  type: string,
-  familyId?: string,
-): Promise<void> {
-  const pk = familyId ? `FAMILY#${familyId}` : `USER#${userId}`;
-  const sk = familyId
-    ? `STMT#${yearMonth}#${userId}`
-    : `STMT#${yearMonth}#${type}`;
-
+export async function softDeleteByFullSK(pk: string, sk: string): Promise<void> {
   await docClient.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
@@ -134,22 +111,13 @@ export async function softDeleteStatement(
   );
 }
 
-export async function softDeleteFamilyMonth(
-  familyId: string,
+export async function softDeleteMonth(
+  userId: string,
   yearMonth: string,
+  familyId?: string,
 ): Promise<void> {
-  const records = await getFamilyMonthStatements(familyId, yearMonth);
+  const records = await getMonthStatements(userId, yearMonth, familyId);
   await Promise.all(
-    records.map((r) =>
-      docClient.send(
-        new UpdateCommand({
-          TableName: TABLE_NAME,
-          Key: { PK: r.PK, SK: r.SK },
-          UpdateExpression: "SET #st = :overridden",
-          ExpressionAttributeNames: { "#st": "status" },
-          ExpressionAttributeValues: { ":overridden": "overridden" },
-        }),
-      ),
-    ),
+    records.map((r) => softDeleteByFullSK(r.PK, r.SK)),
   );
 }

@@ -5,11 +5,9 @@ import { getSession } from "../services/sessionService.js";
 import { getUser } from "../services/userService.js";
 import {
   saveStatement,
-  getStatement,
-  getFamilyMonthStatements,
+  getMonthStatements,
   listStatements,
-  softDeleteStatement,
-  softDeleteFamilyMonth,
+  softDeleteByFullSK,
 } from "../services/statementService.js";
 import type { JWTPayload, TransactionItem } from "../types.js";
 
@@ -69,68 +67,57 @@ async function handleGet(
   const id = event.pathParameters?.id;
   if (!id) return respond(400, { error: "Missing statement id" }, origin);
 
+  const [yearMonth] = id.split("#");
+  if (!yearMonth || !/^\d{6}$/.test(yearMonth)) {
+    return respond(400, { error: "Invalid statement id" }, origin);
+  }
+
   const userRecord = await getUser(user.userId);
   const familyId = userRecord?.familyId;
 
-  if (familyId) {
-    const [yearMonth] = id.split("#");
-    if (!yearMonth) return respond(400, { error: "Invalid statement id" }, origin);
-
-    const records = await getFamilyMonthStatements(familyId, yearMonth);
-    if (records.length === 0) {
-      return respond(404, { error: "Statement not found" }, origin);
-    }
-
-    const allTransactions: TransactionItem[] = [];
-    for (const r of records) {
-      allTransactions.push(...r.transactions);
-    }
-
-    let totalIn = 0;
-    let totalOut = 0;
-    for (const t of allTransactions) {
-      if (t.amount >= 0) totalIn += t.amount;
-      else totalOut += t.amount;
-    }
-
-    const catMap = new Map<string, { category: string; total: number; count: number }>();
-    for (const t of allTransactions) {
-      const existing = catMap.get(t.category);
-      if (existing) {
-        existing.total += t.amount;
-        existing.count += 1;
-      } else {
-        catMap.set(t.category, { category: t.category, total: t.amount, count: 1 });
-      }
-    }
-
-    return respond(200, {
-      id: `${yearMonth}#family`,
-      fileName: records.map((r) => r.fileName).join(", "),
-      uploadedAt: records[0].uploadedAt,
-      summary: {
-        type: "family",
-        totalIn,
-        totalOut,
-        balance: totalIn + totalOut,
-        categories: Array.from(catMap.values()),
-      },
-      transactions: allTransactions,
-    }, origin);
+  const records = await getMonthStatements(user.userId, yearMonth, familyId);
+  if (records.length === 0) {
+    return respond(404, { error: "Statement not found" }, origin);
   }
 
-  const [yearMonth, type] = id.split("#");
-  if (!yearMonth || !type) return respond(400, { error: "Invalid statement id" }, origin);
+  const allTransactions: TransactionItem[] = [];
+  for (const r of records) {
+    allTransactions.push(...r.transactions);
+  }
 
-  const statement = await getStatement(user.userId, yearMonth, type);
-  if (!statement) return respond(404, { error: "Statement not found" }, origin);
+  let totalIn = 0;
+  let totalOut = 0;
+  for (const t of allTransactions) {
+    if (t.amount >= 0) totalIn += t.amount;
+    else totalOut += t.amount;
+  }
+
+  const catMap = new Map<string, { category: string; total: number; count: number }>();
+  for (const t of allTransactions) {
+    const existing = catMap.get(t.category);
+    if (existing) {
+      existing.total += t.amount;
+      existing.count += 1;
+    } else {
+      catMap.set(t.category, { category: t.category, total: t.amount, count: 1 });
+    }
+  }
+
+  const types = new Set(records.map((r) => r.summary.type));
+  const type = familyId || types.size > 1 ? "family" : records[0].summary.type;
 
   return respond(200, {
-    id: statement.SK.replace("STMT#", ""),
-    fileName: statement.fileName,
-    uploadedAt: statement.uploadedAt,
-    summary: statement.summary,
-    transactions: statement.transactions,
+    id: `${yearMonth}#${type}`,
+    fileName: records.map((r) => r.fileName).join(", "),
+    uploadedAt: records[0].uploadedAt,
+    summary: {
+      type,
+      totalIn,
+      totalOut,
+      balance: totalIn + totalOut,
+      categories: Array.from(catMap.values()),
+    },
+    transactions: allTransactions,
   }, origin);
 }
 
@@ -189,16 +176,10 @@ async function handleDelete(
 
   const userRecord = await getUser(user.userId);
   const familyId = userRecord?.familyId;
+  const pk = familyId ? `FAMILY#${familyId}` : `USER#${user.userId}`;
+  const sk = `STMT#${id}`;
 
-  if (familyId) {
-    const [yearMonth] = id.split("#");
-    if (!yearMonth) return respond(400, { error: "Invalid statement id" }, origin);
-    await softDeleteFamilyMonth(familyId, yearMonth);
-  } else {
-    const [yearMonth, type] = id.split("#");
-    if (!yearMonth || !type) return respond(400, { error: "Invalid statement id" }, origin);
-    await softDeleteStatement(user.userId, yearMonth, type);
-  }
+  await softDeleteByFullSK(pk, sk);
 
   return respond(200, { message: "Deleted" }, origin);
 }

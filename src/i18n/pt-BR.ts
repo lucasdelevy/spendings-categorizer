@@ -11,6 +11,9 @@ const ptBR = {
       "Envie seus extratos para este mês. Eles serão combinados com os dos outros membros.",
     cancel: "Cancelar",
     spendingByCategory: "Gastos por Categoria",
+    dailySpending: "Gastos Diários",
+    tabCategory: "Por Categoria",
+    tabDaily: "Por Dia",
     transactions: "Transações",
   },
 
@@ -92,6 +95,7 @@ const ptBR = {
     date: "Data",
     expenses: "Gastos",
     transactions: "Transações",
+    file: "Arquivo",
     view: "Visualizar",
     deleteTitle: "Excluir",
   },

@@ -12,7 +12,7 @@ import {
   createCategoryEntry,
   applyCategoryConfig,
 } from "../services/categoryService.js";
-import { getFamilyMonthStatements, getStatement } from "../services/statementService.js";
+import { getMonthStatements } from "../services/statementService.js";
 import { PutCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient, TABLE_NAME } from "../services/dynamoClient.js";
 import type { JWTPayload, StatementRecord } from "../types.js";
@@ -119,9 +119,9 @@ async function handleRecategorize(
     new PutCommand({ TableName: TABLE_NAME, Item: record }),
   );
 
-  if (applyToSimilar && familyId && originalDesc) {
+  if (applyToSimilar && originalDesc) {
     const [yearMonth] = statementId.split("#");
-    const allRecords = await getFamilyMonthStatements(familyId, yearMonth);
+    const allRecords = await getMonthStatements(user.userId, yearMonth, familyId);
     const descLower = originalDesc.toLowerCase();
     for (const r of allRecords) {
       if (r.PK === record.PK && r.SK === record.SK) continue;
@@ -244,31 +244,18 @@ async function resolveTransaction(
   userId: string,
   familyId?: string,
 ): Promise<{ record: StatementRecord | null; localIdx: number }> {
-  if (familyId) {
-    const [yearMonth, idPart] = statementId.split("#");
-    if (!yearMonth || !idPart) return { record: null, localIdx: 0 };
+  const [yearMonth] = statementId.split("#");
+  if (!yearMonth) return { record: null, localIdx: 0 };
 
-    if (idPart === "family") {
-      const records = await getFamilyMonthStatements(familyId, yearMonth);
-      let idx = globalIndex;
-      for (const r of records) {
-        if (idx < r.transactions.length) {
-          return { record: r, localIdx: idx };
-        }
-        idx -= r.transactions.length;
-      }
-      return { record: null, localIdx: 0 };
+  const records = await getMonthStatements(userId, yearMonth, familyId);
+  let idx = globalIndex;
+  for (const r of records) {
+    if (idx < r.transactions.length) {
+      return { record: r, localIdx: idx };
     }
-
-    const record = await getStatement(idPart, yearMonth, "", familyId);
-    return { record, localIdx: globalIndex };
+    idx -= r.transactions.length;
   }
-
-  const [yearMonth, type] = statementId.split("#");
-  if (!yearMonth || !type) return { record: null, localIdx: 0 };
-
-  const record = await getStatement(userId, yearMonth, type);
-  return { record, localIdx: globalIndex };
+  return { record: null, localIdx: 0 };
 }
 
 async function handleApply(
