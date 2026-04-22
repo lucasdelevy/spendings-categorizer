@@ -24,9 +24,17 @@ export interface Transaction {
   _originalIndex?: number;
 }
 
+export type LimitPeriod = "daily" | "weekly" | "monthly";
+
+export interface CategoryLimit {
+  amount: number;
+  period: LimitPeriod;
+}
+
 export interface CategoryEntry {
   keywords: string[];
   color: string;
+  limit?: CategoryLimit;
 }
 
 export interface CategoryConfig {

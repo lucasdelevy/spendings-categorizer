@@ -13,6 +13,9 @@ Living document of planned features and known tech debt. Update as items are com
 ## Priority: Medium
 
 - [x] **Category management** — Done. Categories, ignore lists, and rename maps stored in DDB per-family/user (`CATCONFIG`). "Categorias" page with Bank/Card tabs, keyword chips, color picker, ignore/rename management. Transaction re-categorization via tag-icon picker in the table. New `categories` Lambda.
+- [x] **Category spending limits** — Done. Per-category daily/weekly/monthly limits with progress bars (green/amber/red) on category headers, "Limits Exceeded" count in summary bar, and breach alert banner on dashboard.
+- [ ] **Limit breach e-mail notifications** *(depends on: Category spending limits)* — Send an e-mail alert to the user (and optionally family members) when a category spending limit is breached. Use SES for delivery; include category name, limit, current total, and a deep link to the dashboard.
+- [ ] **All-transactions view** — Add a new default tab in the "Transactions" listing that shows all transactions in a flat list without category grouping. Keeps the existing categorized view as a secondary tab.
 - [ ] **Multi-month trend charts** — Show spending trends over time by querying all saved statements for the family. Line chart by category over months.
 - [ ] **Migrate solo statements to family** — When a user creates or joins a family, offer a one-time migration of their existing `USER#<userId>/STMT#*` records into the new `FAMILY#<familyId>` namespace.
 - [ ] **Family ownership transfer** — Allow the current owner to transfer ownership to another active member.

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import type { CategoryConfig } from "../types";
+import type { CategoryConfig, LimitPeriod } from "../types";
 
 interface Props {
   config: CategoryConfig | null;
@@ -277,56 +277,122 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
                   key={name}
                   className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
                 >
-                  <button
-                    onClick={() => setExpandedCat(isOpen ? null : name)}
-                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 px-4 py-3">
+                    <button
+                      onClick={() => setExpandedCat(isOpen ? null : name)}
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                    >
                       <ColorDot
                         color={entry.color}
                         onChange={(c) => setCatColor(name, c)}
                       />
-                      <span className="font-medium text-gray-900 dark:text-gray-100">{name}</span>
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                      <span className="truncate font-medium text-gray-900 dark:text-gray-100">{name}</span>
+                      <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">
                         {t("categories.keywordsCount", { count: entry.keywords.length })}
                       </span>
+                    </button>
+
+                    <div className="flex shrink-0 items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      {entry.limit ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-[10px] font-medium uppercase text-gray-400 dark:text-gray-500">R$</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={entry.limit.amount || ""}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              updateDraft((d) => {
+                                const cat = d.categories[name];
+                                if (cat?.limit) cat.limit.amount = raw === "" ? 0 : Math.max(0, parseFloat(raw) || 0);
+                              });
+                            }}
+                            className="w-20 rounded border border-gray-200 px-1.5 py-1 text-xs tabular-nums focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                          />
+                          <select
+                            value={entry.limit.period}
+                            onChange={(e) =>
+                              updateDraft((d) => {
+                                const cat = d.categories[name];
+                                if (cat?.limit) cat.limit.period = e.target.value as LimitPeriod;
+                              })
+                            }
+                            className="rounded border border-gray-200 py-1 pl-1 pr-5 text-xs focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+                          >
+                            <option value="daily">/{t("categories.limitDaily").toLowerCase()}</option>
+                            <option value="weekly">/{t("categories.limitWeekly").toLowerCase()}</option>
+                            <option value="monthly">/{t("categories.limitMonthly").toLowerCase()}</option>
+                          </select>
+                          <button
+                            onClick={() =>
+                              updateDraft((d) => {
+                                const cat = d.categories[name];
+                                if (cat) delete cat.limit;
+                              })
+                            }
+                            className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950"
+                            title={t("categories.removeLimit")}
+                          >
+                            <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            updateDraft((d) => {
+                              const cat = d.categories[name];
+                              if (cat) cat.limit = { amount: 0, period: "monthly" };
+                            })
+                          }
+                          className="rounded border border-dashed border-gray-300 px-2 py-1 text-[10px] font-medium text-gray-400 hover:border-indigo-400 hover:text-indigo-600 dark:border-gray-600 dark:text-gray-500 dark:hover:border-indigo-500 dark:hover:text-indigo-400"
+                        >
+                          {t("categories.setLimit")}
+                        </button>
+                      )}
+
+                      <div className="ml-1 flex items-center gap-1 border-l border-gray-200 pl-2 dark:border-gray-700">
+                        <button
+                          onClick={() => {
+                            const newName = prompt(t("categories.renamePrompt"), name);
+                            if (newName) renameCategory(name, newName);
+                          }}
+                          className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-600 dark:hover:text-gray-200"
+                          title={t("categories.renameTitle")}
+                        >
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(t("categories.deleteConfirm", { name }))) deleteCategory(name);
+                          }}
+                          className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950"
+                          title={t("categories.deleteTitle")}
+                        >
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => setExpandedCat(isOpen ? null : name)}
+                          className="rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600"
+                        >
+                          <svg
+                            className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const newName = prompt(t("categories.renamePrompt"), name);
-                          if (newName) renameCategory(name, newName);
-                        }}
-                        className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-600 dark:hover:text-gray-200"
-                        title={t("categories.renameTitle")}
-                      >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm(t("categories.deleteConfirm", { name }))) deleteCategory(name);
-                        }}
-                        className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950"
-                        title={t("categories.deleteTitle")}
-                      >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                      <svg
-                        className={`h-4 w-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </button>
+                  </div>
 
                   {isOpen && (
                     <div className="border-t border-gray-100 px-4 py-3 space-y-3 dark:border-gray-700">

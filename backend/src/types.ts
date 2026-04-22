@@ -92,9 +92,17 @@ export interface TransactionItem {
   externalId?: string;
 }
 
+export type LimitPeriod = "daily" | "weekly" | "monthly";
+
+export interface CategoryLimit {
+  amount: number;
+  period: LimitPeriod;
+}
+
 export interface CategoryEntry {
   keywords: string[];
   color: string;
+  limit?: CategoryLimit;
 }
 
 export interface CategoryConfigRecord {

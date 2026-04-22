@@ -9,6 +9,7 @@ interface Props {
   balance: number;
   transactionCount: number;
   hiddenCount: number;
+  limitsExceeded?: number;
 }
 
 export default function SummaryBar({
@@ -18,6 +19,7 @@ export default function SummaryBar({
   balance,
   transactionCount,
   hiddenCount,
+  limitsExceeded = 0,
 }: Props) {
   const { t } = useTranslation();
 
@@ -47,11 +49,23 @@ export default function SummaryBar({
             color="text-gray-400"
           />
         )}
+        {limitsExceeded > 0 && (
+          <Card
+            label={t("summary.limitsExceeded")}
+            value={String(limitsExceeded)}
+            color="text-red-600"
+          />
+        )}
       </div>
     );
   }
 
-  const cols = hiddenCount > 0 ? "grid-cols-2 gap-3 sm:grid-cols-5" : "grid-cols-2 gap-3 sm:grid-cols-4";
+  const extraCards = (hiddenCount > 0 ? 1 : 0) + (limitsExceeded > 0 ? 1 : 0);
+  const cols = extraCards === 2
+    ? "grid-cols-2 gap-3 sm:grid-cols-6"
+    : extraCards === 1
+      ? "grid-cols-2 gap-3 sm:grid-cols-5"
+      : "grid-cols-2 gap-3 sm:grid-cols-4";
 
   return (
     <div className={`grid ${cols}`}>
@@ -80,6 +94,13 @@ export default function SummaryBar({
           label={t("summary.hidden")}
           value={String(hiddenCount)}
           color="text-gray-400"
+        />
+      )}
+      {limitsExceeded > 0 && (
+        <Card
+          label={t("summary.limitsExceeded")}
+          value={String(limitsExceeded)}
+          color="text-red-600"
         />
       )}
     </div>

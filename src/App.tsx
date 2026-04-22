@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { StatementType, StatementResult, CategorySummary, CategoryConfig } from "./types";
+import { limitProgress } from "./utils/limits";
 import { parseCSV } from "./engine/csvParser";
 import { processBankCSV } from "./engine/bankCategorizer";
 import { processCardCSV } from "./engine/cardCategorizer";
@@ -493,7 +494,40 @@ export default function App() {
                 balance={result.balance}
                 transactionCount={result.transactions.filter((t) => !t.hidden).length}
                 hiddenCount={result.transactions.filter((t) => t.hidden).length}
+                limitsExceeded={(() => {
+                  if (!catConfig) return 0;
+                  return result.categories.filter((cat) => {
+                    const limit = catConfig.categories[cat.category]?.limit;
+                    if (!limit || limit.amount <= 0) return false;
+                    return limitProgress(cat.total, limit, selectedMonth) >= 1;
+                  }).length;
+                })()}
               />
+
+              {(() => {
+                if (!catConfig) return null;
+                const breached = result.categories.filter((cat) => {
+                  const limit = catConfig.categories[cat.category]?.limit;
+                  if (!limit || limit.amount <= 0) return false;
+                  return limitProgress(cat.total, limit, selectedMonth) >= 1;
+                });
+                if (breached.length === 0) return null;
+                return (
+                  <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 dark:border-red-800 dark:bg-red-950">
+                    <svg className="mt-0.5 h-5 w-5 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                      <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                        {t("limits.breachBanner", { count: breached.length })}
+                      </p>
+                      <p className="mt-0.5 text-xs text-red-600 dark:text-red-400">
+                        {breached.map((c) => c.category).join(", ")}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
                 <div className="flex border-b border-gray-200 dark:border-gray-700">
@@ -540,6 +574,7 @@ export default function App() {
                   categories={result.categories}
                   statementType={result.type}
                   catConfig={catConfig}
+                  yearMonth={selectedMonth}
                   onRecategorize={dataSource === "remote" ? handleRecategorize : undefined}
                   onRename={dataSource === "remote" ? handleRename : undefined}
                   onIgnore={dataSource === "remote" ? handleIgnore : undefined}

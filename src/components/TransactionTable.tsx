@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { CategorySummary, StatementType, CategoryConfig, Transaction, TransactionOrigin, UploadedBy } from "../types";
 import { getCategoryColorFromConfig } from "../engine/categories";
 import { formatBRL, resolveLocale } from "../i18n";
+import { limitProgress, limitColor, effectiveMonthlyLimit } from "../utils/limits";
 import TransactionActionModal from "./TransactionActionModal";
 import type { RecategorizePayload, RenamePayload, IgnorePayload } from "./TransactionActionModal";
 import TransactionFilters, {
@@ -21,6 +22,7 @@ interface Props {
   categories: CategorySummary[];
   statementType: StatementType;
   catConfig?: CategoryConfig | null;
+  yearMonth?: string;
   onRecategorize?: (payload: RecategorizePayload) => void;
   onRename?: (payload: RenamePayload) => void;
   onIgnore?: (payload: IgnorePayload) => void;
@@ -96,6 +98,7 @@ export default function TransactionTable({
   categories,
   statementType,
   catConfig,
+  yearMonth,
   onRecategorize,
   onRename,
   onIgnore,
@@ -177,6 +180,12 @@ export default function TransactionTable({
           const isOpen = expanded.has(category);
           const color = getCategoryColorFromConfig(category, catConfig ?? null);
           const hiddenCount = transactions.filter((t) => t.hidden).length;
+          const catLimit = catConfig?.categories[category]?.limit;
+          const hasLimit = !!(catLimit && catLimit.amount > 0 && yearMonth);
+          const progress = hasLimit ? limitProgress(total, catLimit, yearMonth!) : 0;
+          const progressClamp = Math.min(progress, 1);
+          const progressColor = hasLimit ? limitColor(progress) : "green";
+          const monthlyBudget = hasLimit ? effectiveMonthlyLimit(catLimit, yearMonth!) : 0;
 
           return (
             <div
@@ -185,46 +194,78 @@ export default function TransactionTable({
             >
               <button
                 onClick={() => toggle(category)}
-                className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="flex w-full flex-col px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
               >
-                <div className="flex items-center gap-3">
-                  <span
-                    className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: color }}
-                  />
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{category}</span>
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">
-                    {count}x
-                  </span>
-                  {hiddenCount > 0 && (
-                    <span className="inline-flex items-center gap-0.5 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-400 dark:bg-gray-700 dark:text-gray-500">
-                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                      </svg>
-                      {hiddenCount}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`font-semibold tabular-nums ${total >= 0 ? "text-green-600" : "text-red-600"}`}
-                  >
-                    {formatBRL(total)}
-                  </span>
-                  <svg
-                    className={`h-4 w-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
+                <div className="flex w-full items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="h-3 w-3 rounded-full"
+                      style={{ backgroundColor: color }}
                     />
-                  </svg>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{category}</span>
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                      {count}x
+                    </span>
+                    {hiddenCount > 0 && (
+                      <span className="inline-flex items-center gap-0.5 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-400 dark:bg-gray-700 dark:text-gray-500">
+                        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                        </svg>
+                        {hiddenCount}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`font-semibold tabular-nums ${total >= 0 ? "text-green-600" : "text-red-600"}`}
+                    >
+                      {formatBRL(total)}
+                    </span>
+                    <svg
+                      className={`h-4 w-4 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
                 </div>
+                {hasLimit && (
+                  <div className="mt-2 w-full">
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+                        <div
+                          className={`h-full rounded-full transition-all ${
+                            progressColor === "red"
+                              ? "bg-red-500"
+                              : progressColor === "amber"
+                                ? "bg-amber-500"
+                                : "bg-green-500"
+                          }`}
+                          style={{ width: `${progressClamp * 100}%` }}
+                        />
+                      </div>
+                      <span
+                        className={`shrink-0 text-[10px] font-medium tabular-nums ${
+                          progressColor === "red"
+                            ? "text-red-600 dark:text-red-400"
+                            : progressColor === "amber"
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-gray-500 dark:text-gray-400"
+                        }`}
+                      >
+                        {formatBRL(Math.abs(total))} {t("limits.ofLimit", { limit: formatBRL(monthlyBudget) })}
+                        {progress >= 1 ? ` — ${t("limits.exceeded")}` : ` (${Math.round(progress * 100)}%)`}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </button>
 
               {isOpen && (

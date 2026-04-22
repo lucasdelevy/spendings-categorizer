@@ -64,6 +64,17 @@ const ptBR = {
     noMappings: "Nenhum mapeamento",
     originalName: "Nome original...",
     displayName: "Nome exibido...",
+    limit: "Limite de Gasto",
+    limitAmount: "Valor limite",
+    limitPeriod: "Período",
+    limitDaily: "Diário",
+    limitWeekly: "Semanal",
+    limitMonthly: "Mensal",
+    setLimit: "Definir limite",
+    removeLimit: "Remover limite",
+    limitPerDay: "{{amount}}/dia",
+    limitPerWeek: "{{amount}}/semana",
+    limitPerMonth: "{{amount}}/mês",
   },
 
   family: {
@@ -134,6 +145,7 @@ const ptBR = {
     balance: "Saldo",
     transactions: "Transações",
     hidden: "Ocultas",
+    limitsExceeded: "Limites Excedidos",
   },
 
   table: {
@@ -217,6 +229,9 @@ const ptBR = {
       phase11Title: "Integração Pierre Open Finance",
       phase11Desc:
         "Sincronização automática de transações via API Pierre Finance a cada 5 minutos. Deduplicação entre fontes evita duplicação entre uploads CSV e dados do Open Finance. Cada transação exibe sua origem (API ou CSV).",
+      phase12Title: "Limites de Gasto por Categoria",
+      phase12Desc:
+        "Defina limites de gasto diários, semanais ou mensais por categoria. Barras de progresso nos cabeçalhos de categoria mostram gasto vs orçamento com indicadores coloridos (verde/âmbar/vermelho). Banner no dashboard alerta quando limites são excedidos.",
     },
   },
 
@@ -225,6 +240,13 @@ const ptBR = {
     language: "Idioma",
     darkMode: "Modo escuro",
     navigation: "Navegação",
+  },
+
+  limits: {
+    ofLimit: "de {{limit}}",
+    exceeded: "excedido",
+    breachBanner: "{{count}} limite(s) de categoria excedido(s) neste mês",
+    monthlyBudget: "Orçamento mensal: {{amount}}",
   },
 
   filters: {

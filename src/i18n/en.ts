@@ -63,6 +63,17 @@ const en = {
     noMappings: "No mappings",
     originalName: "Original name...",
     displayName: "Display name...",
+    limit: "Spending Limit",
+    limitAmount: "Limit amount",
+    limitPeriod: "Period",
+    limitDaily: "Daily",
+    limitWeekly: "Weekly",
+    limitMonthly: "Monthly",
+    setLimit: "Set limit",
+    removeLimit: "Remove limit",
+    limitPerDay: "{{amount}}/day",
+    limitPerWeek: "{{amount}}/week",
+    limitPerMonth: "{{amount}}/month",
   },
 
   family: {
@@ -133,6 +144,7 @@ const en = {
     balance: "Balance",
     transactions: "Transactions",
     hidden: "Hidden",
+    limitsExceeded: "Limits Exceeded",
   },
 
   table: {
@@ -216,6 +228,9 @@ const en = {
       phase11Title: "Pierre Open Finance Integration",
       phase11Desc:
         "Automatic transaction sync via Pierre Finance API every 5 minutes. Cross-source deduplication prevents double-counting between CSV uploads and Open Finance data. Each transaction shows its origin (API or CSV).",
+      phase12Title: "Category Spending Limits",
+      phase12Desc:
+        "Set daily, weekly, or monthly spending limits per category. Progress bars on category headers show spend vs budget with color-coded warnings (green/amber/red). Dashboard banner alerts when limits are breached.",
     },
   },
 
@@ -224,6 +239,13 @@ const en = {
     language: "Language",
     darkMode: "Dark mode",
     navigation: "Navigation",
+  },
+
+  limits: {
+    ofLimit: "of {{limit}}",
+    exceeded: "exceeded",
+    breachBanner: "{{count}} category limit(s) exceeded this month",
+    monthlyBudget: "Monthly budget: {{amount}}",
   },
 
   filters: {

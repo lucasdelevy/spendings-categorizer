@@ -167,3 +167,16 @@ Key changes:
 - Subtle origin indicator ("API" / "CSV") added to each transaction row in the UI, positioned near the hide button with low-opacity styling.
 - Owner guard on the manual sync endpoint: only the user whose Google `sub` matches `PIERRE_USER_ID` env var can trigger manual syncs. EventBridge path is internal-only.
 - Each sync covers current month + previous month to catch late-posting transactions near month boundaries, with a 1-day startDate buffer to work around Pierre's date filtering behavior.
+
+## Phase 12: Category Spending Limits
+
+Added per-category spending limits with visual progress tracking and breach notifications on the dashboard.
+
+Key changes:
+- New `CategoryLimit` type (`{ amount: number; period: "daily" | "weekly" | "monthly" }`) added as an optional `limit` field on `CategoryEntry` in both backend and frontend types. Stored in the existing `CATCONFIG` DynamoDB record — no schema migration or new API routes needed.
+- Categories page gains a "Spending Limit" section inside each expanded category accordion: a dashed "Set limit" button that, once clicked, shows an amount input and period dropdown (daily/weekly/monthly), with a "Remove limit" action.
+- Daily and weekly limits are projected to a monthly equivalent for comparison against the month's totals (`daily × daysInMonth`, `weekly × daysInMonth / 7`).
+- Transaction table category headers display a slim color-coded progress bar (green < 75%, amber 75–99%, red ≥ 100%) with a label showing spent vs budget and percentage.
+- Summary bar gains a "Limits Exceeded" card (red) that appears when one or more categories have breached their limit.
+- Dashboard shows a red alert banner listing all breached category names when any limits are exceeded.
+- Full i18n support (EN + PT-BR) for all new strings.
