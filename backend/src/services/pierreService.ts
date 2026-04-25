@@ -1,4 +1,5 @@
 import type { TransactionItem } from "../types.js";
+import { isRefund } from "./refunds.js";
 
 const PIERRE_BASE_URL = "https://pierre.finance/tools/api";
 
@@ -71,7 +72,23 @@ export async function triggerManualSync(apiKey: string): Promise<unknown> {
 
 export function mapPierreTransaction(tx: PierreTransaction): TransactionItem {
   const rawAmount = parseFloat(tx.amount);
-  const amount = tx.type === "DEBIT" && rawAmount > 0 ? -rawAmount : rawAmount;
+  let amount: number;
+
+  if (tx.account_type === "CREDIT") {
+    // Pluggy credit-card convention: positive amount = charge,
+    // negative amount = payment/refund. We negate so charges become
+    // negative (outflow) and refunds/payments become positive (inflow),
+    // matching the bank-side convention used everywhere else.
+    amount = -rawAmount;
+  } else {
+    amount = tx.type === "DEBIT" && rawAmount > 0 ? -rawAmount : rawAmount;
+  }
+
+  // Refunds ("estorno") must always settle as a positive value regardless
+  // of how the upstream source encoded them.
+  if (isRefund(tx.description)) {
+    amount = Math.abs(amount);
+  }
 
   const isoDate = tx.date.includes("T") ? tx.date.split("T")[0] : tx.date;
 

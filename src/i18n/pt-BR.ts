@@ -238,6 +238,9 @@ const ptBR = {
       phase13Title: "Visão de Transações Plana & Correção de Ordenação",
       phase13Desc:
         "Nova aba \"Todas\" (padrão) no dashboard lista todas as transações do mês em uma única tabela ordenada por data (mais recentes primeiro), com coluna de categoria. A visão por categoria continua a um clique de distância. Também corrigida a ordenação por categoria que colocava transações antigas acima das mais recentes ao mesclar datas do banco (DD/MM/AAAA) e cartão (AAAA-MM-DD).",
+      phase14Title: "Correção do Sinal de Estornos",
+      phase14Desc:
+        "Transações de estorno (estorno, devolução, reembolso, chargeback, cashback) agora são sempre registradas como valores positivos, somando ao saldo em vez de subtrair. A correção é aplicada na importação de CSV e na sincronização Pierre/Open Finance, e também repara retroativamente as transações já armazenadas ao abrir o mês. A consolidação familiar passa a incluir valores positivos vindos de faturas de cartão, então estornos de cartão agora aparecem na visão familiar.",
     },
   },
 
