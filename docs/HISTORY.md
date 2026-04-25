@@ -194,3 +194,13 @@ Key changes:
 - `App.tsx` `remoteToResult` now also sorts each category's transactions newest-first after rebuilding from the backend payload.
 - `TransactionFilters` now imports the shared `parseDateToNum` instead of defining its own.
 - New `table.category` and `app.tabAllTransactions` / `app.tabByCategory` i18n keys (EN + PT-BR).
+
+## Phase 14: Mobile Categories Layout
+
+Improved the visual hierarchy of the Categories page on small screens, where the previous single-row layout squeezed the category name down to a single letter when the limit controls and action buttons were present.
+
+Key changes:
+- `src/pages/CategoriesPage.tsx`: the row container for each category now uses `flex flex-col gap-2 ... sm:flex-row sm:items-center`. On mobile the name + keyword-count row sits above the controls row (limit input/period and rename/delete/expand buttons); on `sm` and up everything renders in a single row exactly as before.
+- The name span gained `min-w-0 flex-1` so it occupies all remaining space on its row instead of being truncated to a single letter when the right-hand controls had a flexible width.
+- The controls cluster gained `justify-end` so it stays right-aligned on mobile when it is the only thing on its row.
+- Feature log entries added in `src/i18n/en.ts`, `src/i18n/pt-BR.ts`, and `src/pages/AboutPage.tsx` under the `about.features.phase14Title` / `about.features.phase14Desc` keys.

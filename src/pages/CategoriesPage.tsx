@@ -277,7 +277,7 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
                   key={name}
                   className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
                 >
-                  <div className="flex items-center gap-2 px-4 py-3">
+                  <div className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center">
                     <button
                       onClick={() => setExpandedCat(isOpen ? null : name)}
                       className="flex min-w-0 flex-1 items-center gap-3 text-left"
@@ -286,13 +286,13 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
                         color={entry.color}
                         onChange={(c) => setCatColor(name, c)}
                       />
-                      <span className="truncate font-medium text-gray-900 dark:text-gray-100">{name}</span>
+                      <span className="min-w-0 flex-1 truncate font-medium text-gray-900 dark:text-gray-100">{name}</span>
                       <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-700 dark:text-gray-400">
                         {t("categories.keywordsCount", { count: entry.keywords.length })}
                       </span>
                     </button>
 
-                    <div className="flex shrink-0 items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex shrink-0 items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
                       {entry.limit ? (
                         <div className="flex items-center gap-1">
                           <span className="text-[10px] font-medium uppercase text-gray-400 dark:text-gray-500">R$</span>

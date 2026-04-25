@@ -238,6 +238,9 @@ const ptBR = {
       phase13Title: "Visão de Transações Plana & Correção de Ordenação",
       phase13Desc:
         "Nova aba \"Todas\" (padrão) no dashboard lista todas as transações do mês em uma única tabela ordenada por data (mais recentes primeiro), com coluna de categoria. A visão por categoria continua a um clique de distância. Também corrigida a ordenação por categoria que colocava transações antigas acima das mais recentes ao mesclar datas do banco (DD/MM/AAAA) e cartão (AAAA-MM-DD).",
+      phase14Title: "Layout Mobile da Página de Categorias",
+      phase14Desc:
+        "Linhas da lista de categorias agora empilham verticalmente no mobile, dando largura total ao nome da categoria e à contagem de palavras-chave, enquanto os controles de limite e botões de ação ocupam uma segunda linha. Em telas maiores o layout permanece em linha única.",
     },
   },
 
