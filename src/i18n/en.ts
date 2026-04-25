@@ -36,6 +36,7 @@ const en = {
     createAccount: "Error creating account",
     updateAccount: "Error updating account",
     deleteAccount: "Error deleting account",
+    assignAccount: "Error assigning account",
   },
 
   login: {
@@ -114,6 +115,12 @@ const en = {
     expenses: "Expenses",
     transactions: "Transactions",
     file: "File",
+    account: "Account",
+    unassigned: "— Unassigned —",
+    noMatchingAccount: "No matching account",
+    mixedAccounts: "Mixed",
+    mixedAccountsHint:
+      "This statement contains transactions tied to more than one account. Reassign with care — all transactions will move to the chosen account.",
     view: "View",
     deleteTitle: "Delete",
   },
@@ -138,8 +145,11 @@ const en = {
     detectedMonth: "Detected month:",
     saving: "Saving...",
     save: "Save",
-    assignAccounts: "Assign each file to an account (optional)",
+    assignAccounts: "Assign each file to an account",
     noAccount: "— No account —",
+    noAccountsHint: "Add accounts in 'Accounts & Cards' to enable per-account tagging.",
+    noMatchingAccount: "No {{type}} account configured",
+    closingDayShort: "closes day {{day}}",
   },
 
   accounts: {

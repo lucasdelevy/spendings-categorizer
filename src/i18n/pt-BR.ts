@@ -36,6 +36,7 @@ const ptBR = {
     createAccount: "Erro ao criar conta",
     updateAccount: "Erro ao atualizar conta",
     deleteAccount: "Erro ao excluir conta",
+    assignAccount: "Erro ao associar conta",
   },
 
   login: {
@@ -115,6 +116,12 @@ const ptBR = {
     expenses: "Gastos",
     transactions: "Transações",
     file: "Arquivo",
+    account: "Conta",
+    unassigned: "— Sem conta —",
+    noMatchingAccount: "Nenhuma conta compatível",
+    mixedAccounts: "Misto",
+    mixedAccountsHint:
+      "Este extrato contém transações vinculadas a mais de uma conta. Reatribua com cuidado — todas as transações irão para a conta escolhida.",
     view: "Visualizar",
     deleteTitle: "Excluir",
   },
@@ -139,8 +146,12 @@ const ptBR = {
     detectedMonth: "Mês detectado:",
     saving: "Salvando...",
     save: "Salvar",
-    assignAccounts: "Associe cada arquivo a uma conta (opcional)",
+    assignAccounts: "Associe cada arquivo a uma conta",
     noAccount: "— Sem conta —",
+    noAccountsHint:
+      "Cadastre contas em 'Contas e Cartões' para habilitar a associação por conta.",
+    noMatchingAccount: "Nenhuma conta de {{type}} cadastrada",
+    closingDayShort: "fecha dia {{day}}",
   },
 
   accounts: {

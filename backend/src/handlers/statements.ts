@@ -8,7 +8,10 @@ import {
   getMonthStatements,
   listStatements,
   softDeleteByFullSK,
+  getStatementByFullSK,
 } from "../services/statementService.js";
+import { PutCommand } from "@aws-sdk/lib-dynamodb";
+import { docClient, TABLE_NAME } from "../services/dynamoClient.js";
 import { findDuplicates } from "../services/dedupService.js";
 import {
   getAccount,
@@ -50,6 +53,10 @@ async function handleList(
 
   const items = statements.map((s) => {
     const firstTx = s.transactions[0];
+    const accountIds = new Set<string>();
+    for (const tx of s.transactions) {
+      if (tx.accountId) accountIds.add(tx.accountId);
+    }
     return {
       id: s.SK.replace("STMT#", ""),
       fileName: s.fileName,
@@ -59,6 +66,8 @@ async function handleList(
       categoryCount: s.summary.categories.length,
       transactionCount: s.transactions.length,
       uploadedBy: firstTx?.uploadedBy || null,
+      accountId: accountIds.size === 1 ? Array.from(accountIds)[0] : null,
+      mixedAccounts: accountIds.size > 1,
     };
   });
 
@@ -324,6 +333,107 @@ function recomputeSummary(type: string, txs: TransactionItem[]) {
   };
 }
 
+async function handleAssignAccount(
+  event: APIGatewayProxyEventV2,
+  user: JWTPayload,
+): Promise<APIGatewayProxyResultV2> {
+  const origin = event.headers?.origin;
+  const id = event.pathParameters?.id;
+  if (!id) return respond(400, { error: "Missing statement id" }, origin);
+
+  const body = JSON.parse(event.body || "{}");
+  const accountId: string | null = body.accountId ?? null;
+
+  const userRecord = await getUser(user.userId);
+  const familyId = userRecord?.familyId;
+  const pk = familyId ? `FAMILY#${familyId}` : `USER#${user.userId}`;
+  const sk = `STMT#${id}`;
+
+  const record = await getStatementByFullSK(pk, sk);
+  if (!record) return respond(404, { error: "Statement not found" }, origin);
+
+  let account = null;
+  if (accountId) {
+    account = await getAccount(user.userId, familyId, accountId);
+    if (!account) return respond(400, { error: "Invalid accountId" }, origin);
+  }
+
+  const closingDay =
+    account?.type === "card" ? account.closingDay : undefined;
+
+  const updatedTxs: TransactionItem[] = record.transactions.map((tx) => {
+    const next: TransactionItem = { ...tx };
+    if (account) {
+      next.accountId = account.accountId;
+      const computed = computeBillingMonth(
+        next.date,
+        account.type ?? next.source,
+        closingDay,
+      );
+      if (computed) next.billingMonth = computed;
+    } else {
+      delete next.accountId;
+      delete next.billingMonth;
+    }
+    return next;
+  });
+
+  // Group by billing month so card transactions outside the record's month
+  // bucket get split into a separate statement record under the right month.
+  const recordYearMonth = id.split("#")[0];
+  const sameMonth: TransactionItem[] = [];
+  const otherMonths = new Map<string, TransactionItem[]>();
+
+  for (const tx of updatedTxs) {
+    const ym = tx.billingMonth || recordYearMonth;
+    if (ym === recordYearMonth) {
+      sameMonth.push(tx);
+    } else {
+      if (!otherMonths.has(ym)) otherMonths.set(ym, []);
+      otherMonths.get(ym)!.push(tx);
+    }
+  }
+
+  const uploadedBy = {
+    userId: user.userId,
+    name: userRecord?.name || "",
+    picture: userRecord?.picture || "",
+  };
+
+  const createdRecords: { id: string }[] = [];
+
+  for (const [ym, txs] of otherMonths.entries()) {
+    const newRecord = await saveStatement({
+      userId: user.userId,
+      familyId,
+      yearMonth: ym,
+      type: record.summary.type,
+      fileName: record.fileName,
+      summary: recomputeSummary(record.summary.type, txs),
+      transactions: txs,
+      uploadedBy,
+    });
+    createdRecords.push({ id: newRecord.SK.replace("STMT#", "") });
+  }
+
+  if (sameMonth.length === 0) {
+    await softDeleteByFullSK(pk, sk);
+  } else {
+    record.transactions = sameMonth;
+    record.summary = recomputeSummary(record.summary.type, sameMonth);
+    await docClient.send(
+      new PutCommand({ TableName: TABLE_NAME, Item: record }),
+    );
+  }
+
+  return respond(200, {
+    message: "Account assigned",
+    accountId: accountId ?? null,
+    splitInto: createdRecords,
+    keptInPlace: sameMonth.length,
+  }, origin);
+}
+
 async function handleDelete(
   event: APIGatewayProxyEventV2,
   user: JWTPayload,
@@ -357,6 +467,9 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
 
   if (method === "GET" && path === "/statements") return handleList(event, user);
   if (method === "POST" && path === "/statements") return handleSave(event, user);
+  if (method === "POST" && /^\/statements\/[^/]+\/assign-account$/.test(path)) {
+    return handleAssignAccount(event, user);
+  }
   if (method === "GET" && path.startsWith("/statements/")) return handleGet(event, user);
   if (method === "DELETE" && path.startsWith("/statements/")) return handleDelete(event, user);
 

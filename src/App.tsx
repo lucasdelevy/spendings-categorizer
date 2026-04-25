@@ -221,6 +221,21 @@ export default function App() {
     }
   }, [loadSavedMonths, loadMonthFromRemote]);
 
+  const handleAssignAccount = useCallback(async (id: string, accountId: string | null) => {
+    try {
+      await api.post(`/statements/${id.replace(/#/g, "%23")}/assign-account`, {
+        accountId,
+      });
+      monthCache.current.clear();
+      await loadSavedMonths();
+      if (monthHasData) {
+        await loadMonthFromRemote(selectedMonth, true);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("error.assignAccount"));
+    }
+  }, [loadSavedMonths, loadMonthFromRemote, selectedMonth, monthHasData, t]);
+
   const handleDeleteMonth = useCallback(async (id: string) => {
     try {
       await api.delete(`/statements/${id.replace(/#/g, "%23")}`);
@@ -434,9 +449,11 @@ export default function App() {
       {activePage === "manage" && (
         <ManageMonths
           items={savedMonths}
+          accounts={accounts}
           onBack={() => setShowManage(false)}
           onView={(ym) => { setShowManage(false); handleMonthChange(ym); }}
           onDelete={handleDeleteMonth}
+          onAssignAccount={handleAssignAccount}
         />
       )}
 

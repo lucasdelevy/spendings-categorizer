@@ -37,4 +37,6 @@ export interface SavedStatementItem {
   categoryCount: number;
   transactionCount: number;
   uploadedBy?: { userId: string; name: string; picture: string } | null;
+  accountId?: string | null;
+  mixedAccounts?: boolean;
 }
