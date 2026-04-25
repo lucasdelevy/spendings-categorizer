@@ -15,6 +15,8 @@ const en = {
     cumulative: "Accumulated",
     tabCategory: "By Category",
     tabDaily: "By Day",
+    tabAllTransactions: "All",
+    tabByCategory: "By Category",
     transactions: "Transactions",
   },
 
@@ -152,6 +154,7 @@ const en = {
     source: "Source",
     payee: "Payee",
     merchant: "Merchant",
+    category: "Category",
     installment: "Installment",
     amount: "Amount",
     actions: "Actions",
@@ -231,6 +234,9 @@ const en = {
       phase12Title: "Category Spending Limits",
       phase12Desc:
         "Set daily, weekly, or monthly spending limits per category. Progress bars on category headers show spend vs budget with color-coded warnings (green/amber/red). Dashboard banner alerts when limits are breached.",
+      phase13Title: "Flat Transactions View & Date-Sort Fix",
+      phase13Desc:
+        "New default \"All\" tab on the dashboard lists every transaction for the month in a single table sorted by date (newest first), with a category column. The existing \"By Category\" accordion is one click away. Also fixed per-category sorting that was placing older transactions above newer ones when bank (DD/MM/YYYY) and card (YYYY-MM-DD) dates were merged.",
     },
   },
 

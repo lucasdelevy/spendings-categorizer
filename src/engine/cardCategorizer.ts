@@ -2,6 +2,7 @@ import type { RawRow } from "./csvParser";
 import type { Transaction, StatementResult } from "../types";
 import { CARD_CATEGORIES, CARD_IGNORE, CARD_RENAME } from "./categories";
 import type { EngineConfig } from "./categories";
+import { compareDatesDesc } from "../utils/dates";
 
 const INSTALLMENT_RE = / - Parcela (\d+\/\d+)$/i;
 
@@ -119,7 +120,7 @@ function buildResult(transactions: Transaction[]): StatementResult {
       total: data.total,
       count: data.count,
       transactions: data.transactions.sort((a, b) =>
-        a.date.localeCompare(b.date),
+        compareDatesDesc(a.date, b.date),
       ),
     }))
     .sort((a, b) => Math.abs(b.total) - Math.abs(a.total));

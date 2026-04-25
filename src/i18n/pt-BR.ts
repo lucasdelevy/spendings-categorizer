@@ -15,6 +15,8 @@ const ptBR = {
     cumulative: "Acumulado",
     tabCategory: "Por Categoria",
     tabDaily: "Por Dia",
+    tabAllTransactions: "Todas",
+    tabByCategory: "Por Categoria",
     transactions: "Transações",
   },
 
@@ -153,6 +155,7 @@ const ptBR = {
     source: "Origem",
     payee: "Beneficiário",
     merchant: "Estabelecimento",
+    category: "Categoria",
     installment: "Parcela",
     amount: "Valor",
     actions: "Ações",
@@ -232,6 +235,9 @@ const ptBR = {
       phase12Title: "Limites de Gasto por Categoria",
       phase12Desc:
         "Defina limites de gasto diários, semanais ou mensais por categoria. Barras de progresso nos cabeçalhos de categoria mostram gasto vs orçamento com indicadores coloridos (verde/âmbar/vermelho). Banner no dashboard alerta quando limites são excedidos.",
+      phase13Title: "Visão de Transações Plana & Correção de Ordenação",
+      phase13Desc:
+        "Nova aba \"Todas\" (padrão) no dashboard lista todas as transações do mês em uma única tabela ordenada por data (mais recentes primeiro), com coluna de categoria. A visão por categoria continua a um clique de distância. Também corrigida a ordenação por categoria que colocava transações antigas acima das mais recentes ao mesclar datas do banco (DD/MM/AAAA) e cartão (AAAA-MM-DD).",
     },
   },
 

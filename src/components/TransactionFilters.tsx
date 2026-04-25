@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { resolveLocale } from "../i18n";
+import { parseDateToNum } from "../utils/dates";
 import type { Transaction } from "../types";
 
 export interface FilterState {
@@ -39,20 +40,6 @@ export function filtersActive(f: FilterState): boolean {
     f.dateEnd !== "" ||
     f.selectedOwners.size > 0
   );
-}
-
-export function parseDateToNum(raw: string): number | null {
-  if (raw.includes("-")) {
-    const [y, m, d] = raw.split("-");
-    const n = Number(y) * 10000 + Number(m) * 100 + Number(d);
-    return Number.isNaN(n) ? null : n;
-  }
-  if (raw.includes("/")) {
-    const [d, m, y] = raw.split("/");
-    const n = Number(y) * 10000 + Number(m) * 100 + Number(d);
-    return Number.isNaN(n) ? null : n;
-  }
-  return null;
 }
 
 export function matchesFilters(t: Transaction, f: FilterState): boolean {

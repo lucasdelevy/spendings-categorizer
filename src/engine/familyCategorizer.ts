@@ -1,4 +1,5 @@
 import type { Transaction, StatementResult } from "../types";
+import { compareDatesDesc } from "../utils/dates";
 
 const CARD_BILL_CATEGORY = "Fatura Cartão";
 
@@ -48,7 +49,7 @@ export function processFamilyStatements(
       total: data.total,
       count: data.count,
       transactions: data.transactions.sort((a, b) =>
-        a.date.localeCompare(b.date),
+        compareDatesDesc(a.date, b.date),
       ),
     }))
     .sort((a, b) => Math.abs(b.total) - Math.abs(a.total));

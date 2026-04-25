@@ -180,3 +180,17 @@ Key changes:
 - Summary bar gains a "Limits Exceeded" card (red) that appears when one or more categories have breached their limit.
 - Dashboard shows a red alert banner listing all breached category names when any limits are exceeded.
 - Full i18n support (EN + PT-BR) for all new strings.
+
+## Phase 13: Flat Transactions View & Date-Sort Fix
+
+Added a new top-level view of all transactions for the month, sorted by date, alongside the existing per-category accordion. Also fixed transaction ordering in the per-category view, where older transactions were appearing above newer ones.
+
+Key changes:
+- New `mode` prop on `TransactionTable` (`"all" | "byCategory"`, default `"byCategory"`) — keeps a single component, with a flat-table branch that lists every transaction in one table sorted newest-first and shows the category as a colored cell.
+- Dashboard `Transactions` section gains a small segmented control: **All** (default) shows the flat list; **By Category** shows the existing accordion. Filter bar, action menu (recategorize / rename / ignore), hide toggle, and avatars/origin label work identically in both modes.
+- Extracted `TransactionRow` and `TableHeaderRow` helpers inside `TransactionTable` so the row markup is shared between modes (with a conditional `Category` column only rendered in flat mode).
+- New `src/utils/dates.ts` with `parseDateToNum`, `compareDatesAsc`, and `compareDatesDesc`. Handles `DD/MM/YYYY`, `YYYY-MM-DD`, and ISO `YYYY-MM-DDTHH:MM:SS.sssZ` uniformly.
+- Replaced `a.date.localeCompare(b.date)` in `bankCategorizer`, `cardCategorizer`, and `familyCategorizer` with `compareDatesDesc`. The previous `localeCompare` was string-comparing mixed date formats (e.g., bank `21/04/2026` vs card `2026-04-21`), which placed older items above newer ones once data from both sources was merged.
+- `App.tsx` `remoteToResult` now also sorts each category's transactions newest-first after rebuilding from the backend payload.
+- `TransactionFilters` now imports the shared `parseDateToNum` instead of defining its own.
+- New `table.category` and `app.tabAllTransactions` / `app.tabByCategory` i18n keys (EN + PT-BR).
