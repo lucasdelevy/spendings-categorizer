@@ -12,6 +12,7 @@ import { useAuth } from "./auth/AuthContext";
 import { api } from "./auth/api";
 import { currentYearMonth } from "./utils";
 import type { SavedStatementItem } from "./utils";
+import { compareDatesDesc } from "./utils/dates";
 import LoginPage from "./pages/LoginPage";
 import ManageMonths from "./pages/SavedStatements";
 import FamilyPage from "./pages/FamilyPage";
@@ -85,6 +86,10 @@ function remoteToResult(remote: RemoteStatement): StatementResult {
     }
   }
 
+  for (const cat of catMap.values()) {
+    cat.transactions.sort((a, b) => compareDatesDesc(a.date, b.date));
+  }
+
   return {
     type: remote.summary.type,
     transactions: remote.transactions.map((t, i) => ({ ...t, _originalIndex: i })),
@@ -116,6 +121,7 @@ export default function App() {
   const [showUploadOverlay, setShowUploadOverlay] = useState(false);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
   const [chartTab, setChartTab] = useState<"category" | "daily">("category");
+  const [transactionsTab, setTransactionsTab] = useState<"all" | "byCategory">("all");
 
   const monthCache = useRef<Map<string, StatementResult>>(new Map());
 
@@ -567,14 +573,39 @@ export default function App() {
               </div>
 
               <div>
-                <h2 className="mb-3 text-sm font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  {t("app.transactions")}
-                </h2>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h2 className="text-sm font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                    {t("app.transactions")}
+                  </h2>
+                  <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5 text-xs font-medium dark:border-gray-700 dark:bg-gray-800">
+                    <button
+                      onClick={() => setTransactionsTab("all")}
+                      className={`rounded-md px-3 py-1.5 transition ${
+                        transactionsTab === "all"
+                          ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300"
+                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                      }`}
+                    >
+                      {t("app.tabAllTransactions")}
+                    </button>
+                    <button
+                      onClick={() => setTransactionsTab("byCategory")}
+                      className={`rounded-md px-3 py-1.5 transition ${
+                        transactionsTab === "byCategory"
+                          ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300"
+                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                      }`}
+                    >
+                      {t("app.tabByCategory")}
+                    </button>
+                  </div>
+                </div>
                 <TransactionTable
                   categories={result.categories}
                   statementType={result.type}
                   catConfig={catConfig}
                   yearMonth={selectedMonth}
+                  mode={transactionsTab === "all" ? "all" : "byCategory"}
                   onRecategorize={dataSource === "remote" ? handleRecategorize : undefined}
                   onRename={dataSource === "remote" ? handleRename : undefined}
                   onIgnore={dataSource === "remote" ? handleIgnore : undefined}

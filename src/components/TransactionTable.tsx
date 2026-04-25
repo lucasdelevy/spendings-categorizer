@@ -4,6 +4,7 @@ import type { CategorySummary, StatementType, CategoryConfig, Transaction, Trans
 import { getCategoryColorFromConfig } from "../engine/categories";
 import { formatBRL, resolveLocale } from "../i18n";
 import { limitProgress, limitColor, effectiveMonthlyLimit } from "../utils/limits";
+import { compareDatesDesc } from "../utils/dates";
 import TransactionActionModal from "./TransactionActionModal";
 import type { RecategorizePayload, RenamePayload, IgnorePayload } from "./TransactionActionModal";
 import TransactionFilters, {
@@ -18,11 +19,14 @@ export interface HidePayload {
   globalIndex: number;
 }
 
+export type TransactionTableMode = "byCategory" | "all";
+
 interface Props {
   categories: CategorySummary[];
   statementType: StatementType;
   catConfig?: CategoryConfig | null;
   yearMonth?: string;
+  mode?: TransactionTableMode;
   onRecategorize?: (payload: RecategorizePayload) => void;
   onRename?: (payload: RenamePayload) => void;
   onIgnore?: (payload: IgnorePayload) => void;
@@ -94,11 +98,168 @@ interface ModalTarget {
   category: string;
 }
 
+interface RowProps {
+  tx: Transaction;
+  globalIdx: number;
+  category: string;
+  showSource: boolean;
+  showCategoryCell: boolean;
+  showInstallmentCell: boolean;
+  hasAvatars: boolean;
+  hasActions: boolean;
+  catConfig?: CategoryConfig | null;
+  onHide?: (payload: HidePayload) => void;
+  onOpenModal: (target: ModalTarget) => void;
+}
+
+function TransactionRow({
+  tx,
+  globalIdx,
+  category,
+  showSource,
+  showCategoryCell,
+  showInstallmentCell,
+  hasAvatars,
+  hasActions,
+  catConfig,
+  onHide,
+  onOpenModal,
+}: RowProps) {
+  const { t } = useTranslation();
+  const isHidden = !!tx.hidden;
+  const categoryColor = getCategoryColorFromConfig(category, catConfig ?? null);
+
+  return (
+    <tr className={`${isHidden ? "opacity-40" : "hover:bg-gray-50 dark:hover:bg-gray-700"}`}>
+      {hasAvatars && (
+        <td className="px-2 py-2">
+          <UploaderAvatar uploadedBy={tx.uploadedBy} />
+        </td>
+      )}
+      <td className="whitespace-nowrap px-4 py-2 text-gray-500 dark:text-gray-400">
+        {formatDate(tx.date)}
+      </td>
+      {showSource && (
+        <td className="px-4 py-2">
+          <SourceBadge
+            source={tx.source}
+            label={tx.source === "bank" ? t("table.bank") : t("table.card")}
+          />
+        </td>
+      )}
+      <td
+        className={`max-w-xs truncate px-4 py-2 ${isHidden ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-800 dark:text-gray-200"}`}
+        title={tx.originalDescription}
+      >
+        {tx.payee}
+      </td>
+      {showCategoryCell && (
+        <td className="px-4 py-2">
+          <span className="inline-flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: categoryColor }}
+            />
+            <span className="truncate">{category}</span>
+          </span>
+        </td>
+      )}
+      {showInstallmentCell && (
+        <td className="px-4 py-2 text-gray-500 dark:text-gray-400">
+          {tx.installment || "—"}
+        </td>
+      )}
+      <td
+        className={`whitespace-nowrap px-4 py-2 text-right tabular-nums ${isHidden ? "line-through text-gray-400 dark:text-gray-500" : tx.amount >= 0 ? "text-green-600" : "text-gray-800 dark:text-gray-200"}`}
+      >
+        {formatBRL(tx.amount)}
+      </td>
+      {(hasActions || onHide) && (
+        <td className="px-2 py-2">
+          <div className="flex items-center gap-0.5">
+            <OriginLabel origin={tx.origin} />
+            {onHide && (
+              <button
+                onClick={() => onHide({ globalIndex: globalIdx })}
+                className={`rounded p-1 transition ${isHidden ? "text-indigo-500 hover:bg-indigo-50 hover:text-indigo-700 dark:hover:bg-indigo-900" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-600"}`}
+                title={isHidden ? t("table.unhide") : t("table.hide")}
+              >
+                {isHidden ? (
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                ) : (
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                  </svg>
+                )}
+              </button>
+            )}
+            {hasActions && !isHidden && (
+              <button
+                onClick={() =>
+                  onOpenModal({
+                    transaction: tx,
+                    globalIndex: globalIdx,
+                    category,
+                  })
+                }
+                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-indigo-600 dark:hover:bg-gray-600"
+                title={t("table.actions")}
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </td>
+      )}
+    </tr>
+  );
+}
+
+interface HeaderRowProps {
+  statementType: StatementType;
+  showSource: boolean;
+  showCategoryCell: boolean;
+  showInstallmentCell: boolean;
+  hasAvatars: boolean;
+  hasActionsCell: boolean;
+}
+
+function TableHeaderRow({
+  statementType,
+  showSource,
+  showCategoryCell,
+  showInstallmentCell,
+  hasAvatars,
+  hasActionsCell,
+}: HeaderRowProps) {
+  const { t } = useTranslation();
+  return (
+    <tr className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:bg-gray-900 dark:text-gray-400">
+      {hasAvatars && <th className="w-8 min-w-[36px] px-2 py-2" />}
+      <th className="px-4 py-2">{t("table.date")}</th>
+      {showSource && <th className="px-4 py-2">{t("table.source")}</th>}
+      <th className="px-4 py-2">
+        {statementType === "bank" ? t("table.payee") : t("table.merchant")}
+      </th>
+      {showCategoryCell && <th className="px-4 py-2">{t("table.category")}</th>}
+      {showInstallmentCell && <th className="px-4 py-2">{t("table.installment")}</th>}
+      <th className="px-4 py-2 text-right">{t("table.amount")}</th>
+      {hasActionsCell && <th className="w-8 px-2 py-2" />}
+    </tr>
+  );
+}
+
 export default function TransactionTable({
   categories,
   statementType,
   catConfig,
   yearMonth,
+  mode = "byCategory",
   onRecategorize,
   onRename,
   onIgnore,
@@ -143,6 +304,25 @@ export default function TransactionTable({
     c.transactions.some((t) => t.uploadedBy?.picture),
   );
 
+  const showInstallmentCell = statementType === "card" || statementType === "family";
+  const hasActionsCell = hasActions || !!onHide;
+
+  const flatRows = useMemo(() => {
+    if (mode !== "all") return [];
+    const rows: { tx: Transaction; category: string; globalIndex: number }[] = [];
+    for (const cat of filteredCategories) {
+      for (const tx of cat.transactions) {
+        rows.push({
+          tx,
+          category: cat.category,
+          globalIndex: tx._originalIndex ?? rows.length,
+        });
+      }
+    }
+    rows.sort((a, b) => compareDatesDesc(a.tx.date, b.tx.date));
+    return rows;
+  }, [mode, filteredCategories]);
+
   const visibleCategoryNames = categories.map((c) => c.category);
   const configCategoryNames = catConfig
     ? Object.keys(catConfig.categories)
@@ -169,12 +349,51 @@ export default function TransactionTable({
         owners={owners}
       />
 
-      {isFiltering && filteredCategories.length === 0 && (
+      {((mode === "byCategory" && isFiltering && filteredCategories.length === 0) ||
+        (mode === "all" && flatRows.length === 0)) && (
         <p className="py-6 text-center text-sm text-gray-400">
           {t("table.noResults")}
         </p>
       )}
 
+      {mode === "all" && flatRows.length > 0 && (
+        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[680px] text-sm">
+              <thead>
+                <TableHeaderRow
+                  statementType={statementType}
+                  showSource={showSource}
+                  showCategoryCell={true}
+                  showInstallmentCell={showInstallmentCell}
+                  hasAvatars={hasAvatars}
+                  hasActionsCell={hasActionsCell}
+                />
+              </thead>
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
+                {flatRows.map(({ tx, category, globalIndex }, idx) => (
+                  <TransactionRow
+                    key={`${globalIndex}-${idx}`}
+                    tx={tx}
+                    globalIdx={globalIndex}
+                    category={category}
+                    showSource={showSource}
+                    showCategoryCell={true}
+                    showInstallmentCell={showInstallmentCell}
+                    hasAvatars={hasAvatars}
+                    hasActions={hasActions}
+                    catConfig={catConfig}
+                    onHide={onHide}
+                    onOpenModal={setModalTarget}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {mode === "byCategory" && (
       <div className="space-y-2">
         {filteredCategories.map(({ category, total, count, transactions }) => {
           const isOpen = expanded.has(category);
@@ -272,111 +491,32 @@ export default function TransactionTable({
                 <div className="overflow-x-auto border-t border-gray-100 dark:border-gray-700">
                   <table className="w-full min-w-[600px] text-sm">
                     <thead>
-                      <tr className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:bg-gray-900 dark:text-gray-400">
-                        {hasAvatars && <th className="w-8 min-w-[36px] px-2 py-2" />}
-                        <th className="px-4 py-2">{t("table.date")}</th>
-                        {showSource && (
-                          <th className="px-4 py-2">{t("table.source")}</th>
-                        )}
-                        <th className="px-4 py-2">
-                          {statementType === "bank"
-                            ? t("table.payee")
-                            : t("table.merchant")}
-                        </th>
-                        {(statementType === "card" || statementType === "family") && (
-                          <th className="px-4 py-2">{t("table.installment")}</th>
-                        )}
-                        <th className="px-4 py-2 text-right">{t("table.amount")}</th>
-                        {(hasActions || onHide) && <th className="w-8 px-2 py-2" />}
-                      </tr>
+                      <TableHeaderRow
+                        statementType={statementType}
+                        showSource={showSource}
+                        showCategoryCell={false}
+                        showInstallmentCell={showInstallmentCell}
+                        hasAvatars={hasAvatars}
+                        hasActionsCell={hasActionsCell}
+                      />
                     </thead>
                     <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
-                      {transactions.map((tx, txIdx) => {
-                        const globalIdx = tx._originalIndex ?? txIdx;
-                        const isHidden = !!tx.hidden;
-
-                        return (
-                          <tr
-                            key={txIdx}
-                            className={`${isHidden ? "opacity-40" : "hover:bg-gray-50 dark:hover:bg-gray-700"}`}
-                          >
-                            {hasAvatars && (
-                              <td className="px-2 py-2">
-                                <UploaderAvatar uploadedBy={tx.uploadedBy} />
-                              </td>
-                            )}
-                            <td className="whitespace-nowrap px-4 py-2 text-gray-500 dark:text-gray-400">
-                              {formatDate(tx.date)}
-                            </td>
-                            {showSource && (
-                              <td className="px-4 py-2">
-                                <SourceBadge
-                                  source={tx.source}
-                                  label={tx.source === "bank" ? t("table.bank") : t("table.card")}
-                                />
-                              </td>
-                            )}
-                            <td
-                              className={`max-w-xs truncate px-4 py-2 ${isHidden ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-800 dark:text-gray-200"}`}
-                              title={tx.originalDescription}
-                            >
-                              {tx.payee}
-                            </td>
-                            {(statementType === "card" || statementType === "family") && (
-                              <td className="px-4 py-2 text-gray-500 dark:text-gray-400">
-                                {tx.installment || "—"}
-                              </td>
-                            )}
-                            <td
-                              className={`whitespace-nowrap px-4 py-2 text-right tabular-nums ${isHidden ? "line-through text-gray-400 dark:text-gray-500" : tx.amount >= 0 ? "text-green-600" : "text-gray-800 dark:text-gray-200"}`}
-                            >
-                              {formatBRL(tx.amount)}
-                            </td>
-                            {(hasActions || onHide) && (
-                              <td className="px-2 py-2">
-                                <div className="flex items-center gap-0.5">
-                                  <OriginLabel origin={tx.origin} />
-                                  {onHide && (
-                                    <button
-                                      onClick={() => onHide({ globalIndex: globalIdx })}
-                                      className={`rounded p-1 transition ${isHidden ? "text-indigo-500 hover:bg-indigo-50 hover:text-indigo-700 dark:hover:bg-indigo-900" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-600"}`}
-                                      title={isHidden ? t("table.unhide") : t("table.hide")}
-                                    >
-                                      {isHidden ? (
-                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                      ) : (
-                                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                                        </svg>
-                                      )}
-                                    </button>
-                                  )}
-                                  {hasActions && !isHidden && (
-                                    <button
-                                      onClick={() =>
-                                        setModalTarget({
-                                          transaction: tx,
-                                          globalIndex: globalIdx,
-                                          category,
-                                        })
-                                      }
-                                      className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-indigo-600 dark:hover:bg-gray-600"
-                                      title={t("table.actions")}
-                                    >
-                                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
-                                      </svg>
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                            )}
-                          </tr>
-                        );
-                      })}
+                      {transactions.map((tx, txIdx) => (
+                        <TransactionRow
+                          key={txIdx}
+                          tx={tx}
+                          globalIdx={tx._originalIndex ?? txIdx}
+                          category={category}
+                          showSource={showSource}
+                          showCategoryCell={false}
+                          showInstallmentCell={showInstallmentCell}
+                          hasAvatars={hasAvatars}
+                          hasActions={hasActions}
+                          catConfig={catConfig}
+                          onHide={onHide}
+                          onOpenModal={setModalTarget}
+                        />
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -385,6 +525,7 @@ export default function TransactionTable({
           );
         })}
       </div>
+      )}
 
       {modalTarget && onRecategorize && onRename && onIgnore && (
         <TransactionActionModal

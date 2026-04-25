@@ -2,6 +2,7 @@ import type { RawRow } from "./csvParser";
 import type { Transaction, StatementResult } from "../types";
 import { BANK_CATEGORIES, BANK_IGNORE, BANK_RENAME } from "./categories";
 import type { EngineConfig } from "./categories";
+import { compareDatesDesc } from "../utils/dates";
 
 function categorize(description: string, cats: Record<string, string[]>): string {
   const lower = description.toLowerCase();
@@ -136,7 +137,7 @@ function buildResult(
       total: data.total,
       count: data.count,
       transactions: data.transactions.sort((a, b) =>
-        a.date.localeCompare(b.date),
+        compareDatesDesc(a.date, b.date),
       ),
     }))
     .sort((a, b) => Math.abs(b.total) - Math.abs(a.total));
