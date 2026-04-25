@@ -237,9 +237,6 @@ const en = {
       phase13Title: "Flat Transactions View & Date-Sort Fix",
       phase13Desc:
         "New default \"All\" tab on the dashboard lists every transaction for the month in a single table sorted by date (newest first), with a category column. The existing \"By Category\" accordion is one click away. Also fixed per-category sorting that was placing older transactions above newer ones when bank (DD/MM/YYYY) and card (YYYY-MM-DD) dates were merged.",
-      phase14Title: "Mobile Categories Layout",
-      phase14Desc:
-        "Categories list rows now stack vertically on mobile so the category name and keyword count get the full width, with the limit controls and action buttons sitting on a second row. On larger screens the layout still renders in a single row.",
     },
   },
 
