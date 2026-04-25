@@ -210,3 +210,13 @@ Key changes:
 - `App.tsx` `remoteToResult` now also sorts each category's transactions newest-first after rebuilding from the backend payload.
 - `TransactionFilters` now imports the shared `parseDateToNum` instead of defining its own.
 - New `table.category` and `app.tabAllTransactions` / `app.tabByCategory` i18n keys (EN + PT-BR).
+
+## Phase 15: Category Deletion Confirmation & Auto-Recategorization
+
+Replaced the native browser `confirm()` for category deletion with a styled confirmation modal, and made deletion automatically re-evaluate every transaction that was assigned to the removed category across all months.
+
+Key changes:
+- New `DeleteCategoryModal` rendered inside `CategoriesPage` instead of `window.confirm`. The modal explains that the change becomes effective on Save and that affected transactions will be re-categorized using the remaining keyword rules.
+- Backend `PUT /categories` (handler `categories.handlePut`) now diffs the previous and incoming `categories` keys, detects removed names, and after persisting the new config calls a new `recategorizeRemovedCategories` service that scans every active statement, re-applies keyword matching to any transaction stuck on a removed category, and falls back to `"Sem Categoria"` when nothing matches. Affected statements get their summary recomputed and rewritten in DynamoDB.
+- The endpoint response includes `removedCategories` and a `recategorized` count for observability.
+- New i18n keys: `categories.deleteConfirmTitle`, `categories.deleteConfirmBody`, `categories.deleteConfirmRecategorize`, `categories.deleteCancel`, `categories.deleteConfirmAction` (EN + PT-BR).
