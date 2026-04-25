@@ -69,7 +69,6 @@ async function handleCreate(
     name,
     type,
     closingDay: body.closingDay,
-    dueDay: body.dueDay,
     apiKey: typeof body.apiKey === "string" ? body.apiKey : undefined,
   });
 
@@ -91,7 +90,6 @@ async function handleUpdate(
   const updated = await updateAccount(user.userId, familyId, accountId, {
     name: typeof body.name === "string" ? body.name : undefined,
     closingDay: body.closingDay,
-    dueDay: body.dueDay,
     apiKey:
       body.apiKey === null
         ? null

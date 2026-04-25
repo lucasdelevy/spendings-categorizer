@@ -33,7 +33,6 @@ export interface Account {
   name: string;
   type: AccountType;
   closingDay?: number;
-  dueDay?: number;
   hasApiKey: boolean;
   apiKeyHint?: string;
   createdBy: string;
