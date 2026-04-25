@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { CategorySummary, StatementType, CategoryConfig, Transaction, TransactionOrigin, UploadedBy } from "../types";
+import type { CategorySummary, StatementType, CategoryConfig, Transaction, TransactionOrigin, UploadedBy, Account } from "../types";
 import { getCategoryColorFromConfig } from "../engine/categories";
 import { formatBRL, resolveLocale } from "../i18n";
 import { limitProgress, limitColor, effectiveMonthlyLimit } from "../utils/limits";
@@ -27,6 +27,7 @@ interface Props {
   catConfig?: CategoryConfig | null;
   yearMonth?: string;
   mode?: TransactionTableMode;
+  accounts?: Account[];
   onRecategorize?: (payload: RecategorizePayload) => void;
   onRename?: (payload: RenamePayload) => void;
   onIgnore?: (payload: IgnorePayload) => void;
@@ -108,6 +109,7 @@ interface RowProps {
   hasAvatars: boolean;
   hasActions: boolean;
   catConfig?: CategoryConfig | null;
+  accountNameMap?: Map<string, string>;
   onHide?: (payload: HidePayload) => void;
   onOpenModal: (target: ModalTarget) => void;
 }
@@ -122,6 +124,7 @@ function TransactionRow({
   hasAvatars,
   hasActions,
   catConfig,
+  accountNameMap,
   onHide,
   onOpenModal,
 }: RowProps) {
@@ -151,7 +154,17 @@ function TransactionRow({
         className={`max-w-xs truncate px-4 py-2 ${isHidden ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-800 dark:text-gray-200"}`}
         title={tx.originalDescription}
       >
-        {tx.payee}
+        <div className="flex items-center gap-2">
+          <span className="truncate">{tx.payee}</span>
+          {tx.accountId && accountNameMap?.get(tx.accountId) && (
+            <span
+              className="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-gray-500 dark:bg-gray-700 dark:text-gray-400"
+              title={accountNameMap.get(tx.accountId)}
+            >
+              {accountNameMap.get(tx.accountId)}
+            </span>
+          )}
+        </div>
       </td>
       {showCategoryCell && (
         <td className="px-4 py-2">
@@ -260,6 +273,7 @@ export default function TransactionTable({
   catConfig,
   yearMonth,
   mode = "byCategory",
+  accounts,
   onRecategorize,
   onRename,
   onIgnore,
@@ -306,6 +320,12 @@ export default function TransactionTable({
 
   const showInstallmentCell = statementType === "card" || statementType === "family";
   const hasActionsCell = hasActions || !!onHide;
+
+  const accountNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const a of accounts ?? []) map.set(a.accountId, a.name);
+    return map;
+  }, [accounts]);
 
   const flatRows = useMemo(() => {
     if (mode !== "all") return [];
@@ -383,6 +403,7 @@ export default function TransactionTable({
                     hasAvatars={hasAvatars}
                     hasActions={hasActions}
                     catConfig={catConfig}
+                    accountNameMap={accountNameMap}
                     onHide={onHide}
                     onOpenModal={setModalTarget}
                   />
@@ -513,6 +534,7 @@ export default function TransactionTable({
                           hasAvatars={hasAvatars}
                           hasActions={hasActions}
                           catConfig={catConfig}
+                          accountNameMap={accountNameMap}
                           onHide={onHide}
                           onOpenModal={setModalTarget}
                         />

@@ -3,6 +3,7 @@ import type { Transaction, StatementResult } from "../types";
 import { BANK_CATEGORIES, BANK_IGNORE, BANK_RENAME } from "./categories";
 import type { EngineConfig } from "./categories";
 import { compareDatesDesc } from "../utils/dates";
+import { normalizeRefundSign } from "./refunds";
 
 function categorize(description: string, cats: Record<string, string[]>): string {
   const lower = description.toLowerCase();
@@ -85,7 +86,8 @@ export function processBankCSV(
     const desc = (row[colDesc] ?? "").trim();
     if (!desc || shouldIgnore(desc, ignoreList)) continue;
 
-    const amount = parseBrazilianAmount(row[colValor] ?? "");
+    const rawAmount = parseBrazilianAmount(row[colValor] ?? "");
+    const amount = normalizeRefundSign(desc, rawAmount);
     const date = colData ? (row[colData] ?? "").trim() : "";
     const category = categorize(desc, cats);
     const rawPayee = extractPayee(desc);

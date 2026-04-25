@@ -90,6 +90,25 @@ export interface TransactionItem {
   hidden?: boolean;
   origin?: TransactionOrigin;
   externalId?: string;
+  accountId?: string;
+  billingMonth?: string;
+}
+
+export type AccountType = "bank" | "card";
+
+export interface AccountRecord {
+  PK: string;
+  SK: string;
+  accountId: string;
+  name: string;
+  type: AccountType;
+  closingDay?: number;
+  dueDay?: number;
+  apiKeyEncrypted?: string;
+  apiKeyHint?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type LimitPeriod = "daily" | "weekly" | "monthly";

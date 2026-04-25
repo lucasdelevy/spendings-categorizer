@@ -17,7 +17,9 @@ import LoginPage from "./pages/LoginPage";
 import ManageMonths from "./pages/SavedStatements";
 import FamilyPage from "./pages/FamilyPage";
 import CategoriesPage from "./pages/CategoriesPage";
+import AccountsPage from "./pages/AccountsPage";
 import AboutPage from "./pages/AboutPage";
+import { useAccounts } from "./hooks/useAccounts";
 import MonthSelector from "./components/MonthSelector";
 import SaveConfirmBar from "./components/SaveConfirmBar";
 import FamilyUploader from "./components/FamilyUploader";
@@ -106,6 +108,7 @@ export default function App() {
   const { t } = useTranslation();
   const { user, loading: authLoading, logout } = useAuth();
   const { config: catConfig, refresh: refreshConfig, save: saveCatConfig } = useCategoryConfig(!!user);
+  const { accounts, refresh: refreshAccounts } = useAccounts(!!user);
 
   const [savedMonths, setSavedMonths] = useState<SavedStatementItem[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>(currentYearMonth());
@@ -117,6 +120,7 @@ export default function App() {
   const [showManage, setShowManage] = useState(false);
   const [showFamily, setShowFamily] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
+  const [showAccounts, setShowAccounts] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showUploadOverlay, setShowUploadOverlay] = useState(false);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
@@ -207,7 +211,9 @@ export default function App() {
     setSelectedMonth(ym);
     setFamilyFiles([]);
     setShowUploadOverlay(false);
-    monthCache.current.delete(ym);
+    // Card statements with a closing day may have been bucketed into the
+    // next/previous month, so clear the entire cache and reload.
+    monthCache.current.clear();
     const items = await loadSavedMonths();
     const months = Array.from(new Set(items.map((s) => s.id.split("#")[0])));
     if (months.includes(ym)) {
@@ -350,13 +356,15 @@ export default function App() {
 
   const activePage = showCategories
     ? "categories"
-    : showFamily
-      ? "family"
-      : showManage
-        ? "manage"
-        : showAbout
-          ? "about"
-          : "dashboard";
+    : showAccounts
+      ? "accounts"
+      : showFamily
+        ? "family"
+        : showManage
+          ? "manage"
+          : showAbout
+            ? "about"
+            : "dashboard";
 
   const showUploader = activePage === "dashboard" && ((!monthHasData && dataSource !== "local") || showUploadOverlay);
   const showConfirmBar = activePage === "dashboard" && dataSource === "local" && result !== null;
@@ -373,10 +381,11 @@ export default function App() {
       <SideMenu
         open={sideMenuOpen}
         onClose={() => setSideMenuOpen(false)}
-        onCategories={() => { setShowFamily(false); setShowManage(false); setShowAbout(false); setShowCategories(true); }}
-        onFamily={() => { setShowCategories(false); setShowManage(false); setShowAbout(false); setShowFamily(true); }}
-        onManage={() => { setShowCategories(false); setShowFamily(false); setShowAbout(false); setShowManage(true); }}
-        onAbout={() => { setShowCategories(false); setShowFamily(false); setShowManage(false); setShowAbout(true); }}
+        onCategories={() => { setShowAccounts(false); setShowFamily(false); setShowManage(false); setShowAbout(false); setShowCategories(true); }}
+        onAccounts={() => { setShowCategories(false); setShowFamily(false); setShowManage(false); setShowAbout(false); setShowAccounts(true); }}
+        onFamily={() => { setShowCategories(false); setShowAccounts(false); setShowManage(false); setShowAbout(false); setShowFamily(true); }}
+        onManage={() => { setShowCategories(false); setShowAccounts(false); setShowFamily(false); setShowAbout(false); setShowManage(true); }}
+        onAbout={() => { setShowCategories(false); setShowAccounts(false); setShowFamily(false); setShowManage(false); setShowAbout(true); }}
         user={user}
         onLogout={logout}
       />
@@ -412,6 +421,10 @@ export default function App() {
             if (monthHasData) loadMonthFromRemote(selectedMonth);
           }}
         />
+      )}
+
+      {activePage === "accounts" && (
+        <AccountsPage onBack={() => { setShowAccounts(false); refreshAccounts(); }} />
       )}
 
       {activePage === "family" && (
@@ -481,7 +494,7 @@ export default function App() {
 
           {showConfirmBar && result && (
             <div className="mb-6">
-              <SaveConfirmBar result={result} files={familyFiles} catConfig={catConfig} onSaved={handleSaved} />
+              <SaveConfirmBar result={result} files={familyFiles} catConfig={catConfig} accounts={accounts} onSaved={handleSaved} />
             </div>
           )}
 
@@ -606,6 +619,7 @@ export default function App() {
                   catConfig={catConfig}
                   yearMonth={selectedMonth}
                   mode={transactionsTab === "all" ? "all" : "byCategory"}
+                  accounts={accounts}
                   onRecategorize={dataSource === "remote" ? handleRecategorize : undefined}
                   onRename={dataSource === "remote" ? handleRename : undefined}
                   onIgnore={dataSource === "remote" ? handleIgnore : undefined}

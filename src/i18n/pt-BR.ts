@@ -2,6 +2,7 @@ const ptBR = {
   app: {
     title: "Aletheia",
     categories: "Categorias",
+    accounts: "Contas e Cartões",
     family: "Família",
     manageMonths: "Gerenciar Meses",
     about: "Sobre Aletheia",
@@ -32,6 +33,9 @@ const ptBR = {
     addMember: "Erro ao adicionar membro",
     removeMember: "Erro ao remover membro",
     readFile: "Falha ao ler {{fileName}}",
+    createAccount: "Erro ao criar conta",
+    updateAccount: "Erro ao atualizar conta",
+    deleteAccount: "Erro ao excluir conta",
   },
 
   login: {
@@ -142,6 +146,47 @@ const ptBR = {
     detectedMonth: "Mês detectado:",
     saving: "Salvando...",
     save: "Salvar",
+    assignAccounts: "Associe cada arquivo a uma conta (opcional)",
+    noAccount: "— Sem conta —",
+  },
+
+  accounts: {
+    title: "Contas e Cartões",
+    back: "← Voltar",
+    intro:
+      "Gerencie suas contas bancárias e cartões de crédito. Opcionalmente armazene uma chave de API de Open Finance por conta para manter as transações sincronizadas automaticamente. Para cartões, defina o dia de fechamento (vencimento) para que o painel agrupe as transações pela fatura correta do mês.",
+    loading: "Carregando contas…",
+    empty:
+      "Nenhuma conta cadastrada — adicione uma conta bancária ou cartão para começar.",
+    addNew: "Adicionar conta ou cartão",
+    newTitle: "Nova conta ou cartão",
+    nameLabel: "Nome",
+    namePlaceholder: "ex: Nubank Roxinho",
+    typeLabel: "Tipo",
+    type: {
+      bank: "Banco",
+      card: "Cartão",
+    },
+    closingDayLabel: "Dia de fechamento",
+    closingDayHint:
+      "Dia do mês em que o cartão fecha a fatura. Padrão: 30.",
+    dueDayLabel: "Dia do vencimento (opcional)",
+    dueDayHint: "Dia em que a fatura vence. Apenas para referência.",
+    apiKeyLabel: "Chave de API Open Finance",
+    apiKeyHint:
+      "Armazenada criptografada (AES-256-GCM). Usada apenas pelo worker de sincronização; nunca retornada nas respostas da API.",
+    apiKeyPlaceholder: "Cole a chave do provedor (ex: Pierre Finance)",
+    apiKeyKeepCurrent: "Deixe vazio para manter a chave atual",
+    apiKeyConfigured: "configurada",
+    apiKeyNotSet: "não definida",
+    apiKeyRemove: "Remover chave",
+    edit: "Editar",
+    delete: "Excluir",
+    save: "Salvar alterações",
+    cancel: "Cancelar",
+    create: "Criar",
+    deleteConfirm:
+      'Excluir "{{name}}"? Isso não removerá as transações já importadas.',
   },
 
   summary: {
@@ -245,8 +290,11 @@ const ptBR = {
       phase13Title: "Visão de Transações Plana & Correção de Ordenação",
       phase13Desc:
         "Nova aba \"Todas\" (padrão) no dashboard lista todas as transações do mês em uma única tabela ordenada por data (mais recentes primeiro), com coluna de categoria. A visão por categoria continua a um clique de distância. Também corrigida a ordenação por categoria que colocava transações antigas acima das mais recentes ao mesclar datas do banco (DD/MM/AAAA) e cartão (AAAA-MM-DD).",
-      phase14Title: "Confirmação de Exclusão de Categoria & Recategorização Automática",
+      phase14Title: "Gerenciamento de Contas e Cartões",
       phase14Desc:
+        "Contas e cartões agora são entidades de primeira classe: cada transação pode ser vinculada a uma conta bancária ou cartão de crédito. Cartões têm um dia de fechamento (vencimento, padrão 30) para que as transações sejam agrupadas na fatura mensal correta. Chaves de API Open Finance por conta são armazenadas criptografadas com AES-256-GCM e descriptografadas apenas dentro do worker de sincronização — o frontend só vê os últimos 4 caracteres como dica. A sincronização Pierre itera por todas as contas com chave, suportando múltiplos bancos e cartões em paralelo.",
+      phase15Title: "Confirmação de Exclusão de Categoria & Recategorização Automática",
+      phase15Desc:
         "Excluir uma categoria agora abre um modal de confirmação estilizado que explica o impacto e só toma efeito ao Salvar. Após salvar, o backend reaplica o casamento por keywords em todas as transações que estavam na categoria removida, caindo em \"Sem Categoria\" quando nada corresponde.",
     },
   },

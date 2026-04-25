@@ -3,6 +3,7 @@ import type { Transaction, StatementResult } from "../types";
 import { CARD_CATEGORIES, CARD_IGNORE, CARD_RENAME } from "./categories";
 import type { EngineConfig } from "./categories";
 import { compareDatesDesc } from "../utils/dates";
+import { isRefund } from "./refunds";
 
 const INSTALLMENT_RE = / - Parcela (\d+\/\d+)$/i;
 
@@ -71,7 +72,12 @@ export function processCardCSV(
 
     const rawAmount = (row[colAmount] ?? "").trim().replace(",", "");
     const parsed = rawAmount ? parseFloat(rawAmount) : 0;
-    const amount = parsed === 0 ? 0 : -parsed;
+    // Card statements export charges as positive and refunds/payments as
+    // negative, so we negate to match the bank convention (negative = outflow).
+    // Refunds ("estorno") must always end up positive regardless of how the
+    // source encoded them.
+    const negated = parsed === 0 ? 0 : -parsed;
+    const amount = isRefund(title) ? Math.abs(negated) : negated;
     const date = colDate ? (row[colDate] ?? "").trim() : "";
     const [cleanName, installment] = extractInstallment(title);
     const category = categorize(title, cats);
