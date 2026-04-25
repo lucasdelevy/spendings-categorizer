@@ -293,9 +293,6 @@ const ptBR = {
       phase14Title: "Gerenciamento de Contas e Cartões",
       phase14Desc:
         "Contas e cartões agora são entidades de primeira classe: cada transação pode ser vinculada a uma conta bancária ou cartão de crédito. Cartões têm um dia de fechamento (vencimento, padrão 30) para que as transações sejam agrupadas na fatura mensal correta. Chaves de API Open Finance por conta são armazenadas criptografadas com AES-256-GCM e descriptografadas apenas dentro do worker de sincronização — o frontend só vê os últimos 4 caracteres como dica. A sincronização Pierre itera por todas as contas com chave, suportando múltiplos bancos e cartões em paralelo.",
-      phase15Title: "Confirmação de Exclusão de Categoria & Recategorização Automática",
-      phase15Desc:
-        "Excluir uma categoria agora abre um modal de confirmação estilizado que explica o impacto e só toma efeito ao Salvar. Após salvar, o backend reaplica o casamento por keywords em todas as transações que estavam na categoria removida, caindo em \"Sem Categoria\" quando nada corresponde.",
     },
   },
 
