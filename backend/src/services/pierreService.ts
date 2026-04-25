@@ -47,7 +47,7 @@ export async function fetchTransactions(
     throw new Error(`Pierre get-transactions failed (${res.status}): ${text}`);
   }
 
-  const json = await res.json();
+  const json = (await res.json()) as { data?: PierreTransaction[] };
   const txs = json?.data;
   if (!Array.isArray(txs)) {
     throw new Error(`Unexpected Pierre response shape: ${JSON.stringify(json).slice(0, 200)}`);

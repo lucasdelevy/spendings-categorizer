@@ -30,6 +30,8 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       TABLE_NAME: table.tableName,
       GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "PLACEHOLDER",
       JWT_SECRET: process.env.JWT_SECRET || "CHANGE-ME-IN-PRODUCTION",
+      ACCOUNT_KEY_SECRET:
+        process.env.ACCOUNT_KEY_SECRET || "CHANGE-ME-32-BYTE-BASE64-KEY",
     };
 
     const authFunction = new lambda.Function(this, "AuthFunction", {
@@ -37,7 +39,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "auth.handler",
       code: lambda.Code.fromAsset(backendDist, {
-        exclude: ["statements.*", "categories.*"],
+        exclude: ["statements.*", "categories.*", "accounts.*"],
       }),
       environment: sharedEnv,
       timeout: cdk.Duration.seconds(10),
@@ -49,7 +51,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "statements.handler",
       code: lambda.Code.fromAsset(backendDist, {
-        exclude: ["auth.*", "families.*", "categories.*"],
+        exclude: ["auth.*", "families.*", "categories.*", "accounts.*"],
       }),
       environment: sharedEnv,
       timeout: cdk.Duration.seconds(10),
@@ -61,7 +63,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "families.handler",
       code: lambda.Code.fromAsset(backendDist, {
-        exclude: ["auth.*", "statements.*", "categories.*"],
+        exclude: ["auth.*", "statements.*", "categories.*", "accounts.*"],
       }),
       environment: sharedEnv,
       timeout: cdk.Duration.seconds(10),
@@ -73,7 +75,19 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "categories.handler",
       code: lambda.Code.fromAsset(backendDist, {
-        exclude: ["auth.*", "families.*"],
+        exclude: ["auth.*", "families.*", "accounts.*"],
+      }),
+      environment: sharedEnv,
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 256,
+    });
+
+    const accountsFunction = new lambda.Function(this, "AccountsFunction", {
+      functionName: "spendings-categorizer-accounts",
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "accounts.handler",
+      code: lambda.Code.fromAsset(backendDist, {
+        exclude: ["auth.*", "statements.*", "categories.*", "families.*"],
       }),
       environment: sharedEnv,
       timeout: cdk.Duration.seconds(10),
@@ -105,6 +119,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
     table.grantReadWriteData(statementsFunction);
     table.grantReadWriteData(familiesFunction);
     table.grantReadWriteData(categoriesFunction);
+    table.grantReadWriteData(accountsFunction);
     table.grantReadWriteData(pierreFunction);
 
     const httpApi = new apigatewayv2.HttpApi(this, "HttpApi", {
@@ -141,6 +156,10 @@ export class SpendingsCategorizerStack extends cdk.Stack {
     const categoriesIntegration = new integrations.HttpLambdaIntegration(
       "CategoriesIntegration",
       categoriesFunction,
+    );
+    const accountsIntegration = new integrations.HttpLambdaIntegration(
+      "AccountsIntegration",
+      accountsFunction,
     );
     httpApi.addRoutes({
       path: "/auth/google",
@@ -217,6 +236,17 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       path: "/categories/apply",
       methods: [apigatewayv2.HttpMethod.POST],
       integration: categoriesIntegration,
+    });
+
+    httpApi.addRoutes({
+      path: "/accounts",
+      methods: [apigatewayv2.HttpMethod.GET, apigatewayv2.HttpMethod.POST],
+      integration: accountsIntegration,
+    });
+    httpApi.addRoutes({
+      path: "/accounts/{id}",
+      methods: [apigatewayv2.HttpMethod.PUT, apigatewayv2.HttpMethod.DELETE],
+      integration: accountsIntegration,
     });
 
     const pierreIntegration = new integrations.HttpLambdaIntegration(
