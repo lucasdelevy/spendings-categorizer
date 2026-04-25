@@ -286,9 +286,6 @@ const ptBR = {
       phase14Title: "Gerenciamento de Contas e Cartões",
       phase14Desc:
         "Contas e cartões agora são entidades de primeira classe: cada transação pode ser vinculada a uma conta bancária ou cartão de crédito. Cartões têm um dia de fechamento (vencimento, padrão 30) para que as transações sejam agrupadas na fatura mensal correta. Chaves de API Open Finance por conta são armazenadas criptografadas com AES-256-GCM e descriptografadas apenas dentro do worker de sincronização — o frontend só vê os últimos 4 caracteres como dica. A sincronização Pierre itera por todas as contas com chave, suportando múltiplos bancos e cartões em paralelo.",
-      phase15Title: "Correção do Sinal de Estornos",
-      phase15Desc:
-        "Transações de estorno (estorno, devolução, reembolso, chargeback, cashback) agora são sempre registradas como valores positivos, somando ao saldo em vez de subtrair. A correção é aplicada na importação de CSV e na sincronização Pierre/Open Finance, e também repara retroativamente as transações já armazenadas ao abrir o mês. A consolidação familiar passa a incluir valores positivos vindos de faturas de cartão, então estornos de cartão agora aparecem na visão familiar.",
     },
   },
 

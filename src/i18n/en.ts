@@ -283,9 +283,6 @@ const en = {
       phase14Title: "Bank Accounts & Cards Management",
       phase14Desc:
         "First-class accounts and cards: each transaction can be tied to a bank account or credit card. Cards have a closing day (vencimento, default 30) so transactions are bucketed into the correct monthly bill window. Per-account Open Finance API keys are stored encrypted with AES-256-GCM and only decrypted inside the sync worker — the frontend only ever sees a last-4 hint. Pierre sync iterates every account with a key, supporting multiple banks and cards in parallel.",
-      phase15Title: "Refund (Estorno) Sign Fix",
-      phase15Desc:
-        "Refund-style transactions (estorno, devolução, reembolso, chargeback, cashback) are now always recorded as positive amounts so they correctly add to your balance instead of subtracting from it. Applies at parse time for CSV uploads and the Pierre/Open Finance sync, and retroactively heals previously stored transactions when a month is opened. The family aggregation no longer drops positive amounts coming from credit-card statements, so card refunds now show up in the family view.",
     },
   },
 
