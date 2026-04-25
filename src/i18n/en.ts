@@ -290,9 +290,6 @@ const en = {
       phase14Title: "Bank Accounts & Cards Management",
       phase14Desc:
         "First-class accounts and cards: each transaction can be tied to a bank account or credit card. Cards have a closing day (vencimento, default 30) so transactions are bucketed into the correct monthly bill window. Per-account Open Finance API keys are stored encrypted with AES-256-GCM and only decrypted inside the sync worker — the frontend only ever sees a last-4 hint. Pierre sync iterates every account with a key, supporting multiple banks and cards in parallel.",
-      phase15Title: "Category Deletion Confirmation & Auto-Recategorization",
-      phase15Desc:
-        "Deleting a category now opens a styled confirmation modal that explains the impact and only takes effect on Save. After saving, the backend re-runs keyword matching across every transaction stuck on a removed category, falling back to \"Sem Categoria\" when nothing matches.",
     },
   },
 
