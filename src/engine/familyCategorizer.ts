@@ -11,9 +11,10 @@ export function processFamilyStatements(
     r.transactions.filter((t) => t.category !== CARD_BILL_CATEGORY),
   );
 
-  const cardTransactions = cardResults.flatMap((r) =>
-    r.transactions.filter((t) => t.amount < 0),
-  );
+  // Card outflows are stored negative; positive amounts on a card statement
+  // are refunds ("estorno"), which must still be aggregated into the family
+  // view so they offset the corresponding charges.
+  const cardTransactions = cardResults.flatMap((r) => r.transactions);
 
   const all = [...bankTransactions, ...cardTransactions];
 

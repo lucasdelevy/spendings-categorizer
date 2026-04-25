@@ -3,6 +3,7 @@ import { docClient, TABLE_NAME } from "./dynamoClient.js";
 import { buildDefaultConfig } from "../defaults/categories.js";
 import type { CategoryConfigRecord, CategoryEntry, StatementRecord, TransactionItem } from "../types.js";
 import { getMonthStatements } from "./statementService.js";
+import { isRefund } from "./refunds.js";
 
 function pk(userId: string, familyId?: string): string {
   return familyId ? `FAMILY#${familyId}` : `USER#${userId}`;
@@ -239,6 +240,7 @@ export async function applyCategoryConfig(
 
   for (const record of records) {
     let changed = false;
+    let summaryDirty = false;
     for (const tx of record.transactions) {
       const newCat = categorizeTransaction(tx, config);
       if (newCat !== tx.category) {
@@ -246,6 +248,17 @@ export async function applyCategoryConfig(
         changed = true;
         totalChanged++;
       }
+      // Heal historic refund rows whose amount was stored with the wrong
+      // sign before the estorno fix shipped.
+      if (isRefund(tx.originalDescription) && tx.amount < 0) {
+        tx.amount = Math.abs(tx.amount);
+        changed = true;
+        summaryDirty = true;
+        totalChanged++;
+      }
+    }
+    if (summaryDirty) {
+      record.summary = recomputeSummary(record);
     }
     if (changed) {
       await docClient.send(
@@ -255,6 +268,38 @@ export async function applyCategoryConfig(
   }
 
   return totalChanged;
+}
+
+function recomputeSummary(record: StatementRecord): StatementRecord["summary"] {
+  let totalIn = 0;
+  let totalOut = 0;
+  const catMap = new Map<string, { category: string; total: number; count: number }>();
+  for (const t of record.transactions) {
+    if (!t.hidden) {
+      if (t.amount >= 0) totalIn += t.amount;
+      else totalOut += t.amount;
+    }
+    const existing = catMap.get(t.category);
+    if (existing) {
+      if (!t.hidden) {
+        existing.total += t.amount;
+        existing.count += 1;
+      }
+    } else {
+      catMap.set(t.category, {
+        category: t.category,
+        total: t.hidden ? 0 : t.amount,
+        count: t.hidden ? 0 : 1,
+      });
+    }
+  }
+  return {
+    ...record.summary,
+    totalIn,
+    totalOut,
+    balance: totalIn + totalOut,
+    categories: Array.from(catMap.values()),
+  };
 }
 
 async function seedDefaults(
