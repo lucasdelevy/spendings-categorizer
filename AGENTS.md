@@ -22,6 +22,7 @@ The backend runs on AWS Lambda (Node.js 20.x, us-east-1). There are four Lambda 
 | `spendings-categorizer-statements`   | `statements.handler` | `/statements`, `/statements/{id}` |
 | `spendings-categorizer-categories`   | `categories.handler` | `/categories`, `/categories/*` |
 | `spendings-categorizer-families`     | `families.handler` | `/families`, `/families/*`    |
+| `spendings-categorizer-accounts`     | `accounts.handler` | `/accounts`, `/accounts/{id}` |
 | `spendings-categorizer-pierre`      | `pierre.handler`   | `/pierre/sync` + EventBridge (5 min) |
 
 ### Code-only deploy (no infra changes)
@@ -49,6 +50,7 @@ Each Lambda bundles only the handler files it needs (see `exclude` patterns in `
 - **statements**: `statements.mjs`, `statements.mjs.map`
 - **categories**: `categories.mjs`, `categories.mjs.map`, `statements.mjs`, `statements.mjs.map`
 - **families**: `families.mjs`, `families.mjs.map`
+- **accounts**: `accounts.mjs`, `accounts.mjs.map`
 - **pierre**: `pierre.mjs`, `pierre.mjs.map`, `statements.mjs`, `statements.mjs.map`
 
 ### Infrastructure deploy (new routes, env vars, resources)

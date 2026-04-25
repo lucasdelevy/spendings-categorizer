@@ -2,6 +2,7 @@ const en = {
   app: {
     title: "Aletheia",
     categories: "Categories",
+    accounts: "Accounts & Cards",
     family: "Family",
     manageMonths: "Manage Months",
     about: "About Aletheia",
@@ -32,6 +33,9 @@ const en = {
     addMember: "Error adding member",
     removeMember: "Error removing member",
     readFile: "Failed to read {{fileName}}",
+    createAccount: "Error creating account",
+    updateAccount: "Error updating account",
+    deleteAccount: "Error deleting account",
   },
 
   login: {
@@ -134,6 +138,45 @@ const en = {
     detectedMonth: "Detected month:",
     saving: "Saving...",
     save: "Save",
+    assignAccounts: "Assign each file to an account (optional)",
+    noAccount: "— No account —",
+  },
+
+  accounts: {
+    title: "Accounts & Cards",
+    back: "← Back",
+    intro:
+      "Manage your bank accounts and credit cards. Optionally store an Open Finance API key per account to keep transactions in sync automatically. For credit cards, set the closing day so the dashboard groups transactions by the right monthly bill (vencimento).",
+    loading: "Loading accounts…",
+    empty: "No accounts yet — add a bank account or card to get started.",
+    addNew: "Add account or card",
+    newTitle: "New account or card",
+    nameLabel: "Name",
+    namePlaceholder: "e.g. Nubank Roxinho",
+    typeLabel: "Type",
+    type: {
+      bank: "Bank",
+      card: "Card",
+    },
+    closingDayLabel: "Closing day",
+    closingDayHint:
+      "Day of the month when the credit card statement closes. Defaults to 30.",
+    dueDayLabel: "Due day (optional)",
+    dueDayHint: "Day the bill is due. Used for reference only.",
+    apiKeyLabel: "Open Finance API key",
+    apiKeyHint:
+      "Stored encrypted (AES-256-GCM). Used only by the sync worker; never returned in API responses.",
+    apiKeyPlaceholder: "Paste your provider key (e.g. Pierre Finance)",
+    apiKeyKeepCurrent: "Leave empty to keep current key",
+    apiKeyConfigured: "configured",
+    apiKeyNotSet: "not set",
+    apiKeyRemove: "Remove key",
+    edit: "Edit",
+    delete: "Delete",
+    save: "Save changes",
+    cancel: "Cancel",
+    create: "Create",
+    deleteConfirm: 'Delete "{{name}}"? This will not remove past transactions.',
   },
 
   summary: {
@@ -237,8 +280,11 @@ const en = {
       phase13Title: "Flat Transactions View & Date-Sort Fix",
       phase13Desc:
         "New default \"All\" tab on the dashboard lists every transaction for the month in a single table sorted by date (newest first), with a category column. The existing \"By Category\" accordion is one click away. Also fixed per-category sorting that was placing older transactions above newer ones when bank (DD/MM/YYYY) and card (YYYY-MM-DD) dates were merged.",
-      phase14Title: "Refund (Estorno) Sign Fix",
+      phase14Title: "Bank Accounts & Cards Management",
       phase14Desc:
+        "First-class accounts and cards: each transaction can be tied to a bank account or credit card. Cards have a closing day (vencimento, default 30) so transactions are bucketed into the correct monthly bill window. Per-account Open Finance API keys are stored encrypted with AES-256-GCM and only decrypted inside the sync worker — the frontend only ever sees a last-4 hint. Pierre sync iterates every account with a key, supporting multiple banks and cards in parallel.",
+      phase15Title: "Refund (Estorno) Sign Fix",
+      phase15Desc:
         "Refund-style transactions (estorno, devolução, reembolso, chargeback, cashback) are now always recorded as positive amounts so they correctly add to your balance instead of subtracting from it. Applies at parse time for CSV uploads and the Pierre/Open Finance sync, and retroactively heals previously stored transactions when a month is opened. The family aggregation no longer drops positive amounts coming from credit-card statements, so card refunds now show up in the family view.",
     },
   },

@@ -181,6 +181,22 @@ Key changes:
 - Dashboard shows a red alert banner listing all breached category names when any limits are exceeded.
 - Full i18n support (EN + PT-BR) for all new strings.
 
+## Phase 14: Bank Accounts & Cards Management
+
+Introduced first-class bank account and credit card entities so transactions can be tied to a specific account, card statements are bucketed by their closing day (vencimento), and the Pierre Open Finance integration can sync multiple cards/accounts in parallel using per-account API keys.
+
+Key changes:
+- New DDB record `ACCT#<accountId>` (PK = `FAMILY#<familyId>` or `USER#<userId>`) with fields `accountId`, `name`, `type` (`bank` | `card`), optional `closingDay` (default 30 for cards) and `dueDay`, plus an optional encrypted `apiKeyEncrypted` blob and a non-sensitive `apiKeyHint` (last-4 mask).
+- API keys are encrypted at rest with AES-256-GCM keyed off the new `ACCOUNT_KEY_SECRET` Lambda env var, persisted in the format `v1:<iv>:<tag>:<ct>` (all base64). The plaintext key is **never** returned to the frontend; the accounts API only exposes a `hasApiKey: boolean` and `apiKeyHint`. Decryption happens exclusively inside the Pierre sync Lambda.
+- New `accounts` Lambda (`spendings-categorizer-accounts`) with `GET/POST /accounts` and `PUT/DELETE /accounts/{id}` routes. CDK stack updates wire the Lambda, route group, IAM grants, and `ACCOUNT_KEY_SECRET` env var (provided through GitHub Secrets / local `.env`).
+- `TransactionItem` (backend) and `Transaction` (frontend) gain optional `accountId` and `billingMonth` fields. On `POST /statements`, if an `accountId` is provided, the handler computes each transaction's `billingMonth` from the card's `closingDay` and groups the save into the appropriate `STMT#<YYYYMM>#…` records — so post-closing-day transactions automatically land in the next month's bill.
+- `GET /statements/{id}` now consults neighbouring months for cards with closing days and merges only the transactions whose computed `billingMonth` matches the requested month, so legacy data without a stored `billingMonth` still displays under the correct bill window.
+- Pierre sync rewritten around per-account API keys: scheduled and manual syncs iterate every account that has a stored encrypted key, decrypt it on the fly, and tag synced transactions with that `accountId`. The legacy `PIERRE_API_KEY` env var still works as a fallback when set. Manual sync no longer requires `PIERRE_USER_ID` — any user with at least one account-level API key (or the env-var operator) can trigger a sync.
+- New "Contas e Cartões" sidebar entry and `AccountsPage` in the frontend (`useAccounts` hook) with full CRUD: name, type toggle, closing/due day inputs, masked API key field with "Remove key" action and a "leave empty to keep current" placeholder when editing.
+- `SaveConfirmBar` lets the user assign each uploaded CSV to one of their accounts before saving (auto-selects when only one matching account exists). The saved transactions then carry the `accountId` so card billing-month bucketing works on subsequent reads.
+- `TransactionTable` shows a small uppercase chip with the account name next to each transaction's payee.
+- Full EN + PT-BR translations for the new page, sidebar entry, save bar copy, and error strings.
+
 ## Phase 13: Flat Transactions View & Date-Sort Fix
 
 Added a new top-level view of all transactions for the month, sorted by date, alongside the existing per-category accordion. Also fixed transaction ordering in the per-category view, where older transactions were appearing above newer ones.
@@ -195,7 +211,7 @@ Key changes:
 - `TransactionFilters` now imports the shared `parseDateToNum` instead of defining its own.
 - New `table.category` and `app.tabAllTransactions` / `app.tabByCategory` i18n keys (EN + PT-BR).
 
-## Phase 14: Refund (Estorno) Sign Fix
+## Phase 15: Refund (Estorno) Sign Fix
 
 Refund-style transactions ("estorno", "devolução", "reembolso", "chargeback", "cashback") were being stored with a negative sign in several flows, so they appeared as expenses that decreased the user's balance instead of credits that increased it. This phase normalizes refund signs across every ingestion path and retroactively repairs already-stored data.
 

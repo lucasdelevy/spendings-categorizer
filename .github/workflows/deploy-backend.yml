@@ -50,4 +50,5 @@ jobs:
         env:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          ACCOUNT_KEY_SECRET: ${{ secrets.ACCOUNT_KEY_SECRET }}
         run: npx cdk deploy --require-approval never
