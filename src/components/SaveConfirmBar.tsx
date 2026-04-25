@@ -122,26 +122,37 @@ export default function SaveConfirmBar({ result, files, catConfig, accounts, onS
           {saving ? t("save.saving") : t("save.save")}
         </button>
       </div>
-      {showAccountPickers && (
-        <div className="mt-3 space-y-2 border-t border-indigo-200 pt-3 dark:border-indigo-800">
+      <div className="mt-3 space-y-2 border-t border-indigo-200 pt-3 dark:border-indigo-800">
+        <div className="flex items-baseline justify-between gap-2">
           <p className="text-xs font-medium uppercase tracking-wider text-indigo-700/80 dark:text-indigo-300/80">
             {t("save.assignAccounts")}
           </p>
-          <div className="space-y-1.5">
-            {fileEntries.map(({ file, key, candidates }, idx) => (
-              <div key={`${key}-${idx}`} className="flex items-center justify-between gap-2 text-sm">
-                <span className="truncate text-indigo-900 dark:text-indigo-200">
-                  <span
-                    className={`mr-2 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
-                      file.type === "bank"
-                        ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300"
-                        : "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
-                    }`}
-                  >
-                    {t(`accounts.type.${file.type}`)}
-                  </span>
-                  {file.name}
+          {!showAccountPickers && (
+            <p className="text-[11px] italic text-indigo-700/60 dark:text-indigo-300/60">
+              {t("save.noAccountsHint")}
+            </p>
+          )}
+        </div>
+        <div className="space-y-1.5">
+          {fileEntries.map(({ file, key, candidates }, idx) => (
+            <div key={`${key}-${idx}`} className="flex items-center justify-between gap-2 text-sm">
+              <span className="flex min-w-0 items-center gap-2 truncate text-indigo-900 dark:text-indigo-200">
+                <span
+                  className={`shrink-0 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
+                    file.type === "bank"
+                      ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300"
+                      : "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300"
+                  }`}
+                >
+                  {t(`accounts.type.${file.type}`)}
                 </span>
+                <span className="truncate">{file.name}</span>
+              </span>
+              {candidates.length === 0 ? (
+                <span className="shrink-0 text-[11px] italic text-indigo-700/60 dark:text-indigo-300/60">
+                  {t("save.noMatchingAccount", { type: t(`accounts.type.${file.type}`).toLowerCase() })}
+                </span>
+              ) : (
                 <select
                   value={accountByFile[key] || ""}
                   onChange={(e) =>
@@ -154,16 +165,16 @@ export default function SaveConfirmBar({ result, files, catConfig, accounts, onS
                     <option key={a.accountId} value={a.accountId}>
                       {a.name}
                       {a.type === "card" && a.closingDay
-                        ? ` (closing ${a.closingDay})`
+                        ? ` (${t("save.closingDayShort", { day: a.closingDay })})`
                         : ""}
                     </option>
                   ))}
                 </select>
-              </div>
-            ))}
-          </div>
+              )}
+            </div>
+          ))}
         </div>
-      )}
+      </div>
       {error && <span className="mt-2 block text-xs text-red-600">{error}</span>}
     </div>
   );

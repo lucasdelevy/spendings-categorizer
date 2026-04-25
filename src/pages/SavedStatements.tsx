@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatYearMonth } from "../utils";
 import { resolveLocale } from "../i18n";
 import type { SavedStatementItem } from "../utils";
+import type { Account } from "../types";
 
 function formatDate(iso: string): string {
   const locale = resolveLocale();
@@ -13,13 +15,32 @@ function formatDate(iso: string): string {
 
 interface Props {
   items: SavedStatementItem[];
+  accounts: Account[];
   onBack: () => void;
   onView: (yearMonth: string) => void;
   onDelete: (id: string) => void;
+  onAssignAccount: (id: string, accountId: string | null) => Promise<void>;
 }
 
-export default function ManageMonths({ items, onBack, onView, onDelete }: Props) {
+export default function ManageMonths({
+  items,
+  accounts,
+  onBack,
+  onView,
+  onDelete,
+  onAssignAccount,
+}: Props) {
   const { t } = useTranslation();
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const handleAssign = async (item: SavedStatementItem, value: string) => {
+    setPendingId(item.id);
+    try {
+      await onAssignAccount(item.id, value === "" ? null : value);
+    } finally {
+      setPendingId(null);
+    }
+  };
 
   return (
     <>
@@ -48,6 +69,7 @@ export default function ManageMonths({ items, onBack, onView, onDelete }: Props)
               <tr>
                 <th className="px-4 py-3">{t("manage.period")}</th>
                 <th className="px-4 py-3">{t("manage.file")}</th>
+                <th className="px-4 py-3">{t("manage.account")}</th>
                 <th className="px-4 py-3">{t("manage.owner")}</th>
                 <th className="px-4 py-3">{t("manage.date")}</th>
                 <th className="px-4 py-3 text-right">{t("manage.expenses")}</th>
@@ -58,6 +80,10 @@ export default function ManageMonths({ items, onBack, onView, onDelete }: Props)
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {items.map((s) => {
                 const yearMonth = s.id.split("#")[0];
+                const candidates = accounts.filter(
+                  (a) => s.type === "family" || a.type === s.type,
+                );
+                const isPending = pendingId === s.id;
                 return (
                   <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-4 py-3 font-medium">{formatYearMonth(yearMonth)}</td>
@@ -72,6 +98,40 @@ export default function ManageMonths({ items, onBack, onView, onDelete }: Props)
                           {s.type}
                         </span>
                       </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {candidates.length === 0 ? (
+                        <span className="text-xs italic text-gray-400">
+                          {t("manage.noMatchingAccount")}
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={s.accountId || ""}
+                            disabled={isPending || s.mixedAccounts}
+                            onChange={(e) => handleAssign(s, e.target.value)}
+                            className="max-w-[160px] truncate rounded-md border border-gray-200 px-2 py-1 text-xs focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 disabled:opacity-50"
+                          >
+                            <option value="">{t("manage.unassigned")}</option>
+                            {candidates.map((a) => (
+                              <option key={a.accountId} value={a.accountId}>
+                                {a.name}
+                              </option>
+                            ))}
+                          </select>
+                          {s.mixedAccounts && (
+                            <span
+                              className="text-[10px] uppercase tracking-wider text-amber-600 dark:text-amber-400"
+                              title={t("manage.mixedAccountsHint")}
+                            >
+                              {t("manage.mixedAccounts")}
+                            </span>
+                          )}
+                          {isPending && (
+                            <div className="h-3 w-3 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       {s.uploadedBy ? (

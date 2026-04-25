@@ -187,6 +187,11 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       integration: statementsIntegration,
     });
     httpApi.addRoutes({
+      path: "/statements/{id}/assign-account",
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: statementsIntegration,
+    });
+    httpApi.addRoutes({
       path: "/families",
       methods: [apigatewayv2.HttpMethod.POST, apigatewayv2.HttpMethod.PUT],
       integration: familiesIntegration,
