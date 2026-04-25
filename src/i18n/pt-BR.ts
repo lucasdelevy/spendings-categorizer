@@ -52,6 +52,13 @@ const ptBR = {
     renameTitle: "Renomear",
     deleteTitle: "Excluir",
     deleteConfirm: 'Excluir categoria "{{name}}"?',
+    deleteConfirmTitle: 'Excluir categoria "{{name}}"?',
+    deleteConfirmBody:
+      "A categoria será removida da sua configuração. A exclusão é aplicada quando você clica em Salvar Alterações.",
+    deleteConfirmRecategorize:
+      "Todas as transações atualmente nesta categoria serão reavaliadas com as keywords restantes. O que não corresponder mais cairá em \"Sem Categoria\".",
+    deleteCancel: "Cancelar",
+    deleteConfirmAction: "Excluir",
     noKeywords: "Nenhuma keyword adicionada",
     newKeyword: "Nova keyword...",
     newCategory: "Nova categoria...",
@@ -238,6 +245,9 @@ const ptBR = {
       phase13Title: "Visão de Transações Plana & Correção de Ordenação",
       phase13Desc:
         "Nova aba \"Todas\" (padrão) no dashboard lista todas as transações do mês em uma única tabela ordenada por data (mais recentes primeiro), com coluna de categoria. A visão por categoria continua a um clique de distância. Também corrigida a ordenação por categoria que colocava transações antigas acima das mais recentes ao mesclar datas do banco (DD/MM/AAAA) e cartão (AAAA-MM-DD).",
+      phase14Title: "Confirmação de Exclusão de Categoria & Recategorização Automática",
+      phase14Desc:
+        "Excluir uma categoria agora abre um modal de confirmação estilizado que explica o impacto e só toma efeito ao Salvar. Após salvar, o backend reaplica o casamento por keywords em todas as transações que estavam na categoria removida, caindo em \"Sem Categoria\" quando nada corresponde.",
     },
   },
 

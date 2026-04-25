@@ -11,6 +11,7 @@ import {
   addIgnorePattern,
   createCategoryEntry,
   applyCategoryConfig,
+  recategorizeRemovedCategories,
 } from "../services/categoryService.js";
 import { getMonthStatements } from "../services/statementService.js";
 import { PutCommand } from "@aws-sdk/lib-dynamodb";
@@ -63,17 +64,35 @@ async function handlePut(
   }
 
   const userRecord = await getUser(user.userId);
-  const saved = await saveConfig(user.userId, userRecord?.familyId, {
+  const familyId = userRecord?.familyId;
+
+  const previous = await getConfig(user.userId, familyId);
+  const previousNames = Object.keys(previous.categories);
+  const nextNames = new Set(Object.keys(categories));
+  const removed = previousNames.filter((name) => !nextNames.has(name));
+
+  const saved = await saveConfig(user.userId, familyId, {
     categories,
     ignore: ignore ?? [],
     rename: rename ?? {},
     updatedAt: "",
   });
 
+  let recategorized = 0;
+  if (removed.length > 0) {
+    recategorized = await recategorizeRemovedCategories(
+      user.userId,
+      familyId,
+      removed,
+    );
+  }
+
   return respond(200, {
     categories: saved.categories,
     ignore: saved.ignore,
     rename: saved.rename,
+    removedCategories: removed,
+    recategorized,
   }, origin);
 }
 

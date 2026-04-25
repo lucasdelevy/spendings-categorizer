@@ -2,7 +2,9 @@ import { PutCommand, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient, TABLE_NAME } from "./dynamoClient.js";
 import { buildDefaultConfig } from "../defaults/categories.js";
 import type { CategoryConfigRecord, CategoryEntry, StatementRecord, TransactionItem } from "../types.js";
-import { getMonthStatements } from "./statementService.js";
+import { getMonthStatements, listStatements } from "./statementService.js";
+
+const FALLBACK_CATEGORY = "Sem Categoria";
 
 function pk(userId: string, familyId?: string): string {
   return familyId ? `FAMILY#${familyId}` : `USER#${userId}`;
@@ -248,6 +250,72 @@ export async function applyCategoryConfig(
       }
     }
     if (changed) {
+      await docClient.send(
+        new PutCommand({ TableName: TABLE_NAME, Item: record }),
+      );
+    }
+  }
+
+  return totalChanged;
+}
+
+function recomputeSummary(record: StatementRecord): void {
+  let totalIn = 0;
+  let totalOut = 0;
+  const catMap = new Map<string, { category: string; total: number; count: number }>();
+  for (const t of record.transactions) {
+    if (!t.hidden) {
+      if (t.amount >= 0) totalIn += t.amount;
+      else totalOut += t.amount;
+    }
+    const existing = catMap.get(t.category);
+    if (existing) {
+      if (!t.hidden) existing.total += t.amount;
+      existing.count += 1;
+    } else {
+      catMap.set(t.category, {
+        category: t.category,
+        total: t.hidden ? 0 : t.amount,
+        count: 1,
+      });
+    }
+  }
+  record.summary = {
+    ...record.summary,
+    totalIn,
+    totalOut,
+    balance: totalIn + totalOut,
+    categories: Array.from(catMap.values()),
+  };
+}
+
+export async function recategorizeRemovedCategories(
+  userId: string,
+  familyId: string | undefined,
+  removed: string[],
+): Promise<number> {
+  if (removed.length === 0) return 0;
+  const removedSet = new Set(removed);
+
+  const config = await getConfig(userId, familyId);
+  const records = await listStatements(userId, familyId);
+
+  let totalChanged = 0;
+
+  for (const record of records) {
+    let changed = false;
+    for (const tx of record.transactions) {
+      if (!removedSet.has(tx.category)) continue;
+      const matched = categorizeTransaction({ ...tx, category: "" }, config);
+      const next = matched && !removedSet.has(matched) ? matched : FALLBACK_CATEGORY;
+      if (next !== tx.category) {
+        tx.category = next;
+        changed = true;
+        totalChanged++;
+      }
+    }
+    if (changed) {
+      recomputeSummary(record);
       await docClient.send(
         new PutCommand({ TableName: TABLE_NAME, Item: record }),
       );

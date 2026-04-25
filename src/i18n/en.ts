@@ -52,6 +52,13 @@ const en = {
     renameTitle: "Rename",
     deleteTitle: "Delete",
     deleteConfirm: 'Delete category "{{name}}"?',
+    deleteConfirmTitle: 'Delete category "{{name}}"?',
+    deleteConfirmBody:
+      "This will remove the category from your config. The deletion takes effect when you click Save Changes.",
+    deleteConfirmRecategorize:
+      "All transactions currently in this category will be re-evaluated against the remaining keywords. Anything that no longer matches will fall back to \"Sem Categoria\".",
+    deleteCancel: "Cancel",
+    deleteConfirmAction: "Delete",
     noKeywords: "No keywords added",
     newKeyword: "New keyword...",
     newCategory: "New category...",
@@ -237,6 +244,9 @@ const en = {
       phase13Title: "Flat Transactions View & Date-Sort Fix",
       phase13Desc:
         "New default \"All\" tab on the dashboard lists every transaction for the month in a single table sorted by date (newest first), with a category column. The existing \"By Category\" accordion is one click away. Also fixed per-category sorting that was placing older transactions above newer ones when bank (DD/MM/YYYY) and card (YYYY-MM-DD) dates were merged.",
+      phase14Title: "Category Deletion Confirmation & Auto-Recategorization",
+      phase14Desc:
+        "Deleting a category now opens a styled confirmation modal that explains the impact and only takes effect on Save. After saving, the backend re-runs keyword matching across every transaction stuck on a removed category, falling back to \"Sem Categoria\" when nothing matches.",
     },
   },
 

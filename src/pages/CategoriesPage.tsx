@@ -103,6 +103,7 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
   const [dirty, setDirty] = useState(false);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   useEffect(() => {
     if (config) setDraft(deepClone(config));
@@ -154,6 +155,12 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
       delete d.categories[name];
     });
     if (expandedCat === name) setExpandedCat(null);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    deleteCategory(deleteTarget);
+    setDeleteTarget(null);
   };
 
   const renameCategory = (oldName: string, newName: string) => {
@@ -367,9 +374,7 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
                           </svg>
                         </button>
                         <button
-                          onClick={() => {
-                            if (confirm(t("categories.deleteConfirm", { name }))) deleteCategory(name);
-                          }}
+                          onClick={() => setDeleteTarget(name)}
                           className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-950"
                           title={t("categories.deleteTitle")}
                         >
@@ -496,7 +501,58 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
           <RenameAddForm onAdd={addRename} />
         </div>
       )}
+
+      {deleteTarget && (
+        <DeleteCategoryModal
+          name={deleteTarget}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={confirmDelete}
+        />
+      )}
     </>
+  );
+}
+
+function DeleteCategoryModal({
+  name,
+  onCancel,
+  onConfirm,
+}: {
+  name: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-md rounded-xl bg-white shadow-2xl dark:bg-gray-800">
+        <div className="border-b border-gray-100 px-5 py-4 dark:border-gray-700">
+          <p className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            {t("categories.deleteConfirmTitle", { name })}
+          </p>
+        </div>
+        <div className="space-y-3 px-5 py-4 text-sm text-gray-600 dark:text-gray-300">
+          <p>{t("categories.deleteConfirmBody")}</p>
+          <div className="rounded-lg bg-amber-50 p-3 text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+            {t("categories.deleteConfirmRecategorize")}
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 border-t border-gray-100 px-5 py-3 dark:border-gray-700">
+          <button
+            onClick={onCancel}
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            {t("categories.deleteCancel")}
+          </button>
+          <button
+            onClick={onConfirm}
+            className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+          >
+            {t("categories.deleteConfirmAction")}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
