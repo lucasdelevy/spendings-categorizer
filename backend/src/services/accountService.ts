@@ -74,14 +74,12 @@ export interface CreateAccountInput {
   name: string;
   type: AccountType;
   closingDay?: number;
-  dueDay?: number;
   apiKey?: string;
 }
 
 export interface UpdateAccountInput {
   name?: string;
   closingDay?: number | null;
-  dueDay?: number | null;
   apiKey?: string | null;
 }
 
@@ -99,7 +97,6 @@ export async function createAccount(input: CreateAccountInput): Promise<AccountR
   const accountId = ulid();
   const now = new Date().toISOString();
   const closingDay = input.type === "card" ? normalizeDay(input.closingDay, 30) : undefined;
-  const dueDay = input.type === "card" ? normalizeDay(input.dueDay) : undefined;
 
   const record: AccountRecord = {
     PK: ownerPK(input.userId, input.familyId),
@@ -108,7 +105,6 @@ export async function createAccount(input: CreateAccountInput): Promise<AccountR
     name: input.name,
     type: input.type,
     closingDay,
-    dueDay,
     createdBy: input.userId,
     createdAt: now,
     updatedAt: now,
@@ -185,15 +181,6 @@ export async function updateAccount(
         values[":cd"] = normalized;
       }
     }
-    if (update.dueDay !== undefined) {
-      const normalized = normalizeDay(update.dueDay, existing.dueDay);
-      if (normalized === undefined) {
-        removes.push("dueDay");
-      } else {
-        sets.push("dueDay = :dd");
-        values[":dd"] = normalized;
-      }
-    }
   }
 
   if (update.apiKey !== undefined) {
@@ -245,7 +232,6 @@ export interface PublicAccount {
   name: string;
   type: AccountType;
   closingDay?: number;
-  dueDay?: number;
   hasApiKey: boolean;
   apiKeyHint?: string;
   createdBy: string;
@@ -259,7 +245,6 @@ export function toPublicAccount(record: AccountRecord): PublicAccount {
     name: record.name,
     type: record.type,
     closingDay: record.closingDay,
-    dueDay: record.dueDay,
     hasApiKey: !!record.apiKeyEncrypted,
     apiKeyHint: record.apiKeyHint,
     createdBy: record.createdBy,

@@ -36,6 +36,7 @@ const en = {
     createAccount: "Error creating account",
     updateAccount: "Error updating account",
     deleteAccount: "Error deleting account",
+    assignAccount: "Error assigning account",
   },
 
   login: {
@@ -121,6 +122,12 @@ const en = {
     expenses: "Expenses",
     transactions: "Transactions",
     file: "File",
+    account: "Account",
+    unassigned: "— Unassigned —",
+    noMatchingAccount: "No matching account",
+    mixedAccounts: "Mixed",
+    mixedAccountsHint:
+      "This statement contains transactions tied to more than one account. Reassign with care — all transactions will move to the chosen account.",
     view: "View",
     deleteTitle: "Delete",
   },
@@ -145,15 +152,18 @@ const en = {
     detectedMonth: "Detected month:",
     saving: "Saving...",
     save: "Save",
-    assignAccounts: "Assign each file to an account (optional)",
+    assignAccounts: "Assign each file to an account",
     noAccount: "— No account —",
+    noAccountsHint: "Add accounts in 'Accounts & Cards' to enable per-account tagging.",
+    noMatchingAccount: "No {{type}} account configured",
+    closingDayShort: "closes day {{day}}",
   },
 
   accounts: {
     title: "Accounts & Cards",
     back: "← Back",
     intro:
-      "Manage your bank accounts and credit cards. Optionally store an Open Finance API key per account to keep transactions in sync automatically. For credit cards, set the closing day so the dashboard groups transactions by the right monthly bill (vencimento).",
+      "Manage your bank accounts and credit cards. Optionally store an Open Finance API key per account to keep transactions in sync automatically. For credit cards, set the closing day so the dashboard groups transactions by the right monthly bill.",
     loading: "Loading accounts…",
     empty: "No accounts yet — add a bank account or card to get started.",
     addNew: "Add account or card",
@@ -167,9 +177,7 @@ const en = {
     },
     closingDayLabel: "Closing day",
     closingDayHint:
-      "Day of the month when the credit card statement closes. Defaults to 30.",
-    dueDayLabel: "Due day (optional)",
-    dueDayHint: "Day the bill is due. Used for reference only.",
+      "Day of the month when the credit card statement closes. Transactions made after this day roll into the next month's bill. Defaults to 30.",
     apiKeyLabel: "Open Finance API key",
     apiKeyHint:
       "Stored encrypted (AES-256-GCM). Used only by the sync worker; never returned in API responses.",

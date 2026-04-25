@@ -99,8 +99,9 @@ When reading a month in family mode, all `STMT#<YYYYMM>#*` records are fetched a
 | POST   | `/categories/recategorize` | JWT  | Re-categorize a transaction + update keyword rules |
 | GET    | `/accounts`                | JWT  | List bank accounts and cards (sanitized — no plaintext keys) |
 | POST   | `/accounts`                | JWT  | Create a new bank account or card           |
-| PUT    | `/accounts/{id}`           | JWT  | Update name / closing day / due day / API key |
+| PUT    | `/accounts/{id}`           | JWT  | Update name / closing day / API key         |
 | DELETE | `/accounts/{id}`           | JWT  | Delete an account or card (transactions are preserved) |
+| POST   | `/statements/{id}/assign-account` | JWT  | Re-tag every transaction in a saved statement to an account; rebuckets across months when the card closing day moves transactions into a different bill window |
 
 ## Project Structure
 

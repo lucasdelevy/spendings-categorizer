@@ -36,6 +36,7 @@ const ptBR = {
     createAccount: "Erro ao criar conta",
     updateAccount: "Erro ao atualizar conta",
     deleteAccount: "Erro ao excluir conta",
+    assignAccount: "Erro ao associar conta",
   },
 
   login: {
@@ -122,6 +123,12 @@ const ptBR = {
     expenses: "Gastos",
     transactions: "Transações",
     file: "Arquivo",
+    account: "Conta",
+    unassigned: "— Sem conta —",
+    noMatchingAccount: "Nenhuma conta compatível",
+    mixedAccounts: "Misto",
+    mixedAccountsHint:
+      "Este extrato contém transações vinculadas a mais de uma conta. Reatribua com cuidado — todas as transações irão para a conta escolhida.",
     view: "Visualizar",
     deleteTitle: "Excluir",
   },
@@ -146,15 +153,19 @@ const ptBR = {
     detectedMonth: "Mês detectado:",
     saving: "Salvando...",
     save: "Salvar",
-    assignAccounts: "Associe cada arquivo a uma conta (opcional)",
+    assignAccounts: "Associe cada arquivo a uma conta",
     noAccount: "— Sem conta —",
+    noAccountsHint:
+      "Cadastre contas em 'Contas e Cartões' para habilitar a associação por conta.",
+    noMatchingAccount: "Nenhuma conta de {{type}} cadastrada",
+    closingDayShort: "fecha dia {{day}}",
   },
 
   accounts: {
     title: "Contas e Cartões",
     back: "← Voltar",
     intro:
-      "Gerencie suas contas bancárias e cartões de crédito. Opcionalmente armazene uma chave de API de Open Finance por conta para manter as transações sincronizadas automaticamente. Para cartões, defina o dia de fechamento (vencimento) para que o painel agrupe as transações pela fatura correta do mês.",
+      "Gerencie suas contas bancárias e cartões de crédito. Opcionalmente armazene uma chave de API de Open Finance por conta para manter as transações sincronizadas automaticamente. Para cartões, defina o dia de fechamento para que o painel agrupe as transações pela fatura correta do mês.",
     loading: "Carregando contas…",
     empty:
       "Nenhuma conta cadastrada — adicione uma conta bancária ou cartão para começar.",
@@ -169,9 +180,7 @@ const ptBR = {
     },
     closingDayLabel: "Dia de fechamento",
     closingDayHint:
-      "Dia do mês em que o cartão fecha a fatura. Padrão: 30.",
-    dueDayLabel: "Dia do vencimento (opcional)",
-    dueDayHint: "Dia em que a fatura vence. Apenas para referência.",
+      "Dia do mês em que o cartão fecha a fatura. Compras feitas após este dia entram na fatura do mês seguinte. Padrão: 30.",
     apiKeyLabel: "Chave de API Open Finance",
     apiKeyHint:
       "Armazenada criptografada (AES-256-GCM). Usada apenas pelo worker de sincronização; nunca retornada nas respostas da API.",
