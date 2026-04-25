@@ -103,7 +103,6 @@ export interface AccountRecord {
   name: string;
   type: AccountType;
   closingDay?: number;
-  dueDay?: number;
   apiKeyEncrypted?: string;
   apiKeyHint?: string;
   createdBy: string;

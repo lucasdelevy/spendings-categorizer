@@ -12,7 +12,6 @@ interface FormState {
   name: string;
   type: AccountType;
   closingDay: string;
-  dueDay: string;
   apiKey: string;
 }
 
@@ -20,7 +19,6 @@ const EMPTY_FORM: FormState = {
   name: "",
   type: "card",
   closingDay: "30",
-  dueDay: "",
   apiKey: "",
 };
 
@@ -50,7 +48,6 @@ export default function AccountsPage({ onBack }: Props) {
       name: account.name,
       type: account.type,
       closingDay: account.closingDay ? String(account.closingDay) : "",
-      dueDay: account.dueDay ? String(account.dueDay) : "",
       apiKey: "",
     });
     setEditApiKeyTouched(false);
@@ -73,8 +70,6 @@ export default function AccountsPage({ onBack }: Props) {
       if (form.type === "card") {
         const cd = parseInt(form.closingDay || "30", 10);
         if (Number.isFinite(cd)) input.closingDay = cd;
-        const dd = parseInt(form.dueDay || "", 10);
-        if (Number.isFinite(dd)) input.dueDay = dd;
       }
       if (form.apiKey.trim()) input.apiKey = form.apiKey.trim();
       await create(input);
@@ -99,8 +94,6 @@ export default function AccountsPage({ onBack }: Props) {
       if (editing.type === "card") {
         const cd = parseInt(editForm.closingDay || "", 10);
         input.closingDay = Number.isFinite(cd) ? cd : null;
-        const dd = parseInt(editForm.dueDay || "", 10);
-        input.dueDay = Number.isFinite(dd) ? dd : null;
       }
       if (editApiKeyTouched) {
         const trimmed = editForm.apiKey.trim();
@@ -187,22 +180,12 @@ export default function AccountsPage({ onBack }: Props) {
                       </div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500 dark:text-gray-400">
                         {account.type === "card" && (
-                          <>
-                            <span>
-                              {t("accounts.closingDayLabel")}:{" "}
-                              <strong className="text-gray-700 dark:text-gray-300">
-                                {formatDayLabel(account.closingDay)}
-                              </strong>
-                            </span>
-                            {account.dueDay && (
-                              <span>
-                                {t("accounts.dueDayLabel")}:{" "}
-                                <strong className="text-gray-700 dark:text-gray-300">
-                                  {formatDayLabel(account.dueDay)}
-                                </strong>
-                              </span>
-                            )}
-                          </>
+                          <span>
+                            {t("accounts.closingDayLabel")}:{" "}
+                            <strong className="text-gray-700 dark:text-gray-300">
+                              {formatDayLabel(account.closingDay)}
+                            </strong>
+                          </span>
                         )}
                         <span>
                           {t("accounts.apiKeyLabel")}:{" "}
@@ -352,40 +335,22 @@ function AccountForm({
       </div>
 
       {type === "card" && (
-        <div className="grid gap-3 md:grid-cols-2">
-          <Field
-            label={t("accounts.closingDayLabel")}
-            hint={t("accounts.closingDayHint")}
-          >
-            <input
-              type="number"
-              min={1}
-              max={31}
-              value={form.closingDay}
-              onChange={(e) =>
-                setForm((s) => ({ ...s, closingDay: e.target.value }))
-              }
-              placeholder="30"
-              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200"
-            />
-          </Field>
-          <Field
-            label={t("accounts.dueDayLabel")}
-            hint={t("accounts.dueDayHint")}
-          >
-            <input
-              type="number"
-              min={1}
-              max={31}
-              value={form.dueDay}
-              onChange={(e) =>
-                setForm((s) => ({ ...s, dueDay: e.target.value }))
-              }
-              placeholder="—"
-              className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200"
-            />
-          </Field>
-        </div>
+        <Field
+          label={t("accounts.closingDayLabel")}
+          hint={t("accounts.closingDayHint")}
+        >
+          <input
+            type="number"
+            min={1}
+            max={31}
+            value={form.closingDay}
+            onChange={(e) =>
+              setForm((s) => ({ ...s, closingDay: e.target.value }))
+            }
+            placeholder="30"
+            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200"
+          />
+        </Field>
       )}
 
       <Field

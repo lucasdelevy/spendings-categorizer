@@ -6,14 +6,12 @@ export interface CreateAccountInput {
   name: string;
   type: AccountType;
   closingDay?: number;
-  dueDay?: number;
   apiKey?: string;
 }
 
 export interface UpdateAccountInput {
   name?: string;
   closingDay?: number | null;
-  dueDay?: number | null;
   apiKey?: string | null;
 }
 
