@@ -25,6 +25,9 @@ Living document of planned features and known tech debt. Update as items are com
 - [x] **Statement detail view from Saved Statements** — Done. Month-based UX loads saved data directly from DDB into pie chart + table. "Visualizar" button in Gerenciar Meses page.
 - [ ] **Re-upload from Gerenciar Meses** — Add a "Reenviar" button per month in the management page that navigates back to the main view with the uploader open for that month, allowing the user to re-upload CSVs and overwrite saved data.
 - [x] **Transaction table filters** — Done. Collapsible filter bar on the transaction table with amount range, date range, and owner multi-select. Filters combine and recompute category totals/counts in real time.
+- [x] **Bank accounts & cards management** — Done. New `accounts` Lambda, `Account` DDB record, AccountsPage with CRUD. Each transaction can carry an `accountId`. Cards have a `closingDay` (vencimento, default 30) so transactions are bucketed into the right monthly bill. Per-account Open Finance API keys are encrypted at rest with AES-256-GCM (`ACCOUNT_KEY_SECRET` env var) and only decrypted inside the Pierre sync worker; the frontend only sees a last-4 hint. Pierre sync iterates every account with a key in addition to the env-var fallback.
+- [ ] **Migrate `ACCOUNT_KEY_SECRET` to AWS KMS / Secrets Manager** *(depends on: Bank accounts & cards management)* — The secret is currently sourced from a Lambda env var. Move it to KMS-managed (or Secrets Manager) for rotation and tighter access control. Consider envelope encryption: per-record DEK encrypted by KMS.
+- [ ] **Account-level transaction filter** *(depends on: Bank accounts & cards management)* — Add the account multi-select to `TransactionFilters` so the dashboard can show only one card or one account at a time.
 
 ## Priority: Low
 

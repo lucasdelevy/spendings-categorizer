@@ -21,7 +21,24 @@ export interface Transaction {
   uploadedBy?: UploadedBy;
   hidden?: boolean;
   origin?: TransactionOrigin;
+  accountId?: string;
+  billingMonth?: string;
   _originalIndex?: number;
+}
+
+export type AccountType = "bank" | "card";
+
+export interface Account {
+  accountId: string;
+  name: string;
+  type: AccountType;
+  closingDay?: number;
+  dueDay?: number;
+  hasApiKey: boolean;
+  apiKeyHint?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type LimitPeriod = "daily" | "weekly" | "monthly";

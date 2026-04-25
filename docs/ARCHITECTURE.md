@@ -48,6 +48,7 @@
 | Family meta   | `FAMILY#<familyId>`   | `META`                    | name, createdBy, createdAt                              |
 | Family member | `FAMILY#<familyId>`   | `MEMBER#<userId>`         | email, name, picture, role, status, joinedAt            |
 | Category config | `FAMILY#<familyId>` or `USER#<userId>` | `CATCONFIG` | bankCategories, cardCategories, bankIgnore, cardIgnore, bankRename, cardRename, updatedAt |
+| Account       | `FAMILY#<familyId>` or `USER#<userId>` | `ACCT#<accountId>` | name, type (bank/card), closingDay?, dueDay?, apiKeyEncrypted?, apiKeyHint?, createdBy, createdAt, updatedAt |
 | Email lookup  | `EMAILFAM#<email>`    | `LINK`                    | familyId                                                |
 
 - `userId` = Google's `sub` claim (googleId), used directly.
@@ -96,6 +97,10 @@ When reading a month in family mode, all `STMT#<YYYYMM>#*` records are fetched a
 | GET    | `/categories`              | JWT  | Get category config (seeds defaults if missing) |
 | PUT    | `/categories`              | JWT  | Replace full category config               |
 | POST   | `/categories/recategorize` | JWT  | Re-categorize a transaction + update keyword rules |
+| GET    | `/accounts`                | JWT  | List bank accounts and cards (sanitized — no plaintext keys) |
+| POST   | `/accounts`                | JWT  | Create a new bank account or card           |
+| PUT    | `/accounts/{id}`           | JWT  | Update name / closing day / due day / API key |
+| DELETE | `/accounts/{id}`           | JWT  | Delete an account or card (transactions are preserved) |
 
 ## Project Structure
 
@@ -122,6 +127,25 @@ spendings-categorizer/
 ├── docs/                   # This documentation
 └── .github/workflows/      # GitHub Pages deploy
 ```
+
+## Account API Key Encryption
+
+Open Finance API keys attached to an account are encrypted before being persisted to DynamoDB:
+
+- Algorithm: AES-256-GCM (authenticated encryption).
+- Key source: `ACCOUNT_KEY_SECRET` Lambda env var. Treated as raw base64-encoded 32 bytes when possible; otherwise SHA-256-derived from the provided string.
+- Storage format: `v1:<base64-iv>:<base64-tag>:<base64-ciphertext>` in the `apiKeyEncrypted` attribute.
+- Side-channel hint: a `apiKeyHint` field stores `••<last4>` so the UI can show the user which key is configured without exposing it.
+- Decryption: only the Pierre sync Lambda imports `decryptApiKey`. The accounts handler never returns the ciphertext or plaintext — it returns a sanitized `{ hasApiKey, apiKeyHint }` projection via `toPublicAccount`.
+- Rotation: rotate by setting a new `ACCOUNT_KEY_SECRET` and re-saving each account's API key (frontend re-submits the value), since the legacy ciphertext will no longer authenticate.
+
+## Card Statement Bucketing (vencimento)
+
+Each credit card account stores a `closingDay` (default 30). When transactions are saved or synced from Pierre:
+
+1. The handler computes a `billingMonth` per transaction. Transactions with `day <= closingDay` belong to the current month; later ones roll into the next month.
+2. The save handler groups transactions by computed `billingMonth` and writes them under the corresponding `STMT#<YYYYMM>#…` record, so reads stay efficient (no cross-month scan in the common case).
+3. `GET /statements/{id}` additionally pulls the previous and next month for users who have any card account with a closing day, then merges in only the transactions whose recomputed `billingMonth` matches the requested month — handling legacy data that didn't have `billingMonth` stored at write time.
 
 ## Deployment
 
