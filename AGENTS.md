@@ -78,6 +78,31 @@ The frontend is a Vite React app hosted on GitHub Pages.
 - **Statements** (`SK: "<yearMonth>#<type>"`): hold parsed transactions with their current category assignment
 - **`applyCategoryConfig`**: re-runs keyword matching on all transactions for a month; uses longest-keyword-wins strategy
 
+## AWS Serverless MCP (Cloud Agents)
+
+The repo registers the [AWS Serverless MCP server](https://github.com/awslabs/mcp/tree/main/src/aws-serverless-mcp-server) in `.cursor/mcp.json`. Cloud Agent VMs have no `~/.aws/credentials`, so the config receives credentials via env vars sourced from **Cursor Dashboard → Cloud Agents → Secrets**:
+
+| Secret name             | Required?                            | Purpose                                    |
+|-------------------------|--------------------------------------|--------------------------------------------|
+| `AWS_ACCESS_KEY_ID`     | yes                                  | IAM user or `sts assume-role` access key   |
+| `AWS_SECRET_ACCESS_KEY` | yes                                  | matching secret key                        |
+| `AWS_SESSION_TOKEN`     | only when using temporary creds       | session token from `sts assume-role`       |
+
+`AWS_REGION` is hardcoded to `us-east-1` in `mcp.json`.
+
+To use the GitHub Actions deploy role from a Cloud Agent, run locally:
+
+```bash
+aws sts assume-role \
+  --role-arn <AWS_DEPLOY_ROLE_ARN> \
+  --role-session-name cursor-cloud-agent \
+  --duration-seconds 43200
+```
+
+then paste the three returned values into Cursor secrets. Refresh them when the session expires (max 12h).
+
+> Note: the `uvx` command the MCP server runs through is not pre-installed on Cloud Agent VMs — propose an env setup agent at [cursor.com/onboard](https://cursor.com/onboard) to install `uv`, AWS CLI, and SAM CLI permanently if you want this MCP usable from Cloud Agents.
+
 ## Feature Log Convention
 
 Every major feature must be documented in four files:
