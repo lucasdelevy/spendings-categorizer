@@ -5,7 +5,12 @@ import { getSession } from "../services/sessionService.js";
 import { getUser } from "../services/userService.js";
 import { getMonthStatements, saveStatement } from "../services/statementService.js";
 import { getConfig } from "../services/categoryService.js";
-import { fetchTransactions, triggerManualSync, mapPierreTransaction } from "../services/pierreService.js";
+import {
+  fetchTransactions,
+  triggerManualSync,
+  mapPierreTransaction,
+  type PierreTransaction,
+} from "../services/pierreService.js";
 import { findDuplicates } from "../services/dedupService.js";
 import {
   listAccounts,
@@ -88,46 +93,101 @@ function applyRenameRules(tx: TransactionItem, rename: Record<string, string>): 
   return tx;
 }
 
-async function syncMonthWithKey(
-  apiKey: string,
-  yearMonth: string,
+function normalizeName(value: string | undefined | null): string {
+  return (value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+/**
+ * Pick the local account a Pierre transaction belongs to. Falls back through
+ * progressively looser strategies so that even users who only registered the
+ * API key on one account still get card transactions routed to the matching
+ * card account (and therefore bucketed by its closing day).
+ */
+function pickLocalAccount(
+  pierreTx: PierreTransaction,
+  source: "bank" | "card",
+  ownedAccounts: AccountRecord[],
+): AccountRecord | undefined {
+  const sameType = ownedAccounts.filter((a) => a.type === source);
+  if (sameType.length === 0) return undefined;
+
+  const remoteName = normalizeName(pierreTx.account_name);
+  if (remoteName) {
+    const exact = sameType.find((a) => normalizeName(a.name) === remoteName);
+    if (exact) return exact;
+    const partial = sameType.find((a) => {
+      const local = normalizeName(a.name);
+      return local && (local.includes(remoteName) || remoteName.includes(local));
+    });
+    if (partial) return partial;
+  }
+
+  if (sameType.length === 1) return sameType[0];
+  return undefined;
+}
+
+interface SyncBatchInput {
+  apiKey: string;
+  label: string;
+  preferredAccount?: AccountRecord;
+}
+
+/**
+ * Run one sync pass against a single Pierre API key, routing each transaction
+ * into the best-matching local account so card billing-month bucketing always
+ * uses that account's closing day. We sync N months in one pass so that a
+ * card transaction made in April after the closing day still lands in May.
+ */
+async function syncBatch(
+  input: SyncBatchInput,
+  yearMonths: string[],
   userId: string,
   familyId: string | undefined,
   uploadedBy: { userId: string; name: string; picture: string },
   config: CategoryConfigRecord,
-  account?: AccountRecord,
+  ownedAccounts: AccountRecord[],
 ): Promise<{ imported: number; duplicates: number }> {
-  const { startDate, endDate } = getMonthRange(yearMonth);
+  if (yearMonths.length === 0) return { imported: 0, duplicates: 0 };
 
-  const pierreTxs = await fetchTransactions(apiKey, startDate, endDate);
-  if (pierreTxs.length === 0) {
-    return { imported: 0, duplicates: 0 };
-  }
+  const sortedMonths = [...yearMonths].sort();
+  const firstMonth = sortedMonths[0];
+  const lastMonth = sortedMonths[sortedMonths.length - 1];
+  const { startDate } = getMonthRange(firstMonth);
+  const { endDate } = getMonthRange(lastMonth);
 
-  const targetYearMonth = `${yearMonth.slice(0, 4)}-${yearMonth.slice(4, 6)}`;
-  let mapped = pierreTxs
-    .map(mapPierreTransaction)
-    .filter((tx) => tx.date.startsWith(targetYearMonth));
+  const pierreTxs = await fetchTransactions(input.apiKey, startDate, endDate);
+  if (pierreTxs.length === 0) return { imported: 0, duplicates: 0 };
 
-  if (account) {
-    mapped = mapped
-      .filter((tx) => tx.source === account.type)
-      .map((tx) => ({ ...tx, accountId: account.accountId }));
-  }
-
-  if (mapped.length === 0) {
-    return { imported: 0, duplicates: 0 };
-  }
-
-  // Compute billing month per transaction so card data lands in the right
-  // month bucket (using the account's closing day when known).
-  const closingDay = account?.type === "card" ? account.closingDay : undefined;
+  // Bucket each transaction by its computed billingMonth, using the matching
+  // local account's closing day when one is available.
   const buckets = new Map<string, TransactionItem[]>();
-  for (const tx of mapped) {
-    const ym = computeBillingMonth(tx.date, account?.type ?? tx.source, closingDay) || yearMonth;
-    const enriched = { ...tx, billingMonth: ym };
-    if (!buckets.has(ym)) buckets.set(ym, []);
-    buckets.get(ym)!.push(enriched);
+
+  for (const pierreTx of pierreTxs) {
+    const mapped = mapPierreTransaction(pierreTx);
+    const source = (mapped.source ?? (pierreTx.account_type === "BANK" ? "bank" : "card")) as
+      | "bank"
+      | "card";
+    const txDateMonth = mapped.date.replace(/-/g, "").slice(0, 6);
+
+    let resolvedAccount = pickLocalAccount(pierreTx, source, ownedAccounts);
+    if (!resolvedAccount && input.preferredAccount?.type === source) {
+      resolvedAccount = input.preferredAccount;
+    }
+
+    const closingDay =
+      resolvedAccount?.type === "card" ? resolvedAccount.closingDay : undefined;
+    const billingMonth =
+      computeBillingMonth(mapped.date, resolvedAccount?.type ?? source, closingDay) ||
+      txDateMonth;
+
+    const enriched: TransactionItem = {
+      ...mapped,
+      billingMonth,
+      ...(resolvedAccount ? { accountId: resolvedAccount.accountId } : {}),
+    };
+
+    if (!buckets.has(billingMonth)) buckets.set(billingMonth, []);
+    buckets.get(billingMonth)!.push(enriched);
   }
 
   let totalImported = 0;
@@ -165,7 +225,6 @@ async function syncMonthWithKey(
     const cardTxs = categorized.filter((tx) => tx.source === "card");
 
     const saves: Promise<unknown>[] = [];
-    const accountSuffix = account ? ` [${account.name}]` : "";
 
     if (bankTxs.length > 0) {
       saves.push(
@@ -174,7 +233,7 @@ async function syncMonthWithKey(
           familyId,
           yearMonth: ym,
           type: "bank",
-          fileName: `Pierre Sync (bank)${accountSuffix}`,
+          fileName: `Pierre Sync (bank) [${input.label}]`,
           summary: buildSummary("bank", bankTxs),
           transactions: bankTxs,
           uploadedBy,
@@ -188,7 +247,7 @@ async function syncMonthWithKey(
           familyId,
           yearMonth: ym,
           type: "card",
-          fileName: `Pierre Sync (card)${accountSuffix}`,
+          fileName: `Pierre Sync (card) [${input.label}]`,
           summary: buildSummary("card", cardTxs),
           transactions: cardTxs,
           uploadedBy,
@@ -203,8 +262,8 @@ async function syncMonthWithKey(
   return { imported: totalImported, duplicates: totalDupes };
 }
 
-async function syncMonth(
-  yearMonth: string,
+async function syncMonths(
+  yearMonths: string[],
   userId: string,
   familyId: string | undefined,
   uploadedBy: { userId: string; name: string; picture: string },
@@ -213,42 +272,46 @@ async function syncMonth(
   let totalImported = 0;
   let totalDupes = 0;
 
-  const accounts = await listAccounts(userId, familyId);
-  const accountsWithKeys = accounts.filter((a) => !!a.apiKeyEncrypted);
+  const ownedAccounts = await listAccounts(userId, familyId);
+  const accountsWithKeys = ownedAccounts.filter((a) => !!a.apiKeyEncrypted);
+
+  // Dedupe API keys: many users keep the same key on every account, and
+  // Pierre returns the full transaction set per key, so fetching once is
+  // enough.
+  const seenKeys = new Set<string>();
+  const batches: SyncBatchInput[] = [];
 
   for (const account of accountsWithKeys) {
     try {
       const apiKey = decryptApiKey(account.apiKeyEncrypted!);
-      const result = await syncMonthWithKey(
-        apiKey,
-        yearMonth,
-        userId,
-        familyId,
-        uploadedBy,
-        config,
-        account,
-      );
-      totalImported += result.imported;
-      totalDupes += result.duplicates;
+      if (seenKeys.has(apiKey)) continue;
+      seenKeys.add(apiKey);
+      batches.push({ apiKey, label: account.name, preferredAccount: account });
     } catch (err) {
-      console.error(`Pierre sync failed for account ${account.accountId}:`, err);
+      console.error(`Failed to decrypt key for account ${account.accountId}:`, err);
     }
   }
 
-  if (PIERRE_API_KEY) {
+  if (PIERRE_API_KEY && !seenKeys.has(PIERRE_API_KEY)) {
+    seenKeys.add(PIERRE_API_KEY);
+    batches.push({ apiKey: PIERRE_API_KEY, label: "env" });
+  }
+
+  for (const batch of batches) {
     try {
-      const result = await syncMonthWithKey(
-        PIERRE_API_KEY,
-        yearMonth,
+      const result = await syncBatch(
+        batch,
+        yearMonths,
         userId,
         familyId,
         uploadedBy,
         config,
+        ownedAccounts,
       );
       totalImported += result.imported;
       totalDupes += result.duplicates;
     } catch (err) {
-      console.error("Pierre sync failed for env-var key:", err);
+      console.error(`Pierre sync failed for batch ${batch.label}:`, err);
     }
   }
 
@@ -282,14 +345,19 @@ function buildSummary(type: "bank" | "card", txs: TransactionItem[]) {
   };
 }
 
-function getCurrentAndPreviousMonths(): string[] {
+function getDefaultSyncMonths(): string[] {
   const now = new Date();
-  const current = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`;
 
-  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const previous = `${prev.getFullYear()}${String(prev.getMonth() + 1).padStart(2, "0")}`;
-
-  return [current, previous];
+  // Sync the previous, current, and next month. The next month is included so
+  // card transactions made after the closing day land in their billing month
+  // even before the calendar has rolled over.
+  return [
+    fmt(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
+    fmt(now),
+    fmt(new Date(now.getFullYear(), now.getMonth() + 1, 1)),
+  ];
 }
 
 async function handleScheduled(): Promise<void> {
@@ -311,11 +379,11 @@ async function handleScheduled(): Promise<void> {
     picture: userRecord.picture,
   };
 
-  const months = getCurrentAndPreviousMonths();
-  for (const ym of months) {
-    const result = await syncMonth(ym, PIERRE_USER_ID, userRecord.familyId, uploadedBy, config);
-    console.log(`Sync ${ym}: imported=${result.imported} duplicates=${result.duplicates}`);
-  }
+  const months = getDefaultSyncMonths();
+  const result = await syncMonths(months, PIERRE_USER_ID, userRecord.familyId, uploadedBy, config);
+  console.log(
+    `Sync months=${months.join(",")}: imported=${result.imported} duplicates=${result.duplicates}`,
+  );
 }
 
 async function handleManualSync(
@@ -365,14 +433,16 @@ async function handleManualSync(
     }
   }
 
-  const months = requestedMonth ? [requestedMonth] : getCurrentAndPreviousMonths();
-  const results: Record<string, { imported: number; duplicates: number }> = {};
+  const months = requestedMonth ? [requestedMonth] : getDefaultSyncMonths();
+  const result = await syncMonths(
+    months,
+    user.userId,
+    userRecord.familyId,
+    uploadedBy,
+    config,
+  );
 
-  for (const ym of months) {
-    results[ym] = await syncMonth(ym, user.userId, userRecord.familyId, uploadedBy, config);
-  }
-
-  return respond(200, { results }, origin);
+  return respond(200, { months, result }, origin);
 }
 
 export async function handler(
