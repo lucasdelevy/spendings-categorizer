@@ -97,21 +97,14 @@ function normalizeName(value: string | undefined | null): string {
   return (value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
-/**
- * Pick the local account a Pierre transaction belongs to. Falls back through
- * progressively looser strategies so that even users who only registered the
- * API key on one account still get card transactions routed to the matching
- * card account (and therefore bucketed by its closing day).
- */
-function pickLocalAccount(
-  pierreTx: PierreTransaction,
+function searchAccountPool(
+  pool: AccountRecord[],
   source: "bank" | "card",
-  ownedAccounts: AccountRecord[],
+  remoteName: string,
 ): AccountRecord | undefined {
-  const sameType = ownedAccounts.filter((a) => a.type === source);
+  const sameType = pool.filter((a) => a.type === source);
   if (sameType.length === 0) return undefined;
 
-  const remoteName = normalizeName(pierreTx.account_name);
   if (remoteName) {
     const exact = sameType.find((a) => normalizeName(a.name) === remoteName);
     if (exact) return exact;
@@ -126,10 +119,39 @@ function pickLocalAccount(
   return undefined;
 }
 
+/**
+ * Pick the local account a Pierre transaction belongs to.
+ *
+ * The most reliable signal we have is the API token: each Pierre key is
+ * registered against one or more of the user's accounts, so accounts sharing
+ * the token are by definition the only ones whose data this fetch can
+ * possibly contain. We always look there first — that way, even if Pierre
+ * omits `account_name` (or returns an unfamiliar one), card transactions
+ * coming through a token attached to a single card still pick up that card's
+ * closing day and roll into the right billing month.
+ *
+ * If the token has no account of the matching type (e.g. the env-fallback
+ * key, or a token only attached to bank accounts handling card data), we
+ * widen the search to every account the user owns.
+ */
+function pickLocalAccount(
+  pierreTx: PierreTransaction,
+  source: "bank" | "card",
+  tokenAccounts: AccountRecord[],
+  ownedAccounts: AccountRecord[],
+): AccountRecord | undefined {
+  const remoteName = normalizeName(pierreTx.account_name);
+
+  const fromToken = searchAccountPool(tokenAccounts, source, remoteName);
+  if (fromToken) return fromToken;
+
+  return searchAccountPool(ownedAccounts, source, remoteName);
+}
+
 interface SyncBatchInput {
   apiKey: string;
   label: string;
-  preferredAccount?: AccountRecord;
+  tokenAccounts: AccountRecord[];
 }
 
 /**
@@ -169,10 +191,12 @@ async function syncBatch(
       | "card";
     const txDateMonth = mapped.date.replace(/-/g, "").slice(0, 6);
 
-    let resolvedAccount = pickLocalAccount(pierreTx, source, ownedAccounts);
-    if (!resolvedAccount && input.preferredAccount?.type === source) {
-      resolvedAccount = input.preferredAccount;
-    }
+    const resolvedAccount = pickLocalAccount(
+      pierreTx,
+      source,
+      input.tokenAccounts,
+      ownedAccounts,
+    );
 
     const closingDay =
       resolvedAccount?.type === "card" ? resolvedAccount.closingDay : undefined;
@@ -275,27 +299,41 @@ async function syncMonths(
   const ownedAccounts = await listAccounts(userId, familyId);
   const accountsWithKeys = ownedAccounts.filter((a) => !!a.apiKeyEncrypted);
 
-  // Dedupe API keys: many users keep the same key on every account, and
-  // Pierre returns the full transaction set per key, so fetching once is
-  // enough.
-  const seenKeys = new Set<string>();
-  const batches: SyncBatchInput[] = [];
+  // Group accounts by the API key they share. Pierre returns the full
+  // transaction set per key, so we only need one fetch per unique key — but
+  // we keep the full list of accounts that registered that key so we can
+  // route every transaction to one of them (and thus pick up its closing
+  // day) without depending on Pierre's account_name string matching.
+  const tokenAccounts = new Map<string, AccountRecord[]>();
+  const tokenLabels = new Map<string, string>();
 
   for (const account of accountsWithKeys) {
     try {
       const apiKey = decryptApiKey(account.apiKeyEncrypted!);
-      if (seenKeys.has(apiKey)) continue;
-      seenKeys.add(apiKey);
-      batches.push({ apiKey, label: account.name, preferredAccount: account });
+      const existing = tokenAccounts.get(apiKey);
+      if (existing) {
+        existing.push(account);
+      } else {
+        tokenAccounts.set(apiKey, [account]);
+        tokenLabels.set(apiKey, account.name);
+      }
     } catch (err) {
       console.error(`Failed to decrypt key for account ${account.accountId}:`, err);
     }
   }
 
-  if (PIERRE_API_KEY && !seenKeys.has(PIERRE_API_KEY)) {
-    seenKeys.add(PIERRE_API_KEY);
-    batches.push({ apiKey: PIERRE_API_KEY, label: "env" });
+  if (PIERRE_API_KEY && !tokenAccounts.has(PIERRE_API_KEY)) {
+    tokenAccounts.set(PIERRE_API_KEY, []);
+    tokenLabels.set(PIERRE_API_KEY, "env");
   }
+
+  const batches: SyncBatchInput[] = Array.from(tokenAccounts.entries()).map(
+    ([apiKey, accounts]) => ({
+      apiKey,
+      label: tokenLabels.get(apiKey) ?? "",
+      tokenAccounts: accounts,
+    }),
+  );
 
   for (const batch of batches) {
     try {
