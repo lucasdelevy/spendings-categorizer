@@ -302,9 +302,6 @@ const ptBR = {
       phase14Title: "Gerenciamento de Contas e Cartões",
       phase14Desc:
         "Contas e cartões agora são entidades de primeira classe: cada transação pode ser vinculada a uma conta bancária ou cartão de crédito. Cartões têm um dia de fechamento (vencimento, padrão 30) para que as transações sejam agrupadas na fatura mensal correta. Chaves de API Open Finance por conta são armazenadas criptografadas com AES-256-GCM e descriptografadas apenas dentro do worker de sincronização — o frontend só vê os últimos 4 caracteres como dica. A sincronização Pierre itera por todas as contas com chave, suportando múltiplos bancos e cartões em paralelo.",
-      phase15Title: "Sincronização Pierre Baseada na Tabela de Contas",
-      phase15Desc:
-        "A sincronização agendada de 5 em 5 minutos agora descobre os usuários ativos diretamente na tabela de contas, em vez de uma variável de ambiente. Qualquer usuário que adicionar uma chave de API Open Finance em Contas e Cartões é automaticamente incluído no próximo ciclo — sem redeploy de infraestrutura, sem dependência de variável de shell e sem o risco de a sincronização virar um no-op silencioso quando um deploy esquece a antiga variável PIERRE_USER_ID.",
     },
   },
 
