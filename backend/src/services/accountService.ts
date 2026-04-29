@@ -4,6 +4,7 @@ import {
   DeleteCommand,
   QueryCommand,
   UpdateCommand,
+  ScanCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { ulid } from "ulid";
 import * as crypto from "crypto";
@@ -212,6 +213,58 @@ export async function updateAccount(
   );
 
   return getAccount(userId, familyId, accountId);
+}
+
+export interface AccountOwner {
+  userId: string;
+  familyId?: string;
+}
+
+/**
+ * Find every distinct owner that has at least one account with an Open Finance
+ * API key. We scan because the only way to discover owners without a known
+ * `userId` is to walk the table; in practice the row count is small (one
+ * record per registered account), so a paginated scan with a server-side
+ * filter is cheap. The familyId resolution is intentionally deferred to the
+ * caller to avoid coupling this service to the user table.
+ */
+export async function listOwnersWithApiKeys(): Promise<AccountOwner[]> {
+  const seen = new Set<string>();
+  const owners: AccountOwner[] = [];
+  let exclusiveStartKey: Record<string, unknown> | undefined;
+
+  do {
+    const result: { Items?: Record<string, unknown>[]; LastEvaluatedKey?: Record<string, unknown> } =
+      await docClient.send(
+        new ScanCommand({
+          TableName: TABLE_NAME,
+          ProjectionExpression: "PK",
+          FilterExpression:
+            "begins_with(SK, :prefix) AND attribute_exists(apiKeyEncrypted)",
+          ExpressionAttributeValues: { ":prefix": "ACCT#" },
+          ExclusiveStartKey: exclusiveStartKey,
+        }),
+      );
+
+    for (const item of result.Items ?? []) {
+      const pk = typeof item.PK === "string" ? item.PK : "";
+      if (!pk || seen.has(pk)) continue;
+      seen.add(pk);
+
+      if (pk.startsWith("USER#")) {
+        owners.push({ userId: pk.slice("USER#".length) });
+      } else if (pk.startsWith("FAMILY#")) {
+        // We can't resolve a familyId back to a single owning user without
+        // looking up family member records, so we surface the familyId and
+        // let the caller pick the right user record.
+        owners.push({ userId: "", familyId: pk.slice("FAMILY#".length) });
+      }
+    }
+
+    exclusiveStartKey = result.LastEvaluatedKey;
+  } while (exclusiveStartKey);
+
+  return owners;
 }
 
 export async function deleteAccount(

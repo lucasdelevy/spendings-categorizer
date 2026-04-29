@@ -14,18 +14,17 @@ import {
 import { findDuplicates } from "../services/dedupService.js";
 import {
   listAccounts,
+  listOwnersWithApiKeys,
   decryptApiKey,
   computeBillingMonth,
 } from "../services/accountService.js";
+import { listMembers } from "../services/familyService.js";
 import type {
   JWTPayload,
   TransactionItem,
   CategoryConfigRecord,
   AccountRecord,
 } from "../types.js";
-
-const PIERRE_API_KEY = process.env.PIERRE_API_KEY || "";
-const PIERRE_USER_ID = process.env.PIERRE_USER_ID || "";
 
 function respond(statusCode: number, body: unknown, origin?: string): APIGatewayProxyResultV2 {
   return {
@@ -322,11 +321,6 @@ async function syncMonths(
     }
   }
 
-  if (PIERRE_API_KEY && !tokenAccounts.has(PIERRE_API_KEY)) {
-    tokenAccounts.set(PIERRE_API_KEY, []);
-    tokenLabels.set(PIERRE_API_KEY, "env");
-  }
-
   const batches: SyncBatchInput[] = Array.from(tokenAccounts.entries()).map(
     ([apiKey, accounts]) => ({
       apiKey,
@@ -398,30 +392,78 @@ function getDefaultSyncMonths(): string[] {
   ];
 }
 
+/**
+ * Resolve the user that should own a scheduled sync run for the given owner
+ * record. For personal accounts (USER#…) we already have the userId. For
+ * family-owned accounts (FAMILY#…) we pick the family's owner member, which
+ * keeps statement attribution stable regardless of which member uploaded the
+ * key.
+ */
+async function resolveSyncUserId(
+  owner: { userId: string; familyId?: string },
+): Promise<string | null> {
+  if (owner.userId) return owner.userId;
+  if (!owner.familyId) return null;
+
+  const members = await listMembers(owner.familyId);
+  const ownerMember =
+    members.find((m) => m.role === "owner" && m.status === "active") ??
+    members.find((m) => m.status === "active");
+  if (!ownerMember) return null;
+
+  // Family member SKs are `MEMBER#<userId>` for active members.
+  return ownerMember.SK.startsWith("MEMBER#")
+    ? ownerMember.SK.slice("MEMBER#".length)
+    : null;
+}
+
 async function handleScheduled(): Promise<void> {
-  if (!PIERRE_USER_ID) {
-    console.log("PIERRE_USER_ID not set; skipping scheduled sync");
+  const owners = await listOwnersWithApiKeys();
+  if (owners.length === 0) {
+    console.log("No accounts with Open Finance API keys; skipping scheduled sync");
     return;
   }
-
-  const userRecord = await getUser(PIERRE_USER_ID);
-  if (!userRecord) {
-    console.error(`User ${PIERRE_USER_ID} not found`);
-    return;
-  }
-
-  const config = await getConfig(PIERRE_USER_ID, userRecord.familyId);
-  const uploadedBy = {
-    userId: PIERRE_USER_ID,
-    name: userRecord.name,
-    picture: userRecord.picture,
-  };
 
   const months = getDefaultSyncMonths();
-  const result = await syncMonths(months, PIERRE_USER_ID, userRecord.familyId, uploadedBy, config);
-  console.log(
-    `Sync months=${months.join(",")}: imported=${result.imported} duplicates=${result.duplicates}`,
-  );
+
+  for (const owner of owners) {
+    try {
+      const syncUserId = await resolveSyncUserId(owner);
+      if (!syncUserId) {
+        console.warn(
+          `Skipping owner ${owner.userId || `FAMILY#${owner.familyId}`}: no resolvable user`,
+        );
+        continue;
+      }
+
+      const userRecord = await getUser(syncUserId);
+      if (!userRecord) {
+        console.error(`User ${syncUserId} not found`);
+        continue;
+      }
+
+      // Always use the owner record's familyId so personal accounts don't
+      // get pulled into the family's data, and vice versa.
+      const familyId = owner.familyId ?? userRecord.familyId;
+
+      const config = await getConfig(syncUserId, familyId);
+      const uploadedBy = {
+        userId: syncUserId,
+        name: userRecord.name,
+        picture: userRecord.picture,
+      };
+
+      const result = await syncMonths(months, syncUserId, familyId, uploadedBy, config);
+      console.log(
+        `Sync owner=${familyId ? `FAMILY#${familyId}` : `USER#${syncUserId}`} months=${months.join(",")}: imported=${result.imported} duplicates=${result.duplicates}`,
+      );
+    } catch (err) {
+      console.error(
+        `Scheduled sync failed for owner ${owner.userId || `FAMILY#${owner.familyId}`}:`,
+        err,
+      );
+    }
+  }
 }
 
 async function handleManualSync(
@@ -440,9 +482,8 @@ async function handleManualSync(
 
   const accounts = await listAccounts(user.userId, userRecord.familyId);
   const hasAccountKeys = accounts.some((a) => !!a.apiKeyEncrypted);
-  const isPierreEnvUser = user.userId === PIERRE_USER_ID && PIERRE_API_KEY;
 
-  if (!hasAccountKeys && !isPierreEnvUser) {
+  if (!hasAccountKeys) {
     return respond(403, {
       error:
         "No Open Finance API key configured. Add a key to one of your accounts before triggering a sync.",
@@ -466,8 +507,6 @@ async function handleManualSync(
           console.error("triggerManualSync failed:", err);
         }
       }
-    } else if (PIERRE_API_KEY) {
-      await triggerManualSync(PIERRE_API_KEY);
     }
   }
 

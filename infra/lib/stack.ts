@@ -101,11 +101,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       code: lambda.Code.fromAsset(backendDist, {
         exclude: ["auth.*", "families.*", "categories.*"],
       }),
-      environment: {
-        ...sharedEnv,
-        PIERRE_API_KEY: process.env.PIERRE_API_KEY || "",
-        PIERRE_USER_ID: process.env.PIERRE_USER_ID || "",
-      },
+      environment: sharedEnv,
       timeout: cdk.Duration.seconds(30),
       memorySize: 256,
     });
