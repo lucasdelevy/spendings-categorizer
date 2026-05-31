@@ -53,7 +53,7 @@ The iOS app uses the same API Gateway endpoints documented in `docs/ARCHITECTURE
 | 12 | CSV upload and local preview | [12-csv-upload-and-local-preview.md](./12-csv-upload-and-local-preview.md) | Done |
 | 13 | Save statement flow | [13-save-statement-flow.md](./13-save-statement-flow.md) | Done |
 | 14 | Summary bar and spending limits | [14-summary-bar-and-spending-limits.md](./14-summary-bar-and-spending-limits.md) | Done |
-| 15 | Spending charts (category pie + daily) | [15-spending-charts-category-pie-and-daily.md](./15-spending-charts-category-pie-and-daily.md) | Not started |
+| 15 | Spending charts (category pie + daily) | [15-spending-charts-category-pie-and-daily.md](./15-spending-charts-category-pie-and-daily.md) | Done |
 | 16 | Transaction table (all + by category) | [16-transaction-table-all-and-by-category.md](./16-transaction-table-all-and-by-category.md) | Not started |
 | 17 | Transaction filters | [17-transaction-filters.md](./17-transaction-filters.md) | Not started |
 | 18 | Transaction actions (recategorize, rename, ignore, hide) | [18-transaction-actions.md](./18-transaction-actions.md) | Not started |
