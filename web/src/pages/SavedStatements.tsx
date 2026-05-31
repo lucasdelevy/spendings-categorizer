@@ -5,6 +5,8 @@ import { resolveLocale } from "../i18n";
 import type { SavedStatementItem } from "../utils";
 import type { Account } from "../types";
 
+type ManageTab = "bank" | "card" | "openFinance";
+
 function formatDate(iso: string): string {
   const locale = resolveLocale();
   const d = new Date(iso);
@@ -22,6 +24,40 @@ interface Props {
   onAssignAccount: (id: string, accountId: string | null) => Promise<void>;
 }
 
+function isPierreSync(s: SavedStatementItem): boolean {
+  return s.fileName.startsWith("Pierre Sync");
+}
+
+function filterItems(items: SavedStatementItem[], tab: ManageTab): SavedStatementItem[] {
+  switch (tab) {
+    case "bank":
+      return items.filter((s) => !isPierreSync(s) && (s.type === "bank" || s.type === "family"));
+    case "card":
+      return items.filter((s) => !isPierreSync(s) && s.type === "card");
+    case "openFinance":
+      return items.filter((s) => isPierreSync(s));
+  }
+}
+
+function countByTab(items: SavedStatementItem[]): Record<ManageTab, number> {
+  let bank = 0;
+  let card = 0;
+  let openFinance = 0;
+  for (const s of items) {
+    if (isPierreSync(s)) openFinance++;
+    else if (s.type === "card") card++;
+    else bank++;
+  }
+  return { bank, card, openFinance };
+}
+
+const TABS: ManageTab[] = ["bank", "card", "openFinance"];
+const TAB_KEYS: Record<ManageTab, string> = {
+  bank: "manage.tabBank",
+  card: "manage.tabCard",
+  openFinance: "manage.tabOpenFinance",
+};
+
 export default function ManageMonths({
   items,
   accounts,
@@ -32,6 +68,10 @@ export default function ManageMonths({
 }: Props) {
   const { t } = useTranslation();
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<ManageTab>("bank");
+
+  const counts = countByTab(items);
+  const filtered = filterItems(items, activeTab);
 
   const handleAssign = async (item: SavedStatementItem, value: string) => {
     setPendingId(item.id);
@@ -58,7 +98,34 @@ export default function ManageMonths({
         </div>
       </div>
 
-      {items.length === 0 ? (
+      <div className="mb-6 flex gap-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-800">
+        {TABS.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
+              activeTab === tab
+                ? "bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-gray-100"
+                : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            }`}
+          >
+            {t(TAB_KEYS[tab])}
+            {counts[tab] > 0 && (
+              <span
+                className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs ${
+                  activeTab === tab
+                    ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-300"
+                    : "bg-gray-200 text-gray-500 dark:bg-gray-600 dark:text-gray-400"
+                }`}
+              >
+                {counts[tab]}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
           {t("manage.noStatements")}
         </div>
@@ -78,7 +145,7 @@ export default function ManageMonths({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {items.map((s) => {
+              {filtered.map((s) => {
                 const yearMonth = s.id.split("#")[0];
                 const candidates = accounts.filter(
                   (a) => s.type === "family" || a.type === s.type,
@@ -88,19 +155,14 @@ export default function ManageMonths({
                   <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-4 py-3 font-medium">{formatYearMonth(yearMonth)}</td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate text-xs text-gray-700 dark:text-gray-300">{s.fileName}</span>
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                          s.type === "bank"
-                            ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
-                            : "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
-                        }`}>
-                          {s.type}
-                        </span>
-                      </div>
+                      <span className="truncate text-xs text-gray-700 dark:text-gray-300">{s.fileName}</span>
                     </td>
                     <td className="px-4 py-3">
-                      {candidates.length === 0 ? (
+                      {isPierreSync(s) ? (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {candidates.find((a) => a.accountId === s.accountId)?.name ?? "—"}
+                        </span>
+                      ) : candidates.length === 0 ? (
                         <span className="text-xs italic text-gray-400">
                           {t("manage.noMatchingAccount")}
                         </span>

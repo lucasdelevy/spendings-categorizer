@@ -177,16 +177,16 @@ function TransactionRow({
           </span>
         </td>
       )}
-      {showInstallmentCell && (
-        <td className="px-4 py-2 text-gray-500 dark:text-gray-400">
-          {tx.installment || "—"}
-        </td>
-      )}
       <td
         className={`whitespace-nowrap px-4 py-2 text-right tabular-nums ${isHidden ? "line-through text-gray-400 dark:text-gray-500" : tx.amount >= 0 ? "text-green-600" : "text-gray-800 dark:text-gray-200"}`}
       >
         {formatBRL(tx.amount)}
       </td>
+      {showInstallmentCell && (
+        <td className="px-4 py-2 text-gray-500 dark:text-gray-400">
+          {tx.installment || "—"}
+        </td>
+      )}
       {(hasActions || onHide) && (
         <td className="px-2 py-2">
           <div className="flex items-center gap-0.5">
@@ -260,8 +260,8 @@ function TableHeaderRow({
         {statementType === "bank" ? t("table.payee") : t("table.merchant")}
       </th>
       {showCategoryCell && <th className="px-4 py-2">{t("table.category")}</th>}
-      {showInstallmentCell && <th className="px-4 py-2">{t("table.installment")}</th>}
       <th className="px-4 py-2 text-right">{t("table.amount")}</th>
+      {showInstallmentCell && <th className="px-4 py-2">{t("table.installment")}</th>}
       {hasActionsCell && <th className="w-8 px-2 py-2" />}
     </tr>
   );

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { formatYearMonth } from "../utils";
 
@@ -12,8 +12,6 @@ interface Props {
 
 export default function MonthSelector({ months, selected, onChange, allowNew, loading }: Props) {
   const { t } = useTranslation();
-  const touchStartX = useRef<number | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const idx = months.indexOf(selected);
   const isNewMonth = allowNew && idx === -1;
@@ -43,66 +41,10 @@ export default function MonthSelector({ months, selected, onChange, allowNew, lo
     return () => window.removeEventListener("keydown", handleKey);
   }, [goPrev, goNext, hasPrev, hasNext]);
 
-  const swipeCooldown = useRef(false);
-  const accumulatedDeltaX = useRef(0);
-
-  useEffect(() => {
-    const SWIPE_THRESHOLD = 80;
-    const COOLDOWN_MS = 400;
-
-    const handleWheel = (e: WheelEvent) => {
-      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
-      if (swipeCooldown.current) return;
-
-      accumulatedDeltaX.current += e.deltaX;
-
-      if (accumulatedDeltaX.current > SWIPE_THRESHOLD && hasPrev) {
-        e.preventDefault();
-        accumulatedDeltaX.current = 0;
-        swipeCooldown.current = true;
-        goPrev();
-        setTimeout(() => { swipeCooldown.current = false; }, COOLDOWN_MS);
-      } else if (accumulatedDeltaX.current < -SWIPE_THRESHOLD && hasNext) {
-        e.preventDefault();
-        accumulatedDeltaX.current = 0;
-        swipeCooldown.current = true;
-        goNext();
-        setTimeout(() => { swipeCooldown.current = false; }, COOLDOWN_MS);
-      }
-    };
-
-    const resetAccumulator = () => { accumulatedDeltaX.current = 0; };
-
-    window.addEventListener("wheel", handleWheel, { passive: false });
-    window.addEventListener("scrollend", resetAccumulator);
-    return () => {
-      window.removeEventListener("wheel", handleWheel);
-      window.removeEventListener("scrollend", resetAccumulator);
-    };
-  }, [goPrev, goNext, hasPrev, hasNext]);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  }, []);
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (touchStartX.current === null) return;
-    const delta = e.changedTouches[0].clientX - touchStartX.current;
-    touchStartX.current = null;
-    const SWIPE_THRESHOLD = 50;
-    if (delta > SWIPE_THRESHOLD) goPrev();
-    else if (delta < -SWIPE_THRESHOLD) goNext();
-  }, [goPrev, goNext]);
-
   const label = formatYearMonth(selected);
 
   return (
-    <div
-      ref={containerRef}
-      className="flex flex-col items-center"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div className="flex flex-col items-center">
       <div className="flex items-center gap-4">
         <button
           onClick={goPrev}

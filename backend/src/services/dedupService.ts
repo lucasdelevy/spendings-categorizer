@@ -52,9 +52,20 @@ export interface DedupResult {
   duplicateCount: number;
 }
 
+function adjacentDates(isoDate: string): string[] {
+  const d = new Date(isoDate + "T12:00:00Z");
+  const prev = new Date(d.getTime() - 86_400_000);
+  const next = new Date(d.getTime() + 86_400_000);
+  const fmt = (dt: Date) =>
+    `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
+  return [isoDate, fmt(prev), fmt(next)];
+}
+
 /**
  * Finds which incoming transactions are duplicates of existing ones.
  * Uses (normalizedDate, normalizedAmount) grouping + description similarity.
+ * Tolerates ±1 day difference to handle UTC vs local-time date mismatches
+ * between CSV (bank UTC dates) and Pierre (local BRT dates).
  * Each existing transaction can only match one incoming transaction (consumed on match).
  */
 export function findDuplicates(
@@ -72,36 +83,60 @@ export function findDuplicates(
     }
   }
 
+  const hiddenKeys = new Set<string>();
+  for (const tx of existing) {
+    if (tx.hidden) {
+      hiddenKeys.add(`${normalizeDate(tx.date)}|${normalizeAmount(tx.amount)}`);
+    }
+  }
+
   const newTransactions: TransactionItem[] = [];
   let duplicateCount = 0;
 
   for (const tx of incoming) {
-    const key = `${normalizeDate(tx.date)}|${normalizeAmount(tx.amount)}`;
-    const candidates = groups.get(key);
+    const normDate = normalizeDate(tx.date);
+    const normAmount = normalizeAmount(tx.amount);
+    const dates = adjacentDates(normDate);
 
-    if (!candidates || candidates.length === 0) {
-      newTransactions.push(tx);
-      continue;
-    }
-
-    let bestIdx = -1;
-    let bestSim = -1;
-    for (let i = 0; i < candidates.length; i++) {
-      const sim = descriptionSimilarity(
-        tx.originalDescription,
-        candidates[i].originalDescription,
-      );
-      if (sim > bestSim) {
-        bestSim = sim;
-        bestIdx = i;
+    let allCandidates: { tx: TransactionItem; groupKey: string; idx: number }[] = [];
+    for (const d of dates) {
+      const key = `${d}|${normAmount}`;
+      const group = groups.get(key);
+      if (group) {
+        for (let i = 0; i < group.length; i++) {
+          allCandidates.push({ tx: group[i], groupKey: key, idx: i });
+        }
       }
     }
 
-    if (bestSim >= SIMILARITY_THRESHOLD) {
-      candidates.splice(bestIdx, 1);
+    if (allCandidates.length === 0) {
+      const isHidden = dates.some((d) => hiddenKeys.has(`${d}|${normAmount}`));
+      const out = isHidden ? { ...tx, hidden: true } : tx;
+      newTransactions.push(out);
+      continue;
+    }
+
+    let bestEntry: (typeof allCandidates)[0] | null = null;
+    let bestSim = -1;
+    for (const entry of allCandidates) {
+      const sim = descriptionSimilarity(
+        tx.originalDescription,
+        entry.tx.originalDescription,
+      );
+      if (sim > bestSim) {
+        bestSim = sim;
+        bestEntry = entry;
+      }
+    }
+
+    if (bestSim >= SIMILARITY_THRESHOLD && bestEntry) {
+      const group = groups.get(bestEntry.groupKey)!;
+      group.splice(group.indexOf(bestEntry.tx), 1);
       duplicateCount++;
     } else {
-      newTransactions.push(tx);
+      const isHidden = dates.some((d) => hiddenKeys.has(`${d}|${normAmount}`));
+      const out = isHidden ? { ...tx, hidden: true } : tx;
+      newTransactions.push(out);
     }
   }
 

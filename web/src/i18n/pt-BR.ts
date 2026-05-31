@@ -116,6 +116,9 @@ const ptBR = {
   manage: {
     title: "Gerenciar Meses",
     back: "Voltar",
+    tabBank: "Extratos Bancários",
+    tabCard: "Faturas de Cartão",
+    tabOpenFinance: "Open Finance",
     noStatements: "Nenhum extrato salvo ainda.",
     period: "Período",
     owner: "Dono",

@@ -115,6 +115,9 @@ const en = {
   manage: {
     title: "Manage Months",
     back: "Back",
+    tabBank: "Bank Statements",
+    tabCard: "Card Statements",
+    tabOpenFinance: "Open Finance",
     noStatements: "No saved statements yet.",
     period: "Period",
     owner: "Owner",
