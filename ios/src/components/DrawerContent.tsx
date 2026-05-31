@@ -4,39 +4,44 @@ import {
   type DrawerContentComponentProps,
 } from "@react-navigation/drawer";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useTranslation } from "react-i18next";
 import type { AuthUser } from "../auth/AuthContext";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 interface Props extends DrawerContentComponentProps {
   user: AuthUser;
   onLogout: () => void;
 }
 
-const NAV_ITEMS: { route: keyof import("../navigation/types").DrawerParamList; label: string }[] = [
-  { route: "Categories", label: "Categories" },
-  { route: "Accounts", label: "Accounts" },
-  { route: "Family", label: "Family" },
-  { route: "ManageMonths", label: "Manage Months" },
+const NAV_ITEMS: { route: keyof import("../navigation/types").DrawerParamList; labelKey: string }[] = [
+  { route: "Categories", labelKey: "app.categories" },
+  { route: "Accounts", labelKey: "app.accounts" },
+  { route: "Family", labelKey: "app.family" },
+  { route: "ManageMonths", labelKey: "app.manageMonths" },
 ];
 
 export default function DrawerContent({ navigation, user, onLogout }: Props) {
+  const { t } = useTranslation();
+
   return (
     <DrawerContentScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.section}>Navigation</Text>
+      <LanguageSwitcher />
+      <Text style={styles.section}>{t("sidebar.navigation")}</Text>
       <DrawerItem
-        label="Dashboard"
+        label={t("app.title")}
         onPress={() => navigation.navigate("Dashboard")}
       />
       {NAV_ITEMS.map((item) => (
         <DrawerItem
           key={item.route}
-          label={item.label}
+          label={t(item.labelKey)}
           onPress={() => navigation.navigate(item.route)}
         />
       ))}
 
       <View style={styles.spacer} />
 
-      <DrawerItem label="About" onPress={() => navigation.navigate("About")} />
+      <DrawerItem label={t("app.about")} onPress={() => navigation.navigate("About")} />
 
       <View style={styles.userSection}>
         <Image source={{ uri: user.picture }} style={styles.avatar} />
@@ -46,7 +51,7 @@ export default function DrawerContent({ navigation, user, onLogout }: Props) {
         </View>
       </View>
       <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
-        <Text style={styles.logoutText}>Log out</Text>
+        <Text style={styles.logoutText}>{t("app.logout")}</Text>
       </TouchableOpacity>
     </DrawerContentScrollView>
   );

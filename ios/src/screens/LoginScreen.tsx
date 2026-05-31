@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import { useEffect, useState } from "react";
@@ -13,6 +14,7 @@ import { useAuth } from "../auth/AuthContext";
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const { login } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -37,8 +39,8 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Aletheia</Text>
-      <Text style={styles.subtitle}>Spendings Categorizer</Text>
+      <Text style={styles.title}>{t("app.title")}</Text>
+      <Text style={styles.subtitle}>{t("login.subtitle", "Sign in to continue")}</Text>
 
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -50,7 +52,7 @@ export default function LoginScreen() {
         {busy ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Sign in with Google</Text>
+          <Text style={styles.buttonText}>{t("login.googleSignIn", "Sign in with Google")}</Text>
         )}
       </Pressable>
     </View>
