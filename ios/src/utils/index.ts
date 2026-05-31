@@ -1,5 +1,17 @@
 import { resolveLocale } from "../i18n";
 
+export function extractYearMonth(dateStr: string): string {
+  if (dateStr.includes("/")) {
+    const parts = dateStr.split("/");
+    return `${parts[2]}${parts[1]}`;
+  }
+  if (dateStr.includes("-")) {
+    const parts = dateStr.split("-");
+    return `${parts[0]}${parts[1]}`;
+  }
+  throw new Error(`Unrecognized date format: ${dateStr}`);
+}
+
 export function currentYearMonth(): string {
   const now = new Date();
   const y = now.getFullYear();

@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../auth/AuthContext";
 import FamilyUploader from "../components/FamilyUploader";
 import MonthSelector from "../components/MonthSelector";
+import SaveConfirmBar from "../components/SaveConfirmBar";
+import { useAccounts } from "../hooks/useAccounts";
 import { useCategoryConfig } from "../hooks/useCategoryConfig";
 import { useDashboard } from "../hooks/useDashboard";
 import { useLocalPreview } from "../hooks/useLocalPreview";
@@ -13,6 +15,7 @@ export default function DashboardScreen() {
   const { user } = useAuth();
   const { colors } = useTheme();
   const { config: catConfig } = useCategoryConfig(!!user);
+  const { accounts } = useAccounts(!!user);
   const {
     selectorMonths,
     selectedMonth,
@@ -21,12 +24,23 @@ export default function DashboardScreen() {
     monthHasData,
     result: remoteResult,
     error,
-    setError,
+    loadSavedMonths,
+    loadMonthFromRemote,
+    monthCache,
+    setSelectedMonth,
   } = useDashboard(!!user);
-  const { familyFiles, localResult, handleFamilyFiles } = useLocalPreview(catConfig);
+  const { familyFiles, localResult, handleFamilyFiles, clearLocal } = useLocalPreview(catConfig);
 
   const showUploader = !monthHasData || familyFiles.length > 0;
   const result = localResult ?? remoteResult;
+
+  const handleSaved = async (ym: string) => {
+    clearLocal();
+    monthCache.current.clear();
+    setSelectedMonth(ym);
+    await loadSavedMonths();
+    await loadMonthFromRemote(ym, true);
+  };
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -46,6 +60,16 @@ export default function DashboardScreen() {
 
       {showUploader && (
         <FamilyUploader files={familyFiles} onFilesLoaded={handleFamilyFiles} />
+      )}
+
+      {localResult && familyFiles.length > 0 && (
+        <SaveConfirmBar
+          result={localResult}
+          files={familyFiles}
+          catConfig={catConfig}
+          accounts={accounts}
+          onSaved={handleSaved}
+        />
       )}
 
       {result && (
