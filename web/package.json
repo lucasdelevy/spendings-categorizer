@@ -1,5 +1,5 @@
 {
-  "name": "spendings-categorizer",
+  "name": "@aletheia/web",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -9,16 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aletheia/shared": "*",
     "i18next": "24.2.2",
     "i18next-browser-languagedetector": "8.0.4",
-    "papaparse": "5.5.2",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-i18next": "15.4.1",
     "recharts": "2.15.3"
   },
   "devDependencies": {
-    "@types/papaparse": "5.3.15",
     "@types/react": "18.3.18",
     "@types/react-dom": "18.3.5",
     "@vitejs/plugin-react": "4.3.4",

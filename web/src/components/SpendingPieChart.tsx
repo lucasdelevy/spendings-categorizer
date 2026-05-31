@@ -1,6 +1,6 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import type { CategorySummary } from "../types";
-import { getCategoryColor } from "../engine/categories";
+import type { CategorySummary } from "@aletheia/shared";
+import { getCategoryColor } from "@aletheia/shared";
 import { formatBRL } from "../i18n";
 import { useTheme } from "../theme/ThemeContext";
 

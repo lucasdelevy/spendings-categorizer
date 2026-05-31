@@ -1,10 +1,8 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { CategorySummary, StatementType, CategoryConfig, Transaction, TransactionOrigin, UploadedBy, Account } from "../types";
-import { getCategoryColorFromConfig } from "../engine/categories";
+import type { CategorySummary, StatementType, CategoryConfig, Transaction, TransactionOrigin, UploadedBy, Account } from "@aletheia/shared";
+import { getCategoryColorFromConfig, limitProgress, limitColor, effectiveMonthlyLimit, compareDatesDesc } from "@aletheia/shared";
 import { formatBRL, resolveLocale } from "../i18n";
-import { limitProgress, limitColor, effectiveMonthlyLimit } from "../utils/limits";
-import { compareDatesDesc } from "../utils/dates";
 import TransactionActionModal from "./TransactionActionModal";
 import type { RecategorizePayload, RenamePayload, IgnorePayload } from "./TransactionActionModal";
 import TransactionFilters, {

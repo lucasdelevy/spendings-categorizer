@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import type { Transaction } from "../types";
+import type { Transaction } from "@aletheia/shared";
 import { formatBRL } from "../i18n";
 import { useTheme } from "../theme/ThemeContext";
 import { useTranslation } from "react-i18next";

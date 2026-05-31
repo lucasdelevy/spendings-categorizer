@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { StatementType } from "../types";
-import { parseCSV } from "../engine/csvParser";
+import type { StatementType } from "@aletheia/shared";
+import { parseCSV } from "@aletheia/shared";
 
 export interface DetectedFile {
   name: string;

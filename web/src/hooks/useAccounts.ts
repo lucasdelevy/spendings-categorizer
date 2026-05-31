@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../auth/api";
-import type { Account, AccountType } from "../types";
+import type { Account, AccountType } from "@aletheia/shared";
 
 export interface CreateAccountInput {
   name: string;

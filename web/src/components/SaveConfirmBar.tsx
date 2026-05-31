@@ -2,11 +2,8 @@ import { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../auth/api";
 import { extractYearMonth, formatYearMonth } from "../utils";
-import { parseCSV } from "../engine/csvParser";
-import { processBankCSV } from "../engine/bankCategorizer";
-import { processCardCSV } from "../engine/cardCategorizer";
-import { toEngineConfig } from "../engine/categories";
-import type { StatementResult, CategoryConfig, Account } from "../types";
+import { parseCSV, processBankCSV, processCardCSV, toEngineConfig } from "@aletheia/shared";
+import type { StatementResult, CategoryConfig, Account } from "@aletheia/shared";
 import type { DetectedFile } from "./FamilyUploader";
 
 interface Props {

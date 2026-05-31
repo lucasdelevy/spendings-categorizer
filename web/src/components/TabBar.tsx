@@ -1,4 +1,4 @@
-import type { StatementType } from "../types";
+import type { StatementType } from "@aletheia/shared";
 
 interface Props {
   active: StatementType;

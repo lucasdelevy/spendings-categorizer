@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { resolveLocale } from "../i18n";
-import { parseDateToNum } from "../utils/dates";
-import type { Transaction } from "../types";
+import { parseDateToNum } from "@aletheia/shared";
+import type { Transaction } from "@aletheia/shared";
 
 export interface FilterState {
   amountMin: string;

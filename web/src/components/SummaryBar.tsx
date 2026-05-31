@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import type { StatementType } from "../types";
+import type { StatementType } from "@aletheia/shared";
 import { formatBRL } from "../i18n";
 
 interface Props {

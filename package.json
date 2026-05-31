@@ -1,0 +1,9 @@
+{
+  "name": "spendings-categorizer",
+  "private": true,
+  "workspaces": [
+    "web",
+    "ios",
+    "packages/*"
+  ]
+}

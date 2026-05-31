@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import type { CategoryConfig, LimitPeriod } from "../types";
+import type { CategoryConfig, LimitPeriod } from "@aletheia/shared";
 
 interface Props {
   config: CategoryConfig | null;

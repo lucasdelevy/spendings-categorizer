@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../auth/api";
-import type { CategoryConfig } from "../types";
+import type { CategoryConfig } from "@aletheia/shared";
 
 interface UseCategoryConfigResult {
   config: CategoryConfig | null;

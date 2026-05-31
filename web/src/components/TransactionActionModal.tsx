@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Transaction, CategoryConfig } from "../types";
-import { getCategoryColorFromConfig } from "../engine/categories";
+import type { Transaction, CategoryConfig } from "@aletheia/shared";
+import { getCategoryColorFromConfig } from "@aletheia/shared";
 import { formatBRL } from "../i18n";
 
 type Tab = "recategorize" | "rename" | "ignore";

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { formatYearMonth } from "../utils";
 import { resolveLocale } from "../i18n";
 import type { SavedStatementItem } from "../utils";
-import type { Account } from "../types";
+import type { Account } from "@aletheia/shared";
 
 type ManageTab = "bank" | "card" | "openFinance";
 

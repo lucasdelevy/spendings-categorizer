@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Account, AccountType } from "../types";
+import type { Account, AccountType } from "@aletheia/shared";
 import { useAccounts } from "../hooks/useAccounts";
 import type { CreateAccountInput, UpdateAccountInput } from "../hooks/useAccounts";
 
