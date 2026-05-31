@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { api, clearToken, isAuthenticated, setToken, setUnauthorizedHandler } from "./api";
 
 export interface AuthUser {
   email: string;
@@ -29,15 +30,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(false);
+    setUnauthorizedHandler(() => setUser(null));
   }, []);
 
-  const login = useCallback(async (_googleIdToken: string) => {
-    throw new Error("Not implemented");
+  useEffect(() => {
+    (async () => {
+      if (!(await isAuthenticated())) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const res = await api.get<{ user: AuthUser }>("/auth/me");
+        setUser(res.user);
+      } catch {
+        await clearToken();
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const login = useCallback(async (googleIdToken: string) => {
+    const res = await api.post<{ token: string; user: AuthUser }>("/auth/google", {
+      idToken: googleIdToken,
+    });
+    await setToken(res.token);
+    setUser(res.user);
   }, []);
 
   const logout = useCallback(async () => {
-    setUser(null);
+    try {
+      await api.post("/auth/logout");
+    } finally {
+      await clearToken();
+      setUser(null);
+    }
   }, []);
 
   const value = useMemo(
