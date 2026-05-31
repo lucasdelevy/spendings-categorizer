@@ -44,7 +44,7 @@ The iOS app uses the same API Gateway endpoints documented in `docs/ARCHITECTURE
 | 3 | Initialize Expo project in `ios/` | [03-initialize-expo-ios-project.md](./03-initialize-expo-ios-project.md) | Done |
 | 4 | Extract shared engine and types package | [04-extract-shared-engine-and-types.md](./04-extract-shared-engine-and-types.md) | Done |
 | 5 | App shell, navigation, and side menu | [05-app-shell-navigation-and-side-menu.md](./05-app-shell-navigation-and-side-menu.md) | Done |
-| 6 | API client and secure token storage | [06-api-client-and-secure-token-storage.md](./06-api-client-and-secure-token-storage.md) | Not started |
+| 6 | API client and secure token storage | [06-api-client-and-secure-token-storage.md](./06-api-client-and-secure-token-storage.md) | Done |
 | 7 | Google Sign-In on iOS | [07-google-sign-in-on-ios.md](./07-google-sign-in-on-ios.md) | Not started |
 | 8 | Backend CORS for mobile clients | [08-backend-cors-for-mobile-clients.md](./08-backend-cors-for-mobile-clients.md) | Not started |
 | 9 | i18n (EN / PT-BR) | [09-i18n-en-pt-br.md](./09-i18n-en-pt-br.md) | Not started |
