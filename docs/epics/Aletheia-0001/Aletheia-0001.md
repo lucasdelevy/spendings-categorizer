@@ -49,7 +49,7 @@ The iOS app uses the same API Gateway endpoints documented in `docs/ARCHITECTURE
 | 8 | Backend CORS for mobile clients | [08-backend-cors-for-mobile-clients.md](./08-backend-cors-for-mobile-clients.md) | Done |
 | 9 | i18n (EN / PT-BR) | [09-i18n-en-pt-br.md](./09-i18n-en-pt-br.md) | Done |
 | 10 | Dark mode and theme | [10-dark-mode-and-theme.md](./10-dark-mode-and-theme.md) | Done |
-| 11 | Dashboard — month selector and remote data loading | [11-dashboard-month-selector-and-data-loading.md](./11-dashboard-month-selector-and-data-loading.md) | Not started |
+| 11 | Dashboard — month selector and remote data loading | [11-dashboard-month-selector-and-data-loading.md](./11-dashboard-month-selector-and-data-loading.md) | Done |
 | 12 | CSV upload and local preview | [12-csv-upload-and-local-preview.md](./12-csv-upload-and-local-preview.md) | Not started |
 | 13 | Save statement flow | [13-save-statement-flow.md](./13-save-statement-flow.md) | Not started |
 | 14 | Summary bar and spending limits | [14-summary-bar-and-spending-limits.md](./14-summary-bar-and-spending-limits.md) | Not started |
