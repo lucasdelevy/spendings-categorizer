@@ -1,11 +1,17 @@
 node_modules
 dist
+web/dist
 *.local
 .DS_Store
 .env
 .env.local
 client_secret_*.json
 env.sb-*
+
+# iOS / Expo
+ios/node_modules
+ios/.expo
+ios/dist
 
 # Backend build output
 backend/dist
