@@ -11,6 +11,10 @@
 │  - Client-side CSV parsing + categorization                      │
 │  - Google Sign-In (ID token)                                    │
 │  - JWT stored in localStorage                                   │
+├──────────────────────────────────────────────────────────────────┤
+│  iOS App (Expo React Native) — see ios/                         │
+│  - Same API; JWT in expo-secure-store                           │
+│  - Native fetch bypasses browser CORS                           │
 └────────────────────┬─────────────────────────────────────────────┘
                      │ HTTPS (Bearer JWT)
                      ▼
