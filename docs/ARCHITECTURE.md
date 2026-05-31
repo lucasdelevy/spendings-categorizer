@@ -107,12 +107,15 @@ When reading a month in family mode, all `STMT#<YYYYMM>#*` records are fetched a
 
 ```
 spendings-categorizer/
-├── src/                    # Frontend (React + Vite)
-│   ├── auth/               # AuthContext, GoogleSignIn, api client
-│   ├── components/         # UI components (TransactionTable, FamilyUploader, etc.)
-│   ├── engine/             # CSV parsing + categorization logic
-│   ├── pages/              # LoginPage, SavedStatements, FamilyPage
-│   └── types.ts
+├── web/                    # Frontend (React + Vite)
+│   ├── src/
+│   │   ├── auth/           # AuthContext, GoogleSignIn, api client
+│   │   ├── components/     # UI components (TransactionTable, FamilyUploader, etc.)
+│   │   ├── engine/         # CSV parsing + categorization logic
+│   │   ├── pages/          # LoginPage, SavedStatements, FamilyPage
+│   │   └── types.ts
+│   └── public/             # Static assets
+├── ios/                    # Expo React Native app (planned)
 ├── backend/                # Lambda handlers
 │   ├── src/
 │   │   ├── handlers/       # auth.ts, statements.ts, families.ts, categories.ts

@@ -40,7 +40,7 @@ The iOS app uses the same API Gateway endpoints documented in `docs/ARCHITECTURE
 | # | Task | File | Status |
 |---|------|------|--------|
 | 1 | Move web app to `web/` folder | [01-move-web-app-to-web-folder.md](./01-move-web-app-to-web-folder.md) | Done |
-| 2 | Update CI/CD and docs for monorepo layout | [02-update-cicd-and-docs-for-monorepo.md](./02-update-cicd-and-docs-for-monorepo.md) | Not started |
+| 2 | Update CI/CD and docs for monorepo layout | [02-update-cicd-and-docs-for-monorepo.md](./02-update-cicd-and-docs-for-monorepo.md) | Done |
 | 3 | Initialize Expo project in `ios/` | [03-initialize-expo-ios-project.md](./03-initialize-expo-ios-project.md) | Not started |
 | 4 | Extract shared engine and types package | [04-extract-shared-engine-and-types.md](./04-extract-shared-engine-and-types.md) | Not started |
 | 5 | App shell, navigation, and side menu | [05-app-shell-navigation-and-side-menu.md](./05-app-shell-navigation-and-side-menu.md) | Not started |

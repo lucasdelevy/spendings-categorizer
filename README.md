@@ -1,4 +1,4 @@
-# Meu Extrato
+# Meu Extrato (Aletheia)
 
 Categorize automaticamente seus extratos bancários e faturas de cartão do Nubank.
 
@@ -14,10 +14,13 @@ Categorize automaticamente seus extratos bancários e faturas de cartão do Nuba
 ## Desenvolvimento
 
 ```bash
+cd web
 npm install
 npm run dev
 ```
 
 ## Deploy
 
-Push para `main` — GitHub Actions faz deploy automático no GitHub Pages.
+Push para `main` — GitHub Actions faz deploy automático do app web no GitHub Pages (alterações em `web/**`).
+
+Epics e tarefas planejadas: [`docs/epics/`](docs/epics/).

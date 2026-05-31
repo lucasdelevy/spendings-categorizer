@@ -3,12 +3,13 @@
 ## Project Structure
 
 ```
-├── src/                  # React frontend (Vite + Tailwind)
+├── web/                  # React frontend (Vite + Tailwind)
+│   └── src/              # Pages, components, engine, auth, i18n
+├── ios/                  # Expo React Native app (iOS) — see docs/epics/Aletheia-0001
 ├── backend/              # AWS Lambda handlers (TypeScript + esbuild)
 │   ├── src/handlers/     # Lambda entry points (auth, statements, categories, families)
 │   └── src/services/     # Business logic (categoryService, statementService, etc.)
 ├── infra/                # AWS CDK infrastructure (API Gateway, Lambda, DynamoDB)
-├── public/               # Static assets (favicon, etc.)
 └── mock-data/            # Sample CSV files for local testing
 ```
 
@@ -68,7 +69,7 @@ CDK stack name: `SpendingsCategorizerStack`.
 
 The frontend is a Vite React app hosted on GitHub Pages.
 
-- **Local dev**: `npm run dev` (runs on port 5173 at `/spendings-categorizer/`)
+- **Local dev**: `cd web && npm run dev` (runs on port 5173 at `/spendings-categorizer/`)
 - **Production deploy**: push to `main` — GitHub Actions builds and deploys to GitHub Pages automatically
 
 ## Key Backend Concepts
@@ -83,6 +84,6 @@ The frontend is a Vite React app hosted on GitHub Pages.
 Every major feature must be documented in four files:
 
 1. **`docs/HISTORY.md`** — Append a new `## Phase N: Title` section describing the feature, key decisions, and technical changes.
-2. **`src/pages/AboutPage.tsx`** — Add a corresponding entry to the `featureLog` array (with `phase`, `title`, and `description` i18n keys following the `about.features.phaseNTitle` / `about.features.phaseNDesc` pattern).
-3. **`src/i18n/en.ts`** — Add the English title and description under `about.features.phaseNTitle` / `about.features.phaseNDesc`.
-4. **`src/i18n/pt-BR.ts`** — Add the Portuguese title and description under the same keys.
+2. **`web/src/pages/AboutPage.tsx`** — Add a corresponding entry to the `featureLog` array (with `phase`, `title`, and `description` i18n keys following the `about.features.phaseNTitle` / `about.features.phaseNDesc` pattern).
+3. **`web/src/i18n/en.ts`** — Add the English title and description under `about.features.phaseNTitle` / `about.features.phaseNDesc`.
+4. **`web/src/i18n/pt-BR.ts`** — Add the Portuguese title and description under the same keys.
