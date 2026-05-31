@@ -7,6 +7,8 @@ import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { AuthUser } from "../auth/AuthContext";
 import LanguageSwitcher from "./LanguageSwitcher";
+import DarkModeToggle from "./DarkModeToggle";
+import { useTheme } from "../theme/ThemeContext";
 
 interface Props extends DrawerContentComponentProps {
   user: AuthUser;
@@ -22,10 +24,14 @@ const NAV_ITEMS: { route: keyof import("../navigation/types").DrawerParamList; l
 
 export default function DrawerContent({ navigation, user, onLogout }: Props) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
 
   return (
-    <DrawerContentScrollView contentContainerStyle={styles.container}>
+    <DrawerContentScrollView
+      contentContainerStyle={[styles.container, { backgroundColor: colors.surface }]}
+    >
       <LanguageSwitcher />
+      <DarkModeToggle />
       <Text style={styles.section}>{t("sidebar.navigation")}</Text>
       <DrawerItem
         label={t("app.title")}
