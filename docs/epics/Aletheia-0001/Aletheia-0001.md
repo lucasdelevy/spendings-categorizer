@@ -43,7 +43,7 @@ The iOS app uses the same API Gateway endpoints documented in `docs/ARCHITECTURE
 | 2 | Update CI/CD and docs for monorepo layout | [02-update-cicd-and-docs-for-monorepo.md](./02-update-cicd-and-docs-for-monorepo.md) | Done |
 | 3 | Initialize Expo project in `ios/` | [03-initialize-expo-ios-project.md](./03-initialize-expo-ios-project.md) | Done |
 | 4 | Extract shared engine and types package | [04-extract-shared-engine-and-types.md](./04-extract-shared-engine-and-types.md) | Done |
-| 5 | App shell, navigation, and side menu | [05-app-shell-navigation-and-side-menu.md](./05-app-shell-navigation-and-side-menu.md) | Not started |
+| 5 | App shell, navigation, and side menu | [05-app-shell-navigation-and-side-menu.md](./05-app-shell-navigation-and-side-menu.md) | Done |
 | 6 | API client and secure token storage | [06-api-client-and-secure-token-storage.md](./06-api-client-and-secure-token-storage.md) | Not started |
 | 7 | Google Sign-In on iOS | [07-google-sign-in-on-ios.md](./07-google-sign-in-on-ios.md) | Not started |
 | 8 | Backend CORS for mobile clients | [08-backend-cors-for-mobile-clients.md](./08-backend-cors-for-mobile-clients.md) | Not started |
