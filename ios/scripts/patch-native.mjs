@@ -22,29 +22,81 @@ function patchExpoLocalization() {
   );
   if (!fs.existsSync(swift)) return;
 
-  const marker = "@unknown default:";
   let content = fs.readFileSync(swift, "utf8");
-  if (content.includes(marker)) {
-    console.log("expo-localization already patched for iOS 26 calendars.");
-    return;
-  }
+  let changed = false;
 
-  const needle = `    case .iso8601:
+  const calendarMarker = "@unknown default:";
+  if (!content.includes(calendarMarker)) {
+    const needle = `    case .iso8601:
       return "iso8601"
     }`;
-  const replacement = `    case .iso8601:
+    const replacement = `    case .iso8601:
       return "iso8601"
     @unknown default:
       return "iso8601"
     }`;
 
-  if (!content.includes(needle)) {
-    console.error("Unexpected LocalizationModule.swift layout; patch manually.");
-    process.exit(1);
+    if (!content.includes(needle)) {
+      console.error("Unexpected LocalizationModule.swift layout; patch manually.");
+      process.exit(1);
+    }
+
+    content = content.replace(needle, replacement);
+    changed = true;
+    console.log("Patched expo-localization for iOS 26 calendar identifiers.");
   }
 
-  fs.writeFileSync(swift, content.replace(needle, replacement));
-  console.log("Patched expo-localization for iOS 26 calendar identifiers.");
+  const tempMarker = "iOS 26 workaround: skip MeasurementFormatter";
+  if (!content.includes(tempMarker)) {
+    const tempNeedle = `  static func getTemperatureUnit() -> String? {
+    let formatter = MeasurementFormatter()
+    formatter.locale = Locale.current
+
+    let temperature = Measurement(value: 0, unit: UnitTemperature.celsius)
+    let formatted = formatter.string(from: temperature)
+
+    guard let unitCharacter = formatted.last else {
+      return nil
+    }
+
+    return unitCharacter == "F" ? "fahrenheit" : "celsius"
+  }`;
+    const tempReplacement = `  static func getTemperatureUnit() -> String? {
+    // ${tempMarker} (ICU crash in NSUnitFormatter on iOS 26).
+    return Locale.current.usesMetricSystem ? "celsius" : "fahrenheit"
+  }`;
+
+    if (!content.includes(tempNeedle)) {
+      console.error("Unexpected getTemperatureUnit in LocalizationModule.swift; patch manually.");
+      process.exit(1);
+    }
+
+    content = content.replace(tempNeedle, tempReplacement);
+    changed = true;
+    console.log("Patched expo-localization getTemperatureUnit for iOS 26.");
+  }
+
+  const textDirMarker = "iOS 26 workaround: characterDirection";
+  if (!content.includes(textDirMarker)) {
+    const textDirNeedle =
+      '"textDirection": languageLocale.language.characterDirection == .rightToLeft ? "rtl" : "ltr",';
+    const textDirReplacement = `"textDirection": Locale.characterDirection(forLanguage: languageTag) == .rightToLeft ? "rtl" : "ltr", // ${textDirMarker}`;
+
+    if (!content.includes(textDirNeedle)) {
+      console.error("Unexpected textDirection in LocalizationModule.swift; patch manually.");
+      process.exit(1);
+    }
+
+    content = content.replace(textDirNeedle, textDirReplacement);
+    changed = true;
+    console.log("Patched expo-localization textDirection for iOS 26.");
+  }
+
+  if (changed) {
+    fs.writeFileSync(swift, content);
+  } else {
+    console.log("expo-localization already patched for iOS 26.");
+  }
 }
 
 patchExpoLocalization();

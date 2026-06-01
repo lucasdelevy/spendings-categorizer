@@ -1,11 +1,19 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Localization from "expo-localization";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import en from "./en";
 import ptBR from "./pt-BR";
 
 const LANGUAGE_KEY = "app_language";
+
+function deviceLanguage(): string {
+  try {
+    const locale = Intl.DateTimeFormat().resolvedOptions().locale;
+    return locale.startsWith("pt") ? "pt-BR" : "en";
+  } catch {
+    return "pt-BR";
+  }
+}
 
 const languageDetector = {
   type: "languageDetector" as const,
@@ -16,8 +24,7 @@ const languageDetector = {
       callback(stored);
       return;
     }
-    const device = Localization.getLocales()[0]?.languageTag ?? "pt-BR";
-    callback(device.startsWith("pt") ? "pt-BR" : "en");
+    callback(deviceLanguage());
   },
   init: () => {},
   cacheUserLanguage: async (lng: string) => {
