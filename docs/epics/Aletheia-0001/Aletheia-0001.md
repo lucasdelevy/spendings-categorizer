@@ -57,11 +57,11 @@ The iOS app uses the same API Gateway endpoints documented in `docs/ARCHITECTURE
 | 16 | Transaction table (all + by category) | [16-transaction-table-all-and-by-category.md](./16-transaction-table-all-and-by-category.md) | Done |
 | 17 | Transaction filters | [17-transaction-filters.md](./17-transaction-filters.md) | Done |
 | 18 | Transaction actions (recategorize, rename, ignore, hide) | [18-transaction-actions.md](./18-transaction-actions.md) | Done |
-| 19 | Categories page | [19-categories-page.md](./19-categories-page.md) | Not started |
-| 20 | Accounts page | [20-accounts-page.md](./20-accounts-page.md) | Not started |
-| 21 | Family page | [21-family-page.md](./21-family-page.md) | Not started |
-| 22 | Manage months (saved statements) | [22-manage-months-saved-statements.md](./22-manage-months-saved-statements.md) | Not started |
-| 23 | About page | [23-about-page.md](./23-about-page.md) | Not started |
+| 19 | Categories page | [19-categories-page.md](./19-categories-page.md) | Done |
+| 20 | Accounts page | [20-accounts-page.md](./20-accounts-page.md) | Done |
+| 21 | Family page | [21-family-page.md](./21-family-page.md) | Done |
+| 22 | Manage months (saved statements) | [22-manage-months-saved-statements.md](./22-manage-months-saved-statements.md) | Done |
+| 23 | About page | [23-about-page.md](./23-about-page.md) | Done |
 | 24 | Standalone dev build on connected iPhone | [24-standalone-dev-build-on-iphone.md](./24-standalone-dev-build-on-iphone.md) | Not started |
 | 25 | App icon, splash screen, and polish | [25-app-icon-splash-and-polish.md](./25-app-icon-splash-and-polish.md) | Not started |
 
