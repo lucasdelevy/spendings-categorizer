@@ -17,11 +17,16 @@ interface ThemeColors {
   surface: string;
   text: string;
   textMuted: string;
+  placeholder: string;
   border: string;
   primary: string;
   primaryText: string;
+  primaryMutedBg: string;
   danger: string;
   dangerBg: string;
+  dangerBorder: string;
+  chartBar: string;
+  chartLine: string;
 }
 
 const LIGHT: ThemeColors = {
@@ -29,11 +34,16 @@ const LIGHT: ThemeColors = {
   surface: "#ffffff",
   text: "#111827",
   textMuted: "#6b7280",
+  placeholder: "#9ca3af",
   border: "#e5e7eb",
   primary: "#4f46e5",
   primaryText: "#4338ca",
+  primaryMutedBg: "#eef2ff",
   danger: "#dc2626",
   dangerBg: "#fef2f2",
+  dangerBorder: "#fecaca",
+  chartBar: "#6366f1",
+  chartLine: "#f59e0b",
 };
 
 const DARK: ThemeColors = {
@@ -41,11 +51,16 @@ const DARK: ThemeColors = {
   surface: "#1f2937",
   text: "#f9fafb",
   textMuted: "#9ca3af",
+  placeholder: "#6b7280",
   border: "#374151",
   primary: "#818cf8",
   primaryText: "#a5b4fc",
+  primaryMutedBg: "#312e81",
   danger: "#f87171",
   dangerBg: "#450a0a",
+  dangerBorder: "#991b1b",
+  chartBar: "#818cf8",
+  chartLine: "#fbbf24",
 };
 
 const STORAGE_KEY = "theme_mode";

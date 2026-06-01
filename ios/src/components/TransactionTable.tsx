@@ -1,13 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  Modal,
-  Pressable,
-  SectionList,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Modal, Pressable, SectionList, StyleSheet, Text, View } from "react-native";
 import { useTranslation } from "react-i18next";
 import type {
   Account,
@@ -19,6 +11,13 @@ import type {
 import { getCategoryColorFromConfig, limitProgress } from "@aletheia/shared";
 import { formatBRL } from "../i18n";
 import { useTheme } from "../theme/ThemeContext";
+import TransactionFilters, {
+  EMPTY_FILTERS,
+  collectOwners,
+  matchesFilters,
+  type FilterState,
+} from "./TransactionFilters";
+import { Button, TextField } from "./ui";
 
 export type TransactionTableMode = "all" | "byCategory";
 
@@ -44,23 +43,6 @@ interface Props {
   onHide?: (payload: { globalIndex: number }) => void;
 }
 
-interface FilterState {
-  minAmount: string;
-  maxAmount: string;
-  dateFrom: string;
-  dateTo: string;
-}
-
-const EMPTY_FILTERS: FilterState = { minAmount: "", maxAmount: "", dateFrom: "", dateTo: "" };
-
-function matchesFilters(tx: Transaction, filters: FilterState): boolean {
-  if (filters.minAmount && Math.abs(tx.amount) < parseFloat(filters.minAmount)) return false;
-  if (filters.maxAmount && Math.abs(tx.amount) > parseFloat(filters.maxAmount)) return false;
-  if (filters.dateFrom && tx.date < filters.dateFrom) return false;
-  if (filters.dateTo && tx.date > filters.dateTo) return false;
-  return true;
-}
-
 export default function TransactionTable({
   categories,
   catConfig,
@@ -74,10 +56,15 @@ export default function TransactionTable({
   const { t } = useTranslation();
   const { colors } = useTheme();
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
   const [activeTx, setActiveTx] = useState<Transaction | null>(null);
   const [newCategory, setNewCategory] = useState("");
   const [renameValue, setRenameValue] = useState("");
+
+  const owners = useMemo(
+    () => collectOwners(categories.flatMap((c) => c.transactions)),
+    [categories],
+  );
 
   const filteredCategories = useMemo(() => {
     return categories
@@ -107,38 +94,15 @@ export default function TransactionTable({
 
   return (
     <View>
-      <Pressable onPress={() => setShowFilters((v) => !v)} style={styles.filterToggle}>
-        <Text style={{ color: colors.primary }}>{t("filters.title", "Filters")}</Text>
-      </Pressable>
+      <Button
+        label={showFilters ? `${t("filters.title")} ▾` : `${t("filters.title")} ▸`}
+        variant="secondary"
+        compact
+        onPress={() => setShowFilters((v) => !v)}
+        style={styles.filterToggle}
+      />
       {showFilters && (
-        <View style={[styles.filters, { borderColor: colors.border }]}>
-          <TextInput
-            placeholder={t("filters.minAmount", "Min amount")}
-            value={filters.minAmount}
-            onChangeText={(v) => setFilters((f) => ({ ...f, minAmount: v }))}
-            keyboardType="numeric"
-            style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-          />
-          <TextInput
-            placeholder={t("filters.maxAmount", "Max amount")}
-            value={filters.maxAmount}
-            onChangeText={(v) => setFilters((f) => ({ ...f, maxAmount: v }))}
-            keyboardType="numeric"
-            style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-          />
-          <TextInput
-            placeholder={t("filters.dateFrom", "From date")}
-            value={filters.dateFrom}
-            onChangeText={(v) => setFilters((f) => ({ ...f, dateFrom: v }))}
-            style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-          />
-          <TextInput
-            placeholder={t("filters.dateTo", "To date")}
-            value={filters.dateTo}
-            onChangeText={(v) => setFilters((f) => ({ ...f, dateTo: v }))}
-            style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-          />
-        </View>
+        <TransactionFilters filters={filters} onChange={setFilters} owners={owners} />
       )}
 
       <SectionList
@@ -173,9 +137,16 @@ export default function TransactionTable({
               setRenameValue(item.payee);
             }}
           >
-            <View style={[styles.dot, { backgroundColor: getCategoryColorFromConfig(item.category, catConfig ?? null) }]} />
+            <View
+              style={[
+                styles.dot,
+                { backgroundColor: getCategoryColorFromConfig(item.category, catConfig ?? null) },
+              ]}
+            />
             <View style={styles.rowBody}>
-              <Text style={[styles.payee, { color: colors.text }]} numberOfLines={1}>{item.payee}</Text>
+              <Text style={[styles.payee, { color: colors.text }]} numberOfLines={1}>
+                {item.payee}
+              </Text>
               <Text style={{ color: colors.textMuted, fontSize: 12 }}>{item.date}</Text>
             </View>
             <Text style={[styles.amount, { color: item.amount < 0 ? "#dc2626" : "#16a34a" }]}>
@@ -191,14 +162,13 @@ export default function TransactionTable({
             <Text style={[styles.modalTitle, { color: colors.text }]}>{activeTx?.payee}</Text>
             {onRecategorize && (
               <>
-                <TextInput
+                <TextField
                   value={newCategory}
                   onChangeText={setNewCategory}
                   placeholder={t("actions.newCategory", "Category")}
-                  style={[styles.input, { color: colors.text, borderColor: colors.border }]}
                 />
-                <Pressable
-                  style={[styles.actionBtn, { backgroundColor: colors.primary }]}
+                <Button
+                  label={t("actions.recategorize", "Recategorize")}
                   onPress={() => {
                     if (!activeTx) return;
                     onRecategorize({
@@ -208,59 +178,45 @@ export default function TransactionTable({
                     });
                     setActiveTx(null);
                   }}
-                >
-                  <Text style={styles.actionBtnText}>{t("actions.recategorize", "Recategorize")}</Text>
-                </Pressable>
+                />
               </>
             )}
             {onRename && (
               <>
-                <TextInput
-                  value={renameValue}
-                  onChangeText={setRenameValue}
-                  style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                />
-                <Pressable
-                  style={[styles.actionBtn, { backgroundColor: colors.primary }]}
+                <TextField value={renameValue} onChangeText={setRenameValue} />
+                <Button
+                  label={t("actions.rename", "Rename")}
                   onPress={() => {
                     if (!activeTx) return;
                     onRename({ globalIndex: activeTx._originalIndex ?? 0, newPayeeName: renameValue });
                     setActiveTx(null);
                   }}
-                >
-                  <Text style={styles.actionBtnText}>{t("actions.rename", "Rename")}</Text>
-                </Pressable>
+                />
               </>
             )}
             {onIgnore && (
-              <Pressable
-                style={styles.actionBtnOutline}
+              <Button
+                label={t("actions.ignore", "Ignore")}
+                variant="secondary"
                 onPress={() => {
                   if (!activeTx) return;
                   onIgnore({ globalIndex: activeTx._originalIndex ?? 0 });
                   setActiveTx(null);
                 }}
-              >
-                <Text style={{ color: colors.primary }}>{t("actions.ignore", "Ignore")}</Text>
-              </Pressable>
+              />
             )}
             {onHide && (
-              <Pressable
-                style={styles.actionBtnOutline}
+              <Button
+                label={t("actions.hide", "Hide")}
+                variant="secondary"
                 onPress={() => {
                   if (!activeTx) return;
                   onHide({ globalIndex: activeTx._originalIndex ?? 0 });
                   setActiveTx(null);
                 }}
-              >
-                <Text style={{ color: colors.primary }}>{t("actions.hide", "Hide")}</Text>
-              </Pressable>
+              />
             )}
-            <Pressable onPress={() => setActiveTx(null)}>
-              <Text style={{ color: colors.textMuted, textAlign: "center", marginTop: 12 }}>
-                {t("app.cancel")}
-              </Text>
-            </Pressable>
+            <Button label={t("app.cancel")} variant="ghost" onPress={() => setActiveTx(null)} />
           </View>
         </View>
       </Modal>
@@ -269,9 +225,7 @@ export default function TransactionTable({
 }
 
 const styles = StyleSheet.create({
-  filterToggle: { marginBottom: 8 },
-  filters: { borderWidth: 1, borderRadius: 8, padding: 8, gap: 8, marginBottom: 8 },
-  input: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
+  filterToggle: { alignSelf: "flex-start", marginBottom: 8 },
   sectionHeader: { paddingVertical: 8, paddingHorizontal: 4 },
   sectionTitle: { fontWeight: "700", fontSize: 15 },
   row: {
@@ -288,7 +242,4 @@ const styles = StyleSheet.create({
   modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
   modal: { padding: 20, borderTopLeftRadius: 16, borderTopRightRadius: 16, gap: 10 },
   modalTitle: { fontSize: 18, fontWeight: "700", marginBottom: 8 },
-  actionBtn: { padding: 12, borderRadius: 8, alignItems: "center" },
-  actionBtnText: { color: "#fff", fontWeight: "600" },
-  actionBtnOutline: { padding: 12, alignItems: "center" },
 });

@@ -1,7 +1,7 @@
 # Task 03 — Transaction filters UX parity
 
 **Epic:** [Aletheia-0002](./Aletheia-0002.md)  
-**Status:** Not started  
+**Status:** Done  
 **Depends on:** [05-shared-form-inputs-and-buttons.md](./05-shared-form-inputs-and-buttons.md)
 
 ## Description

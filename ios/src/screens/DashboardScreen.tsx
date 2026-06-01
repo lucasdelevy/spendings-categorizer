@@ -1,14 +1,17 @@
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { limitProgress } from "@aletheia/shared";
 import { useAuth } from "../auth/AuthContext";
+import DailySpendingChart from "../components/DailySpendingChart";
 import FamilyUploader from "../components/FamilyUploader";
 import MonthSelector from "../components/MonthSelector";
 import SaveConfirmBar from "../components/SaveConfirmBar";
-import SpendingCharts from "../components/SpendingCharts";
+import SpendingPieChart from "../components/SpendingPieChart";
 import SummaryBar from "../components/SummaryBar";
 import TransactionTable from "../components/TransactionTable";
+import { Card, SegmentedControl, UnderlineTabs } from "../components/ui";
 import { useAccounts } from "../hooks/useAccounts";
 import { useCategoryConfig } from "../hooks/useCategoryConfig";
 import { useDashboard } from "../hooks/useDashboard";
@@ -75,6 +78,8 @@ export default function DashboardScreen() {
       })
     : [];
 
+  const visibleTransactions = result?.transactions.filter((tx) => !tx.hidden) ?? [];
+
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <MonthSelector
@@ -86,7 +91,7 @@ export default function DashboardScreen() {
       />
 
       {error && (
-        <View style={[styles.errorBox, { backgroundColor: colors.dangerBg }]}>
+        <View style={[styles.errorBox, { backgroundColor: colors.dangerBg, borderColor: colors.dangerBorder }]}>
           <Text style={{ color: colors.danger }}>{error}</Text>
         </View>
       )}
@@ -112,52 +117,62 @@ export default function DashboardScreen() {
             totalIn={result.totalIn}
             totalOut={result.totalOut}
             balance={result.balance}
-            transactionCount={result.transactions.filter((tx) => !tx.hidden).length}
+            transactionCount={visibleTransactions.length}
             hiddenCount={result.transactions.filter((tx) => tx.hidden).length}
             limitsExceeded={limitsExceeded}
           />
 
           {breached.length > 0 && (
-            <View style={[styles.breach, { backgroundColor: colors.dangerBg }]}>
-              <Text style={{ color: colors.danger, fontWeight: "600" }}>
-                {t("limits.breachBanner", { count: breached.length })}
-              </Text>
-              <Text style={{ color: colors.danger, fontSize: 12 }}>
-                {breached.map((c) => c.category).join(", ")}
-              </Text>
+            <View
+              style={[
+                styles.breach,
+                { backgroundColor: colors.dangerBg, borderColor: colors.dangerBorder },
+              ]}
+            >
+              <Ionicons name="warning-outline" size={20} color={colors.danger} style={styles.breachIcon} />
+              <View style={styles.breachCopy}>
+                <Text style={{ color: colors.danger, fontWeight: "600" }}>
+                  {t("limits.breachBanner", { count: breached.length })}
+                </Text>
+                <Text style={{ color: colors.danger, fontSize: 12, marginTop: 2 }}>
+                  {breached.map((c) => c.category).join(", ")}
+                </Text>
+              </View>
             </View>
           )}
 
-          <View style={[styles.tabs, { borderColor: colors.border }]}>
-            <Pressable onPress={() => setChartTab("category")} style={styles.tab}>
-              <Text style={{ color: chartTab === "category" ? colors.primary : colors.textMuted }}>
-                {t("app.tabCategory")}
-              </Text>
-            </Pressable>
-            <Pressable onPress={() => setChartTab("daily")} style={styles.tab}>
-              <Text style={{ color: chartTab === "daily" ? colors.primary : colors.textMuted }}>
-                {t("app.tabDaily")}
-              </Text>
-            </Pressable>
-          </View>
-          <SpendingCharts
-            mode={chartTab}
-            categories={result.categories}
-            transactions={result.transactions.filter((tx) => !tx.hidden)}
-          />
+          <Card style={styles.chartCard}>
+            <UnderlineTabs
+              options={[
+                { value: "category", label: t("app.tabCategory") },
+                { value: "daily", label: t("app.tabDaily") },
+              ]}
+              value={chartTab}
+              onChange={setChartTab}
+            />
+            <View style={styles.chartBody}>
+              {chartTab === "category" ? (
+                <SpendingPieChart categories={result.categories} showExpensesOnly />
+              ) : (
+                <DailySpendingChart transactions={visibleTransactions} />
+              )}
+            </View>
+          </Card>
 
-          <View style={[styles.tabs, { borderColor: colors.border, marginTop: 16 }]}>
-            <Pressable onPress={() => setTxTab("all")} style={styles.tab}>
-              <Text style={{ color: txTab === "all" ? colors.primary : colors.textMuted }}>
-                {t("app.tabAllTransactions")}
-              </Text>
-            </Pressable>
-            <Pressable onPress={() => setTxTab("byCategory")} style={styles.tab}>
-              <Text style={{ color: txTab === "byCategory" ? colors.primary : colors.textMuted }}>
-                {t("app.tabByCategory")}
-              </Text>
-            </Pressable>
+          <View style={styles.transactionsHeader}>
+            <Text style={[styles.transactionsTitle, { color: colors.textMuted }]}>
+              {t("app.transactions")}
+            </Text>
+            <SegmentedControl
+              options={[
+                { value: "all", label: t("app.tabAllTransactions") },
+                { value: "byCategory", label: t("app.tabByCategory") },
+              ]}
+              value={txTab}
+              onChange={setTxTab}
+            />
           </View>
+
           <TransactionTable
             categories={result.categories}
             statementType={result.type}
@@ -175,9 +190,24 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  errorBox: { padding: 12, borderRadius: 8, marginBottom: 12 },
-  results: { marginTop: 8 },
-  breach: { padding: 12, borderRadius: 8, marginBottom: 12 },
-  tabs: { flexDirection: "row", borderBottomWidth: 1, marginBottom: 12 },
-  tab: { flex: 1, paddingVertical: 10, alignItems: "center" },
+  errorBox: { padding: 12, borderRadius: 8, borderWidth: 1, marginBottom: 12 },
+  results: { marginTop: 8, gap: 16 },
+  breach: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  breachIcon: { marginTop: 1, marginRight: 10 },
+  breachCopy: { flex: 1 },
+  chartCard: { marginTop: 0 },
+  chartBody: { padding: 16 },
+  transactionsHeader: { gap: 10 },
+  transactionsTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
 });

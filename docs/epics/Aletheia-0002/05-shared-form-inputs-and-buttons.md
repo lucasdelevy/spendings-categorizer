@@ -1,7 +1,7 @@
 # Task 05 — Shared form inputs and button components
 
 **Epic:** [Aletheia-0002](./Aletheia-0002.md)  
-**Status:** Not started  
+**Status:** Done  
 **Depends on:** Aletheia-0001 task 10 (theme)
 
 ## Description

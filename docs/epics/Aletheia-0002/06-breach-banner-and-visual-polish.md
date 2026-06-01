@@ -1,7 +1,7 @@
 # Task 06 — Breach banner and visual polish
 
 **Epic:** [Aletheia-0002](./Aletheia-0002.md)  
-**Status:** Not started  
+**Status:** Done  
 **Depends on:** [04-dashboard-card-layout-and-tab-styling.md](./04-dashboard-card-layout-and-tab-styling.md), [05-shared-form-inputs-and-buttons.md](./05-shared-form-inputs-and-buttons.md)
 
 ## Description

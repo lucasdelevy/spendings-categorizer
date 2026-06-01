@@ -1,7 +1,7 @@
 # Task 01 — Category donut pie chart
 
 **Epic:** [Aletheia-0002](./Aletheia-0002.md)  
-**Status:** Not started  
+**Status:** Done  
 **Depends on:** Aletheia-0001 task 15 (functional baseline)
 
 ## Description

@@ -1,6 +1,6 @@
 # Aletheia-0002 — iOS UX Parity with Web
 
-**Status:** Not started  
+**Status:** Done  
 **Priority:** High
 
 ## Summary
@@ -31,12 +31,12 @@ This epic closes the visual and interaction gaps so the iOS app feels as polishe
 
 | # | Task | File | Status |
 |---|------|------|--------|
-| 1 | Category donut pie chart | [01-category-donut-pie-chart.md](./01-category-donut-pie-chart.md) | Not started |
-| 2 | Daily spending composed chart | [02-daily-spending-composed-chart.md](./02-daily-spending-composed-chart.md) | Not started |
-| 3 | Transaction filters UX parity | [03-transaction-filters-ux-parity.md](./03-transaction-filters-ux-parity.md) | Not started |
-| 4 | Dashboard card layout and tab styling | [04-dashboard-card-layout-and-tab-styling.md](./04-dashboard-card-layout-and-tab-styling.md) | Not started |
-| 5 | Shared form inputs and button components | [05-shared-form-inputs-and-buttons.md](./05-shared-form-inputs-and-buttons.md) | Not started |
-| 6 | Breach banner and visual polish | [06-breach-banner-and-visual-polish.md](./06-breach-banner-and-visual-polish.md) | Not started |
+| 1 | Category donut pie chart | [01-category-donut-pie-chart.md](./01-category-donut-pie-chart.md) | Done |
+| 2 | Daily spending composed chart | [02-daily-spending-composed-chart.md](./02-daily-spending-composed-chart.md) | Done |
+| 3 | Transaction filters UX parity | [03-transaction-filters-ux-parity.md](./03-transaction-filters-ux-parity.md) | Done |
+| 4 | Dashboard card layout and tab styling | [04-dashboard-card-layout-and-tab-styling.md](./04-dashboard-card-layout-and-tab-styling.md) | Done |
+| 5 | Shared form inputs and button components | [05-shared-form-inputs-and-buttons.md](./05-shared-form-inputs-and-buttons.md) | Done |
+| 6 | Breach banner and visual polish | [06-breach-banner-and-visual-polish.md](./06-breach-banner-and-visual-polish.md) | Done |
 
 ## Suggested implementation order
 
@@ -63,12 +63,12 @@ This epic closes the visual and interaction gaps so the iOS app feels as polishe
 
 ## UX parity checklist
 
-- [ ] Category tab shows a donut pie chart (expenses only) with colored legend and percentages
-- [ ] Daily tab shows vertical bar chart with cumulative line, axes, grid, and formatted tooltips
-- [ ] Daily chart date labels show `DD/MM` (not truncated ISO prefix)
-- [ ] Chart section sits inside a bordered card with styled tab bar
-- [ ] Transaction view uses a segmented pill control for All / By Category
-- [ ] Filters use labeled sections, date presets, optional calendar, owner chips, and clear action
-- [ ] Filter toggle and primary actions use visible button styling with adequate touch targets
-- [ ] Breach banner includes warning icon matching web
+- [x] Category tab shows a donut pie chart (expenses only) with colored legend and percentages
+- [x] Daily tab shows vertical bar chart with cumulative line, axes, grid, and formatted tooltips
+- [x] Daily chart date labels show `DD/MM` (not truncated ISO prefix)
+- [x] Chart section sits inside a bordered card with styled tab bar
+- [x] Transaction view uses a segmented pill control for All / By Category
+- [x] Filters use labeled sections, date presets, optional calendar, owner chips, and clear action
+- [x] Filter toggle and primary actions use visible button styling with adequate touch targets
+- [x] Breach banner includes warning icon matching web
 - [ ] Light and dark mode verified on physical device

@@ -1,7 +1,7 @@
 # Task 04 — Dashboard card layout and tab styling
 
 **Epic:** [Aletheia-0002](./Aletheia-0002.md)  
-**Status:** Not started  
+**Status:** Done  
 **Depends on:** [01-category-donut-pie-chart.md](./01-category-donut-pie-chart.md), [02-daily-spending-composed-chart.md](./02-daily-spending-composed-chart.md)
 
 ## Description
