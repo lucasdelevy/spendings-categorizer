@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "dev.lucasdelevy.aletheia"
+      "bundleIdentifier": "com.lucasdelevy.aletheia"
     },
     "scheme": "aletheia"
   }

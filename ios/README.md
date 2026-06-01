@@ -18,7 +18,7 @@ npm start
 # Press i for iOS simulator
 ```
 
-Google Sign-In requires a valid iOS OAuth client ID matching `app.json` → `ios.bundleIdentifier` (`dev.lucasdelevy.aletheia`).
+Google Sign-In requires a valid iOS OAuth client ID matching `app.json` → `ios.bundleIdentifier` (`com.lucasdelevy.aletheia`).
 
 ## Standalone build on a connected iPhone
 
@@ -43,7 +43,7 @@ open ios/Aletheia.xcworkspace
 
 1. Select the **Aletheia** target → **Signing & Capabilities**
 2. Choose your **Team**
-3. Ensure **Bundle Identifier** is `dev.lucasdelevy.aletheia` (or update Google OAuth + `app.json` to match)
+3. Ensure **Bundle Identifier** is `com.lucasdelevy.aletheia` (or update Google OAuth + `app.json` to match)
 
 ### 4. Build and run on device
 
@@ -56,7 +56,7 @@ open ios/Aletheia.xcworkspace
 
 In [Google Cloud Console](https://console.cloud.google.com/):
 
-- Create an **iOS** OAuth client with bundle ID `dev.lucasdelevy.aletheia`
+- Create an **iOS** OAuth client with bundle ID `com.lucasdelevy.aletheia`
 - Add the reversed client ID as a URL scheme in `app.json` if using native Google Sign-In
 - Set `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` in `.env`
 
