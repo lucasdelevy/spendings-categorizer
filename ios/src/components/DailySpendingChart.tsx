@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import Svg, { G, Line, Path, Rect, Text as SvgText } from "react-native-svg";
 import type { Transaction } from "@aletheia/shared";
@@ -42,7 +42,7 @@ function niceMax(value: number): number {
 
 const PLOT_HEIGHT = 200;
 const BAR_WIDTH = 20;
-const BAR_GAP = 8;
+const MIN_SLOT_WIDTH = 28;
 const PAD_LEFT = 44;
 const PAD_RIGHT = 44;
 const PAD_TOP = 12;
@@ -51,6 +51,7 @@ const PAD_BOTTOM = 36;
 export default function DailySpendingChart({ transactions }: Props) {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
+  const [containerWidth, setContainerWidth] = useState(0);
 
   const data = useMemo(() => {
     const dailyMap = new Map<string, number>();
@@ -79,16 +80,22 @@ export default function DailySpendingChart({ transactions }: Props) {
 
   const maxDaily = niceMax(Math.max(...data.map((d) => d.amount)));
   const maxCumulative = niceMax(Math.max(...data.map((d) => d.cumulative)));
-  const slotWidth = BAR_WIDTH + BAR_GAP;
-  const plotWidth = data.length * slotWidth;
+  const minPlotWidth = data.length * MIN_SLOT_WIDTH;
+  const plotWidth =
+    containerWidth > 0
+      ? Math.max(minPlotWidth, containerWidth - PAD_LEFT - PAD_RIGHT)
+      : minPlotWidth;
   const chartWidth = PAD_LEFT + plotWidth + PAD_RIGHT;
   const chartHeight = PAD_TOP + PLOT_HEIGHT + PAD_BOTTOM;
+  const slotWidth = plotWidth / data.length;
+  const scrollable = containerWidth > 0 && chartWidth > containerWidth;
+  const svgWidth = scrollable ? chartWidth : Math.max(chartWidth, containerWidth);
   const gridColor = isDark ? "#374151" : "#e5e7eb";
   const axisColor = colors.textMuted;
 
   const linePoints = data
     .map((point, i) => {
-      const x = PAD_LEFT + i * slotWidth + BAR_WIDTH / 2;
+      const x = PAD_LEFT + (i + 0.5) * slotWidth;
       const y = PAD_TOP + PLOT_HEIGHT - (point.cumulative / maxCumulative) * PLOT_HEIGHT;
       return `${x},${y}`;
     })
@@ -101,9 +108,16 @@ export default function DailySpendingChart({ transactions }: Props) {
   }));
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      <View>
-        <Svg width={Math.max(chartWidth, 320)} height={chartHeight}>
+    <View
+      style={styles.wrapper}
+      onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+    >
+      <ScrollView
+        horizontal
+        scrollEnabled={scrollable}
+        showsHorizontalScrollIndicator={scrollable}
+      >
+        <Svg width={svgWidth} height={chartHeight}>
           <G>
             {yTicks.map((tick) => {
               const y = PAD_TOP + PLOT_HEIGHT - tick.fraction * PLOT_HEIGHT;
@@ -134,7 +148,8 @@ export default function DailySpendingChart({ transactions }: Props) {
             })}
 
             {data.map((point, i) => {
-              const x = PAD_LEFT + i * slotWidth;
+              const centerX = PAD_LEFT + (i + 0.5) * slotWidth;
+              const x = centerX - BAR_WIDTH / 2;
               const barHeight = (point.amount / maxDaily) * PLOT_HEIGHT;
               const y = PAD_TOP + PLOT_HEIGHT - barHeight;
               return (
@@ -148,13 +163,13 @@ export default function DailySpendingChart({ transactions }: Props) {
                     fill={colors.chartBar}
                   />
                   <SvgText
-                    x={x + BAR_WIDTH / 2}
+                    x={centerX}
                     y={chartHeight - 8}
                     fontSize={10}
                     fill={axisColor}
-                    textAnchor="end"
+                    textAnchor="middle"
                     rotation={-45}
-                    origin={`${x + BAR_WIDTH / 2}, ${chartHeight - 8}`}
+                    origin={`${centerX}, ${chartHeight - 8}`}
                   >
                     {point.label}
                   </SvgText>
@@ -170,14 +185,15 @@ export default function DailySpendingChart({ transactions }: Props) {
             />
           </G>
         </Svg>
-        <Text style={[styles.hint, { color: colors.textMuted }]}>
-          {t("app.dailySpending")} · {t("app.cumulative")}
-        </Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+      <Text style={[styles.hint, { color: colors.textMuted }]}>
+        {t("app.dailySpending")} · {t("app.cumulative")}
+      </Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: { width: "100%" },
   hint: { fontSize: 11, textAlign: "center", marginTop: 4 },
 });
