@@ -41,9 +41,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
 
   if (response.status === 401) {
+    const body = await response.json().catch(() => ({ error: "Unauthorized" }));
     await clearToken();
     onUnauthorized?.();
-    throw new Error("Unauthorized");
+    throw new Error(typeof body.error === "string" ? body.error : "Unauthorized");
   }
 
   if (!response.ok) {

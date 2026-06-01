@@ -29,6 +29,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
     const sharedEnv = {
       TABLE_NAME: table.tableName,
       GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "PLACEHOLDER",
+      GOOGLE_IOS_CLIENT_ID: process.env.GOOGLE_IOS_CLIENT_ID || "",
       JWT_SECRET: process.env.JWT_SECRET || "CHANGE-ME-IN-PRODUCTION",
       ACCOUNT_KEY_SECRET:
         process.env.ACCOUNT_KEY_SECRET || "CHANGE-ME-32-BYTE-BASE64-KEY",

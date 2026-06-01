@@ -64,14 +64,15 @@ open ios/Aletheia.xcworkspace
 In [Google Cloud Console](https://console.cloud.google.com/):
 
 - Create an **iOS** OAuth client with bundle ID `com.lucasdelevy.aletheia`
-- Add the reversed client ID as a URL scheme in `app.json` if using native Google Sign-In
-- Set `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` in `.env`
+- Set `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` and `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` in `.env` (web ID = same as `VITE_GOOGLE_CLIENT_ID`)
+- Add the iOS client ID to the backend: GitHub secret `GOOGLE_IOS_CLIENT_ID`, or comma-separate both IDs in `GOOGLE_CLIENT_ID`, then redeploy backend
 
 ### Troubleshooting
 
 | Issue | Fix |
 |-------|-----|
 | Metro cannot resolve `@aletheia/shared` | Run `npm install` from **repo root** |
+| 401 / "Unauthorized" on sign-in | Backend must accept the iOS OAuth client ID (`GOOGLE_IOS_CLIENT_ID`); rebuild app after updating `.env` |
 | 401 on API calls | Check `EXPO_PUBLIC_API_URL` and sign in again |
 | Google Sign-In fails on device | Verify iOS client ID and bundle ID match |
 | `npm view expo-template-bare-minimum` E401 | Run prebuild with `NPM_CONFIG_REGISTRY=https://registry.npmjs.org/` |

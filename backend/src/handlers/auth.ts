@@ -6,8 +6,18 @@ import { upsertUser, getUser, setFamilyId } from "../services/userService.js";
 import { createSession, getSession, deleteSession } from "../services/sessionService.js";
 import { lookupFamilyByEmail, activateMember } from "../services/familyService.js";
 
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "";
-const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+/** Web + iOS OAuth client IDs (comma-separated GOOGLE_CLIENT_ID also supported). */
+function googleAudiences(): string[] {
+  const raw = [process.env.GOOGLE_CLIENT_ID ?? "", process.env.GOOGLE_IOS_CLIENT_ID ?? ""];
+  const ids = raw
+    .flatMap((value) => value.split(","))
+    .map((id) => id.trim())
+    .filter(Boolean);
+  return [...new Set(ids)];
+}
+
+const GOOGLE_AUDIENCES = googleAudiences();
+const googleClient = new OAuth2Client();
 
 function respond(statusCode: number, body: unknown, origin?: string): APIGatewayProxyResultV2 {
   return {
@@ -26,10 +36,15 @@ async function handleGoogleLogin(event: APIGatewayProxyEventV2): Promise<APIGate
     return respond(400, { error: "idToken is required" }, origin);
   }
 
+  if (GOOGLE_AUDIENCES.length === 0) {
+    console.error("Google OAuth not configured: set GOOGLE_CLIENT_ID and/or GOOGLE_IOS_CLIENT_ID");
+    return respond(500, { error: "Authentication not configured" }, origin);
+  }
+
   try {
     const ticket = await googleClient.verifyIdToken({
       idToken,
-      audience: GOOGLE_CLIENT_ID,
+      audience: GOOGLE_AUDIENCES,
     });
     const payload = ticket.getPayload();
     if (!payload || !payload.sub) {
