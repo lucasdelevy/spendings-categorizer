@@ -17,4 +17,5 @@ Epic IDs follow the pattern **Aletheia-XXXX** starting at `0001`.
 
 | ID | Title | Status |
 |----|-------|--------|
-| [Aletheia-0001](./Aletheia-0001/Aletheia-0001.md) | Launch iOS App | Not started |
+| [Aletheia-0001](./Aletheia-0001/Aletheia-0001.md) | Launch iOS App | Done |
+| [Aletheia-0002](./Aletheia-0002/Aletheia-0002.md) | iOS UX Parity with Web | Not started |
