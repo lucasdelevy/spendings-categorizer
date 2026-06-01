@@ -1,4 +1,5 @@
 import type { TransactionItem } from "../types.js";
+import { cleanPayeeName } from "./payeeUtils.js";
 import { isRefund } from "./refunds.js";
 
 const PIERRE_BASE_URL = "https://pierre.finance/tools/api";
@@ -103,7 +104,7 @@ export function mapPierreTransaction(tx: PierreTransaction): TransactionItem {
     date: isoDate,
     amount: Math.round(amount * 100) / 100,
     category: tx.category || "Outros",
-    payee: tx.description,
+    payee: cleanPayeeName(tx.description),
     installment,
     originalDescription: tx.description,
     source,

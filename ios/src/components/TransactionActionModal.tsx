@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useTranslation } from "react-i18next";
 import type { CategoryConfig, Transaction } from "@aletheia/shared";
-import { getCategoryColorFromConfig } from "@aletheia/shared";
+import { getCategoryColorFromConfig, cleanPayeeName } from "@aletheia/shared";
 import { formatBRL } from "../i18n";
 import { useTheme } from "../theme/ThemeContext";
 import { Button, TextField } from "./ui";
@@ -117,7 +117,7 @@ export default function TransactionActionModal({
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
             <View style={styles.headerCopy}>
               <Text style={[styles.payee, { color: colors.text }]} numberOfLines={1}>
-                {transaction.payee}
+                {cleanPayeeName(transaction.payee)}
               </Text>
               <Text style={{ color: colors.textMuted, fontSize: 12 }} numberOfLines={2}>
                 {transaction.originalDescription}

@@ -7,11 +7,12 @@ import type {
   Transaction,
   TransactionOrigin,
 } from "@aletheia/shared";
-import { getCategoryColorFromConfig } from "@aletheia/shared";
+import { cleanPayeeName, getCategoryColorFromConfig } from "@aletheia/shared";
 import { formatBRL, resolveLocale } from "../i18n";
 import { useTheme } from "../theme/ThemeContext";
 
-const TABLE_MIN_WIDTH = 680;
+const TABLE_MIN_WIDTH = 720;
+const COL_GAP = 12;
 
 const COL = {
   avatar: 36,
@@ -19,9 +20,9 @@ const COL = {
   source: 72,
   merchant: 200,
   category: 120,
-  amount: 96,
-  installment: 88,
-  actions: 72,
+  amount: 118,
+  installment: 100,
+  actions: 80,
 } as const;
 
 function formatDate(raw: string): string {
@@ -132,18 +133,22 @@ export function TransactionTableHeader({ statementType, ...layout }: HeaderProps
           {t("table.category")}
         </Text>
       )}
-      <Text
-        style={[
-          styles.headerCell,
-          { width: COL.amount, color: colors.textMuted, textAlign: "right" },
-        ]}
-      >
-        {t("table.amount")}
-      </Text>
-      {layout.showInstallmentCell && (
-        <Text style={[styles.headerCell, { width: COL.installment, color: colors.textMuted }]}>
-          {t("table.installment")}
+      <View style={[styles.amountCell, { width: COL.amount }]}>
+        <Text
+          style={[
+            styles.headerCell,
+            { color: colors.textMuted, textAlign: "right" },
+          ]}
+        >
+          {t("table.amount")}
         </Text>
+      </View>
+      {layout.showInstallmentCell && (
+        <View style={[styles.installmentCell, { width: COL.installment }]}>
+          <Text style={[styles.headerCell, { color: colors.textMuted }]}>
+            {t("table.installment")}
+          </Text>
+        </View>
       )}
       {layout.hasActionsCell && <View style={{ width: COL.actions }} />}
     </View>
@@ -211,7 +216,7 @@ export function TransactionTableRow({
           ]}
           numberOfLines={2}
         >
-          {tx.payee}
+          {cleanPayeeName(tx.payee)}
         </Text>
         {tx.accountId && accountNameMap?.get(tx.accountId) ? (
           <View style={[styles.accountChip, { backgroundColor: colors.border }]}>
@@ -229,28 +234,32 @@ export function TransactionTableRow({
           </Text>
         </View>
       )}
-      <Text
-        style={[
-          styles.cell,
-          {
-            width: COL.amount,
-            textAlign: "right",
-            fontWeight: "600",
-            color: isHidden
-              ? colors.textMuted
-              : tx.amount >= 0
-                ? "#16a34a"
-                : colors.text,
-            textDecorationLine: isHidden ? "line-through" : "none",
-          },
-        ]}
-      >
-        {formatBRL(tx.amount)}
-      </Text>
-      {layout.showInstallmentCell && (
-        <Text style={[styles.cell, { width: COL.installment, color: colors.textMuted }]}>
-          {tx.installment || "—"}
+      <View style={[styles.amountCell, { width: COL.amount }]}>
+        <Text
+          style={[
+            styles.cell,
+            {
+              textAlign: "right",
+              fontWeight: "600",
+              color: isHidden
+                ? colors.textMuted
+                : tx.amount >= 0
+                  ? "#16a34a"
+                  : colors.text,
+              textDecorationLine: isHidden ? "line-through" : "none",
+            },
+          ]}
+          numberOfLines={1}
+        >
+          {formatBRL(tx.amount)}
         </Text>
+      </View>
+      {layout.showInstallmentCell && (
+        <View style={[styles.installmentCell, { width: COL.installment }]}>
+          <Text style={[styles.cell, { color: colors.textMuted }]} numberOfLines={1}>
+            {tx.installment || "—"}
+          </Text>
+        </View>
       )}
       {layout.hasActionsCell && (
         <View style={[styles.actionsCell, { width: COL.actions }]}>
@@ -328,7 +337,13 @@ export function TransactionTableBody({
 }
 
 const styles = StyleSheet.create({
-  headerRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8, paddingHorizontal: 4 },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    gap: COL_GAP,
+  },
   headerCell: { fontSize: 10, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.3 },
   dataRow: {
     flexDirection: "row",
@@ -336,8 +351,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: COL_GAP,
   },
   cell: { fontSize: 13 },
+  amountCell: { paddingRight: 4, flexShrink: 0 },
+  installmentCell: { paddingLeft: 4, flexShrink: 0 },
   merchantCell: { gap: 4 },
   categoryCell: { flexDirection: "row", alignItems: "center", gap: 6 },
   accountChip: { alignSelf: "flex-start", borderRadius: 999, paddingHorizontal: 6, paddingVertical: 2 },

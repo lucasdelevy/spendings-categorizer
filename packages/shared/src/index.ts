@@ -7,3 +7,4 @@ export * from "./engine/categories";
 export * from "./engine/refunds";
 export * from "./utils/dates";
 export * from "./utils/limits";
+export * from "./utils/payee";

@@ -3,6 +3,7 @@ import type { Transaction, StatementResult } from "../types";
 import { CARD_CATEGORIES, CARD_IGNORE, CARD_RENAME } from "./categories";
 import type { EngineConfig } from "./categories";
 import { compareDatesDesc } from "../utils/dates";
+import { cleanPayeeName } from "../utils/payee";
 import { isRefund } from "./refunds";
 
 const INSTALLMENT_RE = / - Parcela (\d+\/\d+)$/i;
@@ -81,7 +82,7 @@ export function processCardCSV(
     const date = colDate ? (row[colDate] ?? "").trim() : "";
     const [cleanName, installment] = extractInstallment(title);
     const category = categorize(title, cats);
-    const payee = renamePayee(cleanName, renameMap);
+    const payee = renamePayee(cleanPayeeName(cleanName), renameMap);
 
     transactions.push({
       date,

@@ -3,6 +3,7 @@ import type { Transaction, StatementResult } from "../types";
 import { BANK_CATEGORIES, BANK_IGNORE, BANK_RENAME } from "./categories";
 import type { EngineConfig } from "./categories";
 import { compareDatesDesc } from "../utils/dates";
+import { cleanPayeeName } from "../utils/payee";
 import { normalizeRefundSign } from "./refunds";
 
 function categorize(description: string, cats: Record<string, string[]>): string {
@@ -41,7 +42,7 @@ function extractPayee(desc: string): string {
   const lower = desc.toLowerCase();
   if (lower.includes("pix -")) {
     const after = desc.includes(" - ") ? desc.split(" - ", 2)[1] : desc;
-    return after.split(" - ")[0].trim().substring(0, 60);
+    return cleanPayeeName(after.split(" - ")[0].trim());
   }
   for (const prefix of [
     "Compra no débito - ",
@@ -50,10 +51,10 @@ function extractPayee(desc: string): string {
   ]) {
     if (lower.includes(prefix.toLowerCase())) {
       const idx = lower.indexOf(prefix.toLowerCase()) + prefix.length;
-      return desc.substring(idx).trim().substring(0, 60);
+      return cleanPayeeName(desc.substring(idx).trim());
     }
   }
-  return desc.substring(0, 60);
+  return cleanPayeeName(desc);
 }
 
 function findColumn(

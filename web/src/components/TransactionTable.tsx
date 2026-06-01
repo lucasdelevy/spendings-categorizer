@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { CategorySummary, StatementType, CategoryConfig, Transaction, TransactionOrigin, UploadedBy, Account } from "@aletheia/shared";
-import { getCategoryColorFromConfig, limitProgress, limitColor, effectiveMonthlyLimit, compareDatesDesc } from "@aletheia/shared";
+import { getCategoryColorFromConfig, limitProgress, limitColor, effectiveMonthlyLimit, compareDatesDesc, cleanPayeeName } from "@aletheia/shared";
 import { formatBRL, resolveLocale } from "../i18n";
 import TransactionActionModal from "./TransactionActionModal";
 import type { RecategorizePayload, RenamePayload, IgnorePayload } from "./TransactionActionModal";
@@ -153,7 +153,7 @@ function TransactionRow({
         title={tx.originalDescription}
       >
         <div className="flex items-center gap-2">
-          <span className="truncate">{tx.payee}</span>
+          <span className="truncate">{cleanPayeeName(tx.payee)}</span>
           {tx.accountId && accountNameMap?.get(tx.accountId) && (
             <span
               className="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-gray-500 dark:bg-gray-700 dark:text-gray-400"
