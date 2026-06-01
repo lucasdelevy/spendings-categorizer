@@ -26,18 +26,25 @@ Requires Xcode, an Apple Developer account, and a USB-connected device.
 
 ### 1. Prebuild native project
 
+From the **Expo app folder** (`spendings-categorizer/ios/` — your prompt should end in `.../ios`, not `.../ios/ios`):
+
 ```bash
-cd ios
-npx expo prebuild --platform ios --clean
+cd /path/to/spendings-categorizer/ios
+# Do NOT run `cd ios` again — you are already in the Expo project root.
+
+# If prebuild fails fetching the template (npm E401 / always-auth), use the public registry:
+NPM_CONFIG_REGISTRY=https://registry.npmjs.org/ npx expo prebuild --platform ios --clean
 ```
 
-This generates `ios/ios/` (native Xcode project inside the Expo folder).
+This generates the **native** Xcode project at `./ios/` inside the Expo folder (full path: `spendings-categorizer/ios/ios/`).
 
 ### 2. Open in Xcode
 
 ```bash
 open ios/Aletheia.xcworkspace
 ```
+
+(Run that from `spendings-categorizer/ios/`, not from the repo root.)
 
 ### 3. Configure signing
 
@@ -67,6 +74,8 @@ In [Google Cloud Console](https://console.cloud.google.com/):
 | Metro cannot resolve `@aletheia/shared` | Run `npm install` from **repo root** |
 | 401 on API calls | Check `EXPO_PUBLIC_API_URL` and sign in again |
 | Google Sign-In fails on device | Verify iOS client ID and bundle ID match |
+| `npm view expo-template-bare-minimum` E401 | Run prebuild with `NPM_CONFIG_REGISTRY=https://registry.npmjs.org/` |
+| `cd: no such file or directory: ios` | You're already in `spendings-categorizer/ios`; skip the extra `cd ios` |
 
 ## Project structure
 

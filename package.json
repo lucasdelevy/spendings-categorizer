@@ -5,5 +5,8 @@
     "web",
     "ios",
     "packages/*"
-  ]
+  ],
+  "scripts": {
+    "ios:standalone": "npm run ios:standalone --workspace=aletheia-ios --"
+  }
 }
