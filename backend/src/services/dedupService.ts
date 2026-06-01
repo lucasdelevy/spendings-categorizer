@@ -1,6 +1,7 @@
 import type { TransactionItem } from "../types.js";
 
-const SIMILARITY_THRESHOLD = 0.3;
+const MAX_DATE_DISTANCE_DAYS = 10;
+const MATCH_THRESHOLD = 0.2;
 
 /**
  * Normalizes date strings from multiple formats to YYYY-MM-DD:
@@ -47,46 +48,62 @@ export function descriptionSimilarity(a: string, b: string): number {
   return smaller === 0 ? 0 : intersection / smaller;
 }
 
+/** Absolute day difference between two YYYY-MM-DD date strings. */
+export function daysBetween(a: string, b: string): number {
+  const msA = Date.UTC(+a.slice(0, 4), +a.slice(5, 7) - 1, +a.slice(8, 10));
+  const msB = Date.UTC(+b.slice(0, 4), +b.slice(5, 7) - 1, +b.slice(8, 10));
+  return Math.round(Math.abs(msA - msB) / 86_400_000);
+}
+
+/**
+ * Linear decay from 1.0 (same day) to 0.0 (MAX_DATE_DISTANCE_DAYS apart).
+ * Returns 0 for dates further apart than the maximum.
+ */
+export function dateProximity(dateA: string, dateB: string): number {
+  const diff = daysBetween(dateA, dateB);
+  return Math.max(0, 1 - diff / MAX_DATE_DISTANCE_DAYS);
+}
+
 export interface DedupResult {
   newTransactions: TransactionItem[];
   duplicateCount: number;
 }
 
-function adjacentDates(isoDate: string): string[] {
-  const d = new Date(isoDate + "T12:00:00Z");
-  const prev = new Date(d.getTime() - 86_400_000);
-  const next = new Date(d.getTime() + 86_400_000);
-  const fmt = (dt: Date) =>
-    `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
-  return [isoDate, fmt(prev), fmt(next)];
-}
-
 /**
  * Finds which incoming transactions are duplicates of existing ones.
- * Uses (normalizedDate, normalizedAmount) grouping + description similarity.
- * Tolerates ±1 day difference to handle UTC vs local-time date mismatches
- * between CSV (bank UTC dates) and Pierre (local BRT dates).
+ *
+ * Uses multiplicative composite scoring: matchScore = descSim * dateProximity.
+ * This tolerates multi-day date drift (weekends, card processing, Open Finance
+ * delays) while preventing false matches — zero description similarity or dates
+ * too far apart both independently force the score to zero.
+ *
  * Each existing transaction can only match one incoming transaction (consumed on match).
  */
 export function findDuplicates(
   incoming: TransactionItem[],
   existing: TransactionItem[],
 ): DedupResult {
-  const groups = new Map<string, TransactionItem[]>();
+  const amountGroups = new Map<number, TransactionItem[]>();
   for (const tx of existing) {
-    const key = `${normalizeDate(tx.date)}|${normalizeAmount(tx.amount)}`;
-    const group = groups.get(key);
+    const amt = normalizeAmount(tx.amount);
+    const group = amountGroups.get(amt);
     if (group) {
       group.push(tx);
     } else {
-      groups.set(key, [tx]);
+      amountGroups.set(amt, [tx]);
     }
   }
 
-  const hiddenKeys = new Set<string>();
+  const hiddenByAmount = new Map<number, TransactionItem[]>();
   for (const tx of existing) {
     if (tx.hidden) {
-      hiddenKeys.add(`${normalizeDate(tx.date)}|${normalizeAmount(tx.amount)}`);
+      const amt = normalizeAmount(tx.amount);
+      const group = hiddenByAmount.get(amt);
+      if (group) {
+        group.push(tx);
+      } else {
+        hiddenByAmount.set(amt, [tx]);
+      }
     }
   }
 
@@ -96,49 +113,53 @@ export function findDuplicates(
   for (const tx of incoming) {
     const normDate = normalizeDate(tx.date);
     const normAmount = normalizeAmount(tx.amount);
-    const dates = adjacentDates(normDate);
+    const candidates = amountGroups.get(normAmount);
 
-    let allCandidates: { tx: TransactionItem; groupKey: string; idx: number }[] = [];
-    for (const d of dates) {
-      const key = `${d}|${normAmount}`;
-      const group = groups.get(key);
-      if (group) {
-        for (let i = 0; i < group.length; i++) {
-          allCandidates.push({ tx: group[i], groupKey: key, idx: i });
-        }
-      }
-    }
-
-    if (allCandidates.length === 0) {
-      const isHidden = dates.some((d) => hiddenKeys.has(`${d}|${normAmount}`));
-      const out = isHidden ? { ...tx, hidden: true } : tx;
+    if (!candidates || candidates.length === 0) {
+      const out = shouldInheritHidden(normDate, normAmount, hiddenByAmount)
+        ? { ...tx, hidden: true }
+        : tx;
       newTransactions.push(out);
       continue;
     }
 
-    let bestEntry: (typeof allCandidates)[0] | null = null;
-    let bestSim = -1;
-    for (const entry of allCandidates) {
-      const sim = descriptionSimilarity(
+    let bestCandidate: TransactionItem | null = null;
+    let bestScore = -1;
+    for (const cand of candidates) {
+      const descSim = descriptionSimilarity(
         tx.originalDescription,
-        entry.tx.originalDescription,
+        cand.originalDescription,
       );
-      if (sim > bestSim) {
-        bestSim = sim;
-        bestEntry = entry;
+      const dateSim = dateProximity(normDate, normalizeDate(cand.date));
+      const score = descSim * dateSim;
+      if (score > bestScore) {
+        bestScore = score;
+        bestCandidate = cand;
       }
     }
 
-    if (bestSim >= SIMILARITY_THRESHOLD && bestEntry) {
-      const group = groups.get(bestEntry.groupKey)!;
-      group.splice(group.indexOf(bestEntry.tx), 1);
+    if (bestScore >= MATCH_THRESHOLD && bestCandidate) {
+      candidates.splice(candidates.indexOf(bestCandidate), 1);
       duplicateCount++;
     } else {
-      const isHidden = dates.some((d) => hiddenKeys.has(`${d}|${normAmount}`));
-      const out = isHidden ? { ...tx, hidden: true } : tx;
+      const out = shouldInheritHidden(normDate, normAmount, hiddenByAmount)
+        ? { ...tx, hidden: true }
+        : tx;
       newTransactions.push(out);
     }
   }
 
   return { newTransactions, duplicateCount };
+}
+
+function shouldInheritHidden(
+  normDate: string,
+  normAmount: number,
+  hiddenByAmount: Map<number, TransactionItem[]>,
+): boolean {
+  const hiddenTxs = hiddenByAmount.get(normAmount);
+  if (!hiddenTxs) return false;
+  return hiddenTxs.some(
+    (h) => dateProximity(normDate, normalizeDate(h.date)) > 0,
+  );
 }
