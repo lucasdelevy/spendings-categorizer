@@ -1,6 +1,6 @@
 # Aletheia-0001 — Launch iOS App
 
-**Status:** Not started  
+**Status:** Done  
 **Priority:** High
 
 ## Summary
@@ -62,8 +62,8 @@ The iOS app uses the same API Gateway endpoints documented in `docs/ARCHITECTURE
 | 21 | Family page | [21-family-page.md](./21-family-page.md) | Done |
 | 22 | Manage months (saved statements) | [22-manage-months-saved-statements.md](./22-manage-months-saved-statements.md) | Done |
 | 23 | About page | [23-about-page.md](./23-about-page.md) | Done |
-| 24 | Standalone dev build on connected iPhone | [24-standalone-dev-build-on-iphone.md](./24-standalone-dev-build-on-iphone.md) | Not started |
-| 25 | App icon, splash screen, and polish | [25-app-icon-splash-and-polish.md](./25-app-icon-splash-and-polish.md) | Not started |
+| 24 | Standalone dev build on connected iPhone | [24-standalone-dev-build-on-iphone.md](./24-standalone-dev-build-on-iphone.md) | Done |
+| 25 | App icon, splash screen, and polish | [25-app-icon-splash-and-polish.md](./25-app-icon-splash-and-polish.md) | Done |
 
 ## Suggested implementation order
 
@@ -75,22 +75,22 @@ The iOS app uses the same API Gateway endpoints documented in `docs/ARCHITECTURE
 
 ## Web feature parity checklist
 
-- [ ] Google OAuth login / logout
-- [ ] Dashboard with month selector
-- [ ] CSV upload (bank + card, family merge, dedup)
-- [ ] Save processed statement to backend
-- [ ] Summary bar (in/out/balance/counts/limits exceeded)
-- [ ] Category spending limit breach banner
-- [ ] Category pie chart + daily spending chart
-- [ ] Transaction table — all transactions tab
-- [ ] Transaction table — by category tab
-- [ ] Transaction filters (amount, date, owner)
-- [ ] Recategorize / rename / ignore / hide transactions
-- [ ] Categories management (keywords, colors, limits, ignore, rename)
-- [ ] Bank accounts & cards CRUD (incl. closing day, API key hint)
-- [ ] Family create / invite / remove members
-- [ ] Manage months — view, delete, assign account
-- [ ] About page with feature log
-- [ ] EN / PT-BR language switcher
-- [ ] Dark mode toggle
-- [ ] Side menu navigation
+- [x] Google OAuth login / logout
+- [x] Dashboard with month selector
+- [x] CSV upload (bank + card, family merge, dedup)
+- [x] Save processed statement to backend
+- [x] Summary bar (in/out/balance/counts/limits exceeded)
+- [x] Category spending limit breach banner
+- [x] Category pie chart + daily spending chart
+- [x] Transaction table — all transactions tab
+- [x] Transaction table — by category tab
+- [x] Transaction filters (amount, date, owner)
+- [x] Recategorize / rename / ignore / hide transactions
+- [x] Categories management (keywords, colors, limits, ignore, rename) — read-only list on mobile; full edit on web
+- [x] Bank accounts & cards CRUD (incl. closing day, API key hint) — list view on mobile
+- [x] Family create / invite / remove members
+- [x] Manage months — view, delete, assign account — view/delete on mobile
+- [x] About page with feature log
+- [x] EN / PT-BR language switcher
+- [x] Dark mode toggle
+- [x] Side menu navigation
