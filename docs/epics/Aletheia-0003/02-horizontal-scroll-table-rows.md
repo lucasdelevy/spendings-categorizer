@@ -1,7 +1,7 @@
 # Task 02 — Horizontal-scroll table rows with full columns
 
 **Epic:** [Aletheia-0003](./Aletheia-0003.md)  
-**Status:** Not started  
+**Status:** Done  
 **Depends on:** [01-collapsible-category-cards.md](./01-collapsible-category-cards.md)
 
 ## Description

@@ -1,7 +1,7 @@
 # Task 03 — Row action buttons and TransactionActionModal
 
 **Epic:** [Aletheia-0003](./Aletheia-0003.md)  
-**Status:** Not started  
+**Status:** Done  
 **Depends on:** [02-horizontal-scroll-table-rows.md](./02-horizontal-scroll-table-rows.md)
 
 ## Description

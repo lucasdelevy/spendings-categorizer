@@ -1,7 +1,7 @@
 # Task 01 — Collapsible category cards and limit progress
 
 **Epic:** [Aletheia-0003](./Aletheia-0003.md)  
-**Status:** Not started  
+**Status:** Done  
 **Depends on:** [Aletheia-0002 task 05](../Aletheia-0002/05-shared-form-inputs-and-buttons.md)
 
 ## Description

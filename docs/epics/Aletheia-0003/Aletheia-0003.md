@@ -1,6 +1,6 @@
 # Aletheia-0003 — iOS Transaction Table Parity
 
-**Status:** Not started  
+**Status:** Done  
 **Priority:** High  
 **Depends on:** [Aletheia-0002](../Aletheia-0002/Aletheia-0002.md) (dashboard charts, filters, shared UI)
 
@@ -37,9 +37,9 @@ This epic closes that gap.
 
 | # | Task | File | Status |
 |---|------|------|--------|
-| 1 | Collapsible category cards and limit progress | [01-collapsible-category-cards.md](./01-collapsible-category-cards.md) | Not started |
-| 2 | Horizontal-scroll table rows with full columns | [02-horizontal-scroll-table-rows.md](./02-horizontal-scroll-table-rows.md) | Not started |
-| 3 | Row action buttons and TransactionActionModal | [03-row-actions-and-action-modal.md](./03-row-actions-and-action-modal.md) | Not started |
+| 1 | Collapsible category cards and limit progress | [01-collapsible-category-cards.md](./01-collapsible-category-cards.md) | Done |
+| 2 | Horizontal-scroll table rows with full columns | [02-horizontal-scroll-table-rows.md](./02-horizontal-scroll-table-rows.md) | Done |
+| 3 | Row action buttons and TransactionActionModal | [03-row-actions-and-action-modal.md](./03-row-actions-and-action-modal.md) | Done |
 
 ## Suggested implementation order
 
@@ -61,14 +61,14 @@ This epic closes that gap.
 
 ## UX parity checklist
 
-- [ ] By Category: each category renders as a bordered card with tap-to-expand/collapse
-- [ ] Category header shows color dot, name, `{count}x` badge, total (green/red), chevron
-- [ ] Category header shows limit progress bar when a spending limit is configured
-- [ ] Expanded category reveals a table with column headers (date, source, merchant, amount, installment when applicable)
-- [ ] Table scrolls horizontally on iPhone so full merchant name and actions are reachable
-- [ ] Each row shows uploader avatar (when family data present), formatted locale date, source badge, account chip, origin label
-- [ ] Hide and tag action buttons visible per row; row tap does not hijack the whole row
-- [ ] Hidden transactions visible but dimmed; hidden count badge on category header
-- [ ] All mode: flat date-sorted table with category column, same row layout and horizontal scroll
-- [ ] `TransactionActionModal` matches web recategorize / rename / ignore flows
+- [x] By Category: each category renders as a bordered card with tap-to-expand/collapse
+- [x] Category header shows color dot, name, `{count}x` badge, total (green/red), chevron
+- [x] Category header shows limit progress bar when a spending limit is configured
+- [x] Expanded category reveals a table with column headers (date, source, merchant, amount, installment when applicable)
+- [x] Table scrolls horizontally on iPhone so full merchant name and actions are reachable
+- [x] Each row shows uploader avatar (when family data present), formatted locale date, source badge, account chip, origin label
+- [x] Hide and tag action buttons visible per row; row tap does not hijack the whole row
+- [x] Hidden transactions visible but dimmed; hidden count badge on category header
+- [x] All mode: flat date-sorted table with category column, same row layout and horizontal scroll
+- [x] `TransactionActionModal` matches web recategorize / rename / ignore flows
 - [ ] Light and dark mode verified on physical device

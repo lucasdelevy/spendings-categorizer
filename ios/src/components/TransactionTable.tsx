@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Modal, Pressable, SectionList, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import type {
   Account,
@@ -8,27 +9,29 @@ import type {
   StatementType,
   Transaction,
 } from "@aletheia/shared";
-import { getCategoryColorFromConfig, limitProgress } from "@aletheia/shared";
+import {
+  compareDatesDesc,
+  effectiveMonthlyLimit,
+  getCategoryColorFromConfig,
+  limitColor,
+  limitProgress,
+} from "@aletheia/shared";
 import { formatBRL } from "../i18n";
 import { useTheme } from "../theme/ThemeContext";
+import TransactionActionModal from "./TransactionActionModal";
+import type { RecategorizePayload } from "./TransactionActionModal";
 import TransactionFilters, {
   EMPTY_FILTERS,
   collectOwners,
+  filtersActive,
   matchesFilters,
   type FilterState,
 } from "./TransactionFilters";
-import { Button, TextField } from "./ui";
+import { getTableLayout, TransactionTableBody } from "./TransactionTableRows";
+import { Button, Card } from "./ui";
 
 export type TransactionTableMode = "all" | "byCategory";
-
-export interface RecategorizePayload {
-  globalIndex: number;
-  newCategory: string;
-  keyword: string;
-  createCategory?: boolean;
-  color?: string;
-  applyToSimilar?: boolean;
-}
+export type { RecategorizePayload };
 
 interface Props {
   categories: CategorySummary[];
@@ -43,11 +46,19 @@ interface Props {
   onHide?: (payload: { globalIndex: number }) => void;
 }
 
+interface ModalTarget {
+  transaction: Transaction;
+  globalIndex: number;
+  category: string;
+}
+
 export default function TransactionTable({
   categories,
+  statementType,
   catConfig,
   yearMonth,
-  mode = "all",
+  mode = "byCategory",
+  accounts,
   onRecategorize,
   onRename,
   onIgnore,
@@ -55,42 +66,83 @@ export default function TransactionTable({
 }: Props) {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [modalTarget, setModalTarget] = useState<ModalTarget | null>(null);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
   const [showFilters, setShowFilters] = useState(true);
-  const [activeTx, setActiveTx] = useState<Transaction | null>(null);
-  const [newCategory, setNewCategory] = useState("");
-  const [renameValue, setRenameValue] = useState("");
 
-  const owners = useMemo(
-    () => collectOwners(categories.flatMap((c) => c.transactions)),
+  const hasActions = !!(onRecategorize || onRename || onIgnore);
+  const isFiltering = filtersActive(filters);
+
+  const allTransactions = useMemo(
+    () => categories.flatMap((c) => c.transactions),
     [categories],
   );
+  const owners = useMemo(() => collectOwners(allTransactions), [allTransactions]);
 
   const filteredCategories = useMemo(() => {
-    return categories
-      .map((cat) => ({
-        ...cat,
-        transactions: cat.transactions.filter(
-          (tx) => !tx.hidden && matchesFilters(tx, filters),
-        ),
-      }))
-      .filter((cat) => cat.transactions.length > 0)
-      .map((cat) => ({
-        ...cat,
-        total: cat.transactions.reduce((s, tx) => s + tx.amount, 0),
-        count: cat.transactions.length,
-      }));
-  }, [categories, filters]);
+    const base = isFiltering
+      ? categories
+          .map((cat) => {
+            const txs = cat.transactions.filter((tx) => matchesFilters(tx, filters));
+            return { ...cat, transactions: txs, count: txs.length };
+          })
+          .filter((cat) => cat.transactions.length > 0)
+      : categories;
 
-  const flatRows = useMemo(
-    () => filteredCategories.flatMap((c) => c.transactions),
-    [filteredCategories],
+    return base.map((cat) => ({
+      ...cat,
+      total: cat.transactions.reduce((sum, tx) => (tx.hidden ? sum : sum + tx.amount), 0),
+      count: cat.transactions.filter((tx) => !tx.hidden).length,
+    }));
+  }, [categories, filters, isFiltering]);
+
+  const hasAvatars = filteredCategories.some((c) =>
+    c.transactions.some((tx) => tx.uploadedBy?.picture),
   );
 
-  const sections =
-    mode === "all"
-      ? [{ title: t("app.tabAllTransactions"), data: flatRows }]
-      : filteredCategories.map((c) => ({ title: c.category, data: c.transactions, summary: c }));
+  const accountNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const a of accounts ?? []) map.set(a.accountId, a.name);
+    return map;
+  }, [accounts]);
+
+  const flatRows = useMemo(() => {
+    if (mode !== "all") return [];
+    const rows: { tx: Transaction; category: string; globalIndex: number }[] = [];
+    for (const cat of filteredCategories) {
+      for (const tx of cat.transactions) {
+        rows.push({
+          tx,
+          category: cat.category,
+          globalIndex: tx._originalIndex ?? rows.length,
+        });
+      }
+    }
+    rows.sort((a, b) => compareDatesDesc(a.tx.date, b.tx.date));
+    return rows;
+  }, [mode, filteredCategories]);
+
+  const visibleCategoryNames = categories.map((c) => c.category);
+  const configCategoryNames = catConfig ? Object.keys(catConfig.categories) : [];
+  const allCategoryNames = Array.from(new Set([...visibleCategoryNames, ...configCategoryNames]));
+
+  const allLayout = getTableLayout(statementType, hasAvatars, hasActions, !!onHide, true);
+  const categoryLayout = getTableLayout(statementType, hasAvatars, hasActions, !!onHide, false);
+
+  const toggle = (cat: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+
+  if (categories.length === 0) return null;
+
+  const noResults =
+    (mode === "byCategory" && isFiltering && filteredCategories.length === 0) ||
+    (mode === "all" && flatRows.length === 0);
 
   return (
     <View>
@@ -105,141 +157,178 @@ export default function TransactionTable({
         <TransactionFilters filters={filters} onChange={setFilters} owners={owners} />
       )}
 
-      <SectionList
-        sections={sections}
-        keyExtractor={(item, index) => `${item._originalIndex ?? index}-${item.date}-${item.amount}`}
-        scrollEnabled={false}
-        renderSectionHeader={({ section }) => {
-          const summary = (section as { summary?: CategorySummary }).summary;
-          const limit = summary && catConfig ? catConfig.categories[summary.category]?.limit : undefined;
-          const progress =
-            summary && limit && yearMonth
-              ? limitProgress(summary.total, limit, yearMonth)
-              : 0;
-          return (
-            <View style={[styles.sectionHeader, { backgroundColor: colors.surface }]}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>{section.title}</Text>
-              {summary && (
-                <Text style={{ color: colors.textMuted, fontSize: 12 }}>
-                  {formatBRL(summary.total)} · {summary.count}
-                  {limit && limit.amount > 0 ? ` · ${Math.round(progress * 100)}%` : ""}
-                </Text>
-              )}
-            </View>
-          );
-        }}
-        renderItem={({ item }) => (
-          <Pressable
-            style={[styles.row, { borderColor: colors.border }]}
-            onPress={() => {
-              setActiveTx(item);
-              setNewCategory(item.category);
-              setRenameValue(item.payee);
-            }}
-          >
-            <View
-              style={[
-                styles.dot,
-                { backgroundColor: getCategoryColorFromConfig(item.category, catConfig ?? null) },
-              ]}
-            />
-            <View style={styles.rowBody}>
-              <Text style={[styles.payee, { color: colors.text }]} numberOfLines={1}>
-                {item.payee}
-              </Text>
-              <Text style={{ color: colors.textMuted, fontSize: 12 }}>{item.date}</Text>
-            </View>
-            <Text style={[styles.amount, { color: item.amount < 0 ? "#dc2626" : "#16a34a" }]}>
-              {formatBRL(item.amount)}
-            </Text>
-          </Pressable>
-        )}
-      />
+      {noResults && (
+        <Text style={[styles.noResults, { color: colors.textMuted }]}>{t("table.noResults")}</Text>
+      )}
 
-      <Modal visible={!!activeTx} transparent animationType="slide">
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.modal, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>{activeTx?.payee}</Text>
-            {onRecategorize && (
-              <>
-                <TextField
-                  value={newCategory}
-                  onChangeText={setNewCategory}
-                  placeholder={t("actions.newCategory", "Category")}
-                />
-                <Button
-                  label={t("actions.recategorize", "Recategorize")}
-                  onPress={() => {
-                    if (!activeTx) return;
-                    onRecategorize({
-                      globalIndex: activeTx._originalIndex ?? 0,
-                      newCategory,
-                      keyword: activeTx.payee,
-                    });
-                    setActiveTx(null);
-                  }}
-                />
-              </>
-            )}
-            {onRename && (
-              <>
-                <TextField value={renameValue} onChangeText={setRenameValue} />
-                <Button
-                  label={t("actions.rename", "Rename")}
-                  onPress={() => {
-                    if (!activeTx) return;
-                    onRename({ globalIndex: activeTx._originalIndex ?? 0, newPayeeName: renameValue });
-                    setActiveTx(null);
-                  }}
-                />
-              </>
-            )}
-            {onIgnore && (
-              <Button
-                label={t("actions.ignore", "Ignore")}
-                variant="secondary"
-                onPress={() => {
-                  if (!activeTx) return;
-                  onIgnore({ globalIndex: activeTx._originalIndex ?? 0 });
-                  setActiveTx(null);
-                }}
-              />
-            )}
-            {onHide && (
-              <Button
-                label={t("actions.hide", "Hide")}
-                variant="secondary"
-                onPress={() => {
-                  if (!activeTx) return;
-                  onHide({ globalIndex: activeTx._originalIndex ?? 0 });
-                  setActiveTx(null);
-                }}
-              />
-            )}
-            <Button label={t("app.cancel")} variant="ghost" onPress={() => setActiveTx(null)} />
-          </View>
+      {mode === "all" && flatRows.length > 0 && (
+        <Card style={styles.tableCard}>
+          <TransactionTableBody
+            statementType={statementType}
+            layout={allLayout}
+            rows={flatRows}
+            catConfig={catConfig}
+            accountNameMap={accountNameMap}
+            hasActions={hasActions}
+            onHide={onHide}
+            onOpenModal={setModalTarget}
+          />
+        </Card>
+      )}
+
+      {mode === "byCategory" && (
+        <View style={styles.categoryList}>
+          {filteredCategories.map(({ category, total, count, transactions }) => {
+            const isOpen = expanded.has(category);
+            const color = getCategoryColorFromConfig(category, catConfig ?? null);
+            const hiddenCount = transactions.filter((tx) => tx.hidden).length;
+            const catLimit = catConfig?.categories[category]?.limit;
+            const hasLimit = !!(catLimit && catLimit.amount > 0 && yearMonth);
+            const progress = hasLimit ? limitProgress(total, catLimit!, yearMonth!) : 0;
+            const progressClamp = Math.min(progress, 1);
+            const progressTone = hasLimit ? limitColor(progress) : "green";
+            const monthlyBudget = hasLimit ? effectiveMonthlyLimit(catLimit!, yearMonth!) : 0;
+            const progressBarColor =
+              progressTone === "red" ? "#ef4444" : progressTone === "amber" ? "#f59e0b" : "#22c55e";
+            const progressTextColor =
+              progressTone === "red"
+                ? colors.danger
+                : progressTone === "amber"
+                  ? "#d97706"
+                  : colors.textMuted;
+
+            const rows = transactions.map((tx, txIdx) => ({
+              tx,
+              category,
+              globalIndex: tx._originalIndex ?? txIdx,
+            }));
+
+            return (
+              <Card key={category} style={styles.categoryCard}>
+                <Pressable
+                  onPress={() => toggle(category)}
+                  style={[styles.categoryHeader, { borderBottomColor: colors.border }]}
+                >
+                  <View style={styles.categoryHeaderTop}>
+                    <View style={styles.categoryTitleRow}>
+                      <View style={[styles.categoryDot, { backgroundColor: color }]} />
+                      <Text style={[styles.categoryName, { color: colors.text }]}>{category}</Text>
+                      <View style={[styles.countBadge, { backgroundColor: colors.border }]}>
+                        <Text style={{ color: colors.textMuted, fontSize: 11 }}>{count}x</Text>
+                      </View>
+                      {hiddenCount > 0 && (
+                        <View style={[styles.countBadge, { backgroundColor: colors.border }]}>
+                          <Ionicons name="eye-off-outline" size={11} color={colors.textMuted} />
+                          <Text style={{ color: colors.textMuted, fontSize: 11 }}>{hiddenCount}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.categoryMeta}>
+                      <Text
+                        style={{
+                          fontWeight: "600",
+                          color: total >= 0 ? "#16a34a" : "#dc2626",
+                        }}
+                      >
+                        {formatBRL(total)}
+                      </Text>
+                      <Ionicons
+                        name={isOpen ? "chevron-up" : "chevron-down"}
+                        size={18}
+                        color={colors.textMuted}
+                      />
+                    </View>
+                  </View>
+                  {hasLimit && (
+                    <View style={styles.limitRow}>
+                      <View style={[styles.limitTrack, { backgroundColor: colors.border }]}>
+                        <View
+                          style={[
+                            styles.limitFill,
+                            { width: `${progressClamp * 100}%`, backgroundColor: progressBarColor },
+                          ]}
+                        />
+                      </View>
+                      <Text style={{ fontSize: 10, fontWeight: "500", color: progressTextColor }}>
+                        {formatBRL(Math.abs(total))}{" "}
+                        {t("limits.ofLimit", { limit: formatBRL(monthlyBudget) })}
+                        {progress >= 1
+                          ? ` — ${t("limits.exceeded")}`
+                          : ` (${Math.round(progress * 100)}%)`}
+                      </Text>
+                    </View>
+                  )}
+                </Pressable>
+                {isOpen && (
+                  <TransactionTableBody
+                    statementType={statementType}
+                    layout={categoryLayout}
+                    rows={rows}
+                    catConfig={catConfig}
+                    accountNameMap={accountNameMap}
+                    hasActions={hasActions}
+                    onHide={onHide}
+                    onOpenModal={setModalTarget}
+                  />
+                )}
+              </Card>
+            );
+          })}
         </View>
-      </Modal>
+      )}
+
+      {modalTarget && onRecategorize && onRename && onIgnore && (
+        <TransactionActionModal
+          transaction={modalTarget.transaction}
+          globalIndex={modalTarget.globalIndex}
+          currentCategory={modalTarget.category}
+          allCategories={allCategoryNames}
+          catConfig={catConfig ?? null}
+          onRecategorize={(payload) => {
+            setModalTarget(null);
+            onRecategorize(payload);
+          }}
+          onRename={(payload) => {
+            setModalTarget(null);
+            onRename(payload);
+          }}
+          onIgnore={(payload) => {
+            setModalTarget(null);
+            onIgnore(payload);
+          }}
+          onClose={() => setModalTarget(null)}
+        />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   filterToggle: { alignSelf: "flex-start", marginBottom: 8 },
-  sectionHeader: { paddingVertical: 8, paddingHorizontal: 4 },
-  sectionTitle: { fontWeight: "700", fontSize: 15 },
-  row: {
+  noResults: { textAlign: "center", paddingVertical: 24, fontSize: 14 },
+  tableCard: { overflow: "hidden" },
+  categoryList: { gap: 8 },
+  categoryCard: { overflow: "hidden" },
+  categoryHeader: { padding: 14, gap: 8 },
+  categoryHeaderTop: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    justifyContent: "space-between",
+    gap: 8,
   },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  rowBody: { flex: 1 },
-  payee: { fontSize: 14, fontWeight: "500" },
-  amount: { fontSize: 14, fontWeight: "600" },
-  modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" },
-  modal: { padding: 20, borderTopLeftRadius: 16, borderTopRightRadius: 16, gap: 10 },
-  modalTitle: { fontSize: 18, fontWeight: "700", marginBottom: 8 },
+  categoryTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, flex: 1, flexWrap: "wrap" },
+  categoryDot: { width: 12, height: 12, borderRadius: 6 },
+  categoryName: { fontSize: 15, fontWeight: "600" },
+  countBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  categoryMeta: { flexDirection: "row", alignItems: "center", gap: 10 },
+  limitRow: { gap: 6 },
+  limitTrack: { height: 6, borderRadius: 999, overflow: "hidden" },
+  limitFill: { height: 6, borderRadius: 999 },
 });
