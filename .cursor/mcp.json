@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "awslabs.aws-serverless-mcp-server": {
+      "command": "uvx",
+      "args": [
+        "awslabs.aws-serverless-mcp-server@latest",
+        "--allow-write",
+        "--allow-sensitive-data-access"
+      ],
+      "env": {
+        "AWS_ACCESS_KEY_ID": "${env:AWS_ACCESS_KEY_ID}",
+        "AWS_SECRET_ACCESS_KEY": "${env:AWS_SECRET_ACCESS_KEY}",
+        "AWS_SESSION_TOKEN": "${env:AWS_SESSION_TOKEN}",
+        "AWS_REGION": "us-east-1",
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      },
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}
