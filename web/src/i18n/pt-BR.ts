@@ -324,6 +324,9 @@ const ptBR = {
       phase16Title: "Notificações de limite de gasto",
       phase16Desc:
         "O app iOS pode avisar quando uma categoria com limite de gasto atinge um percentual que você escolhe (padrão 80%). A sincronização da Pierre a cada 5 minutos confere o gasto atual e envia um push uma vez por categoria por mês, para não repetir o alerta enquanto o gasto continuar acima da linha.",
+      phase17Title: "Sem match fica Sem Categoria",
+      phase17Desc:
+        "As categorias da Open Finance da Pierre deixam de ser importadas como categorias novas no Aletheia. Se a transação não casar com uma keyword sua, ela fica em Sem Categoria. Abrir o mês reaplica as regras, então rótulos antigos da Pierre caem nesse bucket a menos que uma keyword case.",
     },
   },
 

@@ -1,6 +1,6 @@
 import type { RawRow } from "./csvParser";
 import type { Transaction, StatementResult } from "../types";
-import { CARD_CATEGORIES, CARD_IGNORE, CARD_RENAME } from "./categories";
+import { CARD_CATEGORIES, CARD_IGNORE, CARD_RENAME, FALLBACK_CATEGORY } from "./categories";
 import type { EngineConfig } from "./categories";
 import { compareDatesDesc } from "../utils/dates";
 import { cleanPayeeName } from "../utils/payee";
@@ -21,7 +21,7 @@ function categorize(title: string, cats: Record<string, string[]>): string {
       }
     }
   }
-  return bestCategory || "Sem Categoria";
+  return bestCategory || FALLBACK_CATEGORY;
 }
 
 function shouldIgnore(title: string, ignoreList: string[]): boolean {

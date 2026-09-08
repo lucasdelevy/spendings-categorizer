@@ -110,6 +110,8 @@ const COLORS: Record<string, string> = {
   "Sem Categoria": "#d1d5db",
 };
 
+export const FALLBACK_CATEGORY = "Sem Categoria";
+
 function toCatMap(raw: Record<string, string[]>): CatMap {
   const result: CatMap = {};
   for (const [name, keywords] of Object.entries(raw)) {

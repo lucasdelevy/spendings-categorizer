@@ -1,6 +1,6 @@
 import type { RawRow } from "./csvParser";
 import type { Transaction, StatementResult } from "../types";
-import { BANK_CATEGORIES, BANK_IGNORE, BANK_RENAME } from "./categories";
+import { BANK_CATEGORIES, BANK_IGNORE, BANK_RENAME, FALLBACK_CATEGORY } from "./categories";
 import type { EngineConfig } from "./categories";
 import { compareDatesDesc } from "../utils/dates";
 import { cleanPayeeName } from "../utils/payee";
@@ -19,7 +19,7 @@ function categorize(description: string, cats: Record<string, string[]>): string
       }
     }
   }
-  return bestCategory || "Sem Categoria";
+  return bestCategory || FALLBACK_CATEGORY;
 }
 
 function shouldIgnore(description: string, ignoreList: string[]): boolean {

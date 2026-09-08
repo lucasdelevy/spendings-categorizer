@@ -1,11 +1,12 @@
 import { PutCommand, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient, TABLE_NAME } from "./dynamoClient.js";
-import { buildDefaultConfig } from "../defaults/categories.js";
+import { buildDefaultConfig, FALLBACK_CATEGORY } from "../defaults/categories.js";
 import type { CategoryConfigRecord, CategoryEntry, StatementRecord, TransactionItem } from "../types.js";
 import { getMonthStatements, listStatements } from "./statementService.js";
 import { isRefund } from "./refunds.js";
+import { matchCategory } from "./categoryMatch.js";
 
-const FALLBACK_CATEGORY = "Sem Categoria";
+export { FALLBACK_CATEGORY, matchCategory };
 
 function pk(userId: string, familyId?: string): string {
   return familyId ? `FAMILY#${familyId}` : `USER#${userId}`;
@@ -213,22 +214,7 @@ function categorizeTransaction(
   tx: TransactionItem,
   config: CategoryConfigRecord,
 ): string {
-  const desc = tx.originalDescription.toLowerCase();
-
-  let bestMatch = "";
-  let bestCategory = "";
-
-  for (const [catName, entry] of Object.entries(config.categories)) {
-    for (const kw of entry.keywords) {
-      const kwLower = kw.toLowerCase();
-      if (desc.includes(kwLower) && kwLower.length > bestMatch.length) {
-        bestMatch = kwLower;
-        bestCategory = catName;
-      }
-    }
-  }
-
-  return bestCategory || tx.category;
+  return matchCategory(tx.originalDescription, config, tx.category);
 }
 
 export async function applyCategoryConfig(
@@ -250,6 +236,7 @@ export async function applyCategoryConfig(
       if (newCat !== tx.category) {
         tx.category = newCat;
         changed = true;
+        summaryDirty = true;
         totalChanged++;
       }
       // Heal historic refund rows whose amount was stored with the wrong

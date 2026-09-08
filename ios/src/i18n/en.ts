@@ -321,6 +321,9 @@ const en = {
       phase16Title: "Limit Breach Push Notifications",
       phase16Desc:
         "The iOS app can alert you when a category with a spending limit reaches a threshold you choose (default 80%). Pierre's 5-minute sync checks current spend and sends a push once per category per month, so you are not spammed while it stays over the line.",
+      phase17Title: "Unmatched Transactions Stay Uncategorized",
+      phase17Desc:
+        "Open Finance categories from Pierre are no longer imported as new Aletheia categories. If a transaction does not match one of your keyword rules, it stays in Sem Categoria. Opening a month re-applies the rules so older Pierre labels collapse into that bucket unless a keyword matches.",
     },
   },
 

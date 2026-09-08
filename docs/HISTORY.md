@@ -233,3 +233,12 @@ Key changes:
 - Sending uses APNs HTTP/2 from the Pierre Lambda (`APNS_KEY_ID`, `APNS_KEY_P8`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID`, `APNS_PRODUCTION`). Local/dev device installs use the sandbox environment.
 - iOS requests notification permission after sign-in via `expo-notifications` and registers the native device token.
 
+## Phase 17: Unmatched Transactions Stay Sem Categoria
+
+CSV imports have always used keyword matching and fallen back to **Sem Categoria**. Pierre Open Finance sync (`02d68cf`) kept Pierre/Pluggy's own category labels when no keyword matched, which created extra dashboard groups that were not in the user's category list.
+
+Key changes:
+- Pierre mapping no longer copies Open Finance category names. Unmatched transactions are stored as `Sem Categoria`.
+- Month apply (`POST /categories/apply`) uses the same rule: keyword match wins; otherwise keep the category only if it already exists in `CATCONFIG`; unknown labels fall back to `Sem Categoria`. Manual tags on existing categories are preserved.
+- Opening a month re-applies rules, so previously imported Pierre categories collapse into Sem Categoria unless a keyword matches.
+
