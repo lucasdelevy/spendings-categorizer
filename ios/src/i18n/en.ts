@@ -85,6 +85,9 @@ const en = {
     limitMonthly: "Monthly",
     setLimit: "Set limit",
     removeLimit: "Remove limit",
+    alertThreshold: "Alert at % of limit",
+    alertThresholdHint:
+      "You'll get a push when a category with a spending limit reaches this percent. Default is 80.",
     limitPerDay: "{{amount}}/day",
     limitPerWeek: "{{amount}}/week",
     limitPerMonth: "{{amount}}/month",
@@ -314,6 +317,9 @@ const en = {
       phase15Title: "Open Finance Key Reconnect",
       phase15Desc:
         "When Pierre reports an expired or invalid API key, the account is flagged and a dashboard banner asks you to generate a new key on Pierre and paste it back into Accounts. Saving a new key clears the flag and resumes the 5-minute sync.",
+      phase16Title: "Limit Breach Push Notifications",
+      phase16Desc:
+        "The iOS app can alert you when a category with a spending limit reaches a threshold you choose (default 80%). Pierre's 5-minute sync checks current spend and sends a push once per category per month, so you are not spammed while it stays over the line.",
     },
   },
 

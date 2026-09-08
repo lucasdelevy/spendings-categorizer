@@ -51,8 +51,10 @@
 | Statement (family) | `FAMILY#<familyId>` | `STMT#<YYYYMM>#<userId>` | fileName, uploadedAt, status, summary, transactions     |
 | Family meta   | `FAMILY#<familyId>`   | `META`                    | name, createdBy, createdAt                              |
 | Family member | `FAMILY#<familyId>`   | `MEMBER#<userId>`         | email, name, picture, role, status, joinedAt            |
-| Category config | `FAMILY#<familyId>` or `USER#<userId>` | `CATCONFIG` | bankCategories, cardCategories, bankIgnore, cardIgnore, bankRename, cardRename, updatedAt |
+| Category config | `FAMILY#<familyId>` or `USER#<userId>` | `CATCONFIG` | categories, ignore, rename, limitAlertPercent?, updatedAt |
 | Account       | `FAMILY#<familyId>` or `USER#<userId>` | `ACCT#<accountId>` | name, type (bank/card), closingDay?, dueDay?, apiKeyEncrypted?, apiKeyHint?, apiKeyStatus?, createdBy, createdAt, updatedAt |
+| Device        | `USER#<userId>`       | `DEVICE#<token>`          | token, platform (`ios`), locale, updatedAt                  |
+| Limit alert   | `FAMILY#<familyId>` or `USER#<userId>` | `LIMITALERT#<YYYYMM>#<category>` | percent, threshold, notifiedAt |
 | Email lookup  | `EMAILFAM#<email>`    | `LINK`                    | familyId                                                |
 
 - `userId` = Google's `sub` claim (googleId), used directly.

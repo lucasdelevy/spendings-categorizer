@@ -15,7 +15,7 @@
 
 ## Deploying Backend Changes
 
-The backend runs on AWS Lambda (Node.js 20.x, us-east-1). There are four Lambda functions:
+The backend runs on AWS Lambda (Node.js 20.x, us-east-1). There are seven Lambda functions:
 
 | Function Name                        | Handler File       | Routes                        |
 |--------------------------------------|--------------------|-------------------------------|
@@ -24,6 +24,7 @@ The backend runs on AWS Lambda (Node.js 20.x, us-east-1). There are four Lambda 
 | `spendings-categorizer-categories`   | `categories.handler` | `/categories`, `/categories/*` |
 | `spendings-categorizer-families`     | `families.handler` | `/families`, `/families/*`    |
 | `spendings-categorizer-accounts`     | `accounts.handler` | `/accounts`, `/accounts/{id}` |
+| `spendings-categorizer-devices`      | `devices.handler`  | `/devices`, `/devices/{token}` |
 | `spendings-categorizer-pierre`      | `pierre.handler`   | `/pierre/sync` + EventBridge (5 min) |
 
 ### Code-only deploy (no infra changes)
@@ -52,6 +53,7 @@ Each Lambda bundles only the handler files it needs (see `exclude` patterns in `
 - **categories**: `categories.mjs`, `categories.mjs.map`, `statements.mjs`, `statements.mjs.map`
 - **families**: `families.mjs`, `families.mjs.map`
 - **accounts**: `accounts.mjs`, `accounts.mjs.map`
+- **devices**: `devices.mjs`, `devices.mjs.map`
 - **pierre**: `pierre.mjs`, `pierre.mjs.map`, `statements.mjs`, `statements.mjs.map`
 
 ### Infrastructure deploy (new routes, env vars, resources)

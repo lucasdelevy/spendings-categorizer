@@ -67,6 +67,20 @@ In [Google Cloud Console](https://console.cloud.google.com/):
 - Set `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` and `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` in `.env` (web ID = same as `VITE_GOOGLE_CLIENT_ID`)
 - Add the iOS client ID to the backend: GitHub secret `GOOGLE_IOS_CLIENT_ID`, or comma-separate both IDs in `GOOGLE_CLIENT_ID`, then redeploy backend
 
+### 6. Push notifications
+
+Limit-breach pushes need an Apple Push (APNs) auth key on the Pierre Lambda:
+
+1. In [Apple Developer → Keys](https://developer.apple.com/account/resources/authkeys/list), create a key with **Apple Push Notifications service (APNs)** enabled.
+2. Download the `.p8` once, then set GitHub secrets (or local env vars for `cdk deploy`):
+   - `APNS_KEY_ID` — the 10-character Key ID
+   - `APNS_TEAM_ID` — `B2P4VVXRT2`
+   - `APNS_BUNDLE_ID` — `com.lucasdelevy.aletheia`
+   - `APNS_KEY_P8` — the `.p8` PEM, or base64 of the file
+   - `APNS_PRODUCTION` — `false` for local Xcode/devicectl installs (sandbox); `true` for TestFlight/App Store
+3. Redeploy infra so Pierre picks up the env vars.
+4. On first launch after sign-in, allow notifications when iOS prompts.
+
 ### Troubleshooting
 
 | Issue | Fix |

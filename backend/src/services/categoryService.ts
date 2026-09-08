@@ -23,6 +23,7 @@ interface LegacyConfigRecord {
   categories?: Record<string, CategoryEntry>;
   ignore?: string[];
   rename?: Record<string, string>;
+  limitAlertPercent?: number;
   updatedAt: string;
 }
 
@@ -32,6 +33,7 @@ function migrateRecord(raw: LegacyConfigRecord): Omit<CategoryConfigRecord, "PK"
       categories: raw.categories,
       ignore: raw.ignore ?? [],
       rename: raw.rename ?? {},
+      limitAlertPercent: raw.limitAlertPercent,
       updatedAt: raw.updatedAt,
     };
   }

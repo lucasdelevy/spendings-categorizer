@@ -21,6 +21,7 @@ import {
   setApiKeyStatusForAccounts,
 } from "../services/accountService.js";
 import { listMembers } from "../services/familyService.js";
+import { evaluateAndNotifyLimitAlerts } from "../services/limitAlertService.js";
 import type {
   JWTPayload,
   TransactionItem,
@@ -463,6 +464,21 @@ async function handleScheduled(): Promise<void> {
       console.log(
         `Sync owner=${familyId ? `FAMILY#${familyId}` : `USER#${syncUserId}`} months=${months.join(",")}: imported=${result.imported} duplicates=${result.duplicates}`,
       );
+
+      try {
+        const alerts = await evaluateAndNotifyLimitAlerts({
+          userId: syncUserId,
+          familyId,
+          config,
+        });
+        if (alerts.notified > 0) {
+          console.log(
+            `Limit alerts owner=${familyId ? `FAMILY#${familyId}` : `USER#${syncUserId}`} notified=${alerts.notified} sent=${alerts.sent}`,
+          );
+        }
+      } catch (alertErr) {
+        console.error("Limit alert evaluation failed:", alertErr);
+      }
     } catch (err) {
       console.error(
         `Scheduled sync failed for owner ${owner.userId || `FAMILY#${owner.familyId}`}:`,
@@ -524,6 +540,16 @@ async function handleManualSync(
     uploadedBy,
     config,
   );
+
+  try {
+    await evaluateAndNotifyLimitAlerts({
+      userId: user.userId,
+      familyId: userRecord.familyId,
+      config,
+    });
+  } catch (alertErr) {
+    console.error("Limit alert evaluation failed:", alertErr);
+  }
 
   return respond(200, { months, result }, origin);
 }

@@ -14,8 +14,22 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.lucasdelevy.aletheia"
+      "bundleIdentifier": "com.lucasdelevy.aletheia",
+      "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"]
+      },
+      "entitlements": {
+        "aps-environment": "development"
+      }
     },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "mode": "development"
+        }
+      ]
+    ],
     "scheme": "aletheia"
   }
 }

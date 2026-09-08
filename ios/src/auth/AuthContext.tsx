@@ -7,7 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { api, clearToken, isAuthenticated, setToken, setUnauthorizedHandler } from "./api";
+import { registerPushNotifications, unregisterPushNotifications } from "../notifications/registerPush";
 
 export interface AuthUser {
   email: string;
@@ -28,6 +30,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const { i18n } = useTranslation();
 
   useEffect(() => {
     setUnauthorizedHandler(() => setUser(null));
@@ -50,6 +53,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })();
   }, []);
 
+  useEffect(() => {
+    if (!user) return;
+    void registerPushNotifications(i18n.language).catch((err) => {
+      console.warn("Push registration failed:", err);
+    });
+  }, [user, i18n.language]);
+
   const login = useCallback(async (googleIdToken: string) => {
     const res = await api.post<{ token: string; user: AuthUser }>("/auth/google", {
       idToken: googleIdToken,
@@ -60,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
+      await unregisterPushNotifications();
       await api.post("/auth/logout");
     } finally {
       await clearToken();

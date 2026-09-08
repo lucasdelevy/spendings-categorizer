@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type { CategoryConfig, LimitPeriod } from "@aletheia/shared";
+import { clampLimitAlertPercent } from "@aletheia/shared";
 
 interface Props {
   config: CategoryConfig | null;
@@ -104,9 +105,13 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [thresholdText, setThresholdText] = useState("80");
 
   useEffect(() => {
-    if (config) setDraft(deepClone(config));
+    if (config) {
+      setDraft(deepClone(config));
+      setThresholdText(String(config.limitAlertPercent ?? 80));
+    }
   }, [config]);
 
   if (!draft) {
@@ -127,11 +132,23 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
     setDirty(true);
   };
 
+  const commitThreshold = (raw: string) => {
+    const next = clampLimitAlertPercent(raw === "" ? 80 : raw);
+    setThresholdText(String(next));
+    updateDraft((d) => {
+      d.limitAlertPercent = next;
+    });
+  };
+
   const handleSave = async () => {
     if (!draft) return;
+    const percent = clampLimitAlertPercent(thresholdText === "" ? 80 : thresholdText);
+    const toSave = { ...draft, limitAlertPercent: percent };
+    setDraft(toSave);
+    setThresholdText(String(percent));
     setSaving(true);
     try {
-      await onSave(draft);
+      await onSave(toSave);
       setDirty(false);
     } finally {
       setSaving(false);
@@ -272,6 +289,34 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
           </button>
         ))}
       </div>
+
+      {section === "categories" && (
+        <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            {t("categories.alertThreshold")}
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={3}
+              value={thresholdText}
+              onChange={(e) => {
+                setThresholdText(e.target.value.replace(/\D/g, "").slice(0, 3));
+                setDirty(true);
+              }}
+              onBlur={() => commitThreshold(thresholdText)}
+              placeholder="80"
+              className="w-20 rounded-lg border border-gray-200 px-3 py-1.5 text-sm tabular-nums focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200"
+            />
+            <span className="text-sm text-gray-500 dark:text-gray-400">%</span>
+          </div>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            {t("categories.alertThresholdHint")}
+          </p>
+        </div>
+      )}
 
       {section === "categories" && (
         <div className="space-y-2">

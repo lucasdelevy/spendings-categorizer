@@ -86,6 +86,9 @@ const ptBR = {
     limitMonthly: "Mensal",
     setLimit: "Definir limite",
     removeLimit: "Remover limite",
+    alertThreshold: "Alertar em % do limite",
+    alertThresholdHint:
+      "Você receberá um push quando uma categoria com limite de gasto atingir este percentual. O padrão é 80.",
     limitPerDay: "{{amount}}/dia",
     limitPerWeek: "{{amount}}/semana",
     limitPerMonth: "{{amount}}/mês",
@@ -318,6 +321,9 @@ const ptBR = {
       phase15Title: "Reconexão da chave Open Finance",
       phase15Desc:
         "Quando a Pierre informa que a chave de API expirou ou é inválida, a conta é marcada e um aviso no dashboard pede para gerar uma nova chave no site da Pierre e colá-la em Contas. Salvar a chave nova limpa o aviso e retoma a sincronização a cada 5 minutos.",
+      phase16Title: "Notificações de limite de gasto",
+      phase16Desc:
+        "O app iOS pode avisar quando uma categoria com limite de gasto atinge um percentual que você escolhe (padrão 80%). A sincronização da Pierre a cada 5 minutos confere o gasto atual e envia um push uma vez por categoria por mês, para não repetir o alerta enquanto o gasto continuar acima da linha.",
     },
   },
 

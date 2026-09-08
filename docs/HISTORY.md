@@ -222,3 +222,14 @@ Key changes:
 - `GET /accounts` exposes `apiKeyExpired` (never the key itself).
 - Dashboard and Accounts pages show a reconnect banner with a button that opens https://pierre.finance/api-key. On iOS, expired accounts also get an in-place paste field so the new `sk-…` key can be saved without leaving the app.
 
+## Phase 16: Limit Breach Push Notifications
+
+Pierre's 5-minute sync now also evaluates category spending against each category's limit and can send an iOS push when spend crosses a user-defined percent (default 80%).
+
+Key changes:
+- `CATCONFIG` gains optional `limitAlertPercent` (1–100, default 80), editable on web and iOS Categories. `GET/PUT /categories` round-trips the field.
+- New `DEVICE#<token>` records under `USER#<userId>` store APNs device tokens. `POST /devices` registers; `DELETE /devices/{token}` unregisters on sign-out. Family owners notify every active member who has a registered device.
+- After each Pierre sync (scheduled or manual), the worker totals the current and next billing months (America/Sao_Paulo), compares spend to the monthly-equivalent limit, and sends an APNs alert for newly crossed thresholds. Dedup records `LIMITALERT#<YYYYMM>#<category>` ensure one push per category per month until spend drops back below the line and crosses again.
+- Sending uses APNs HTTP/2 from the Pierre Lambda (`APNS_KEY_ID`, `APNS_KEY_P8`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID`, `APNS_PRODUCTION`). Local/dev device installs use the sandbox environment.
+- iOS requests notification permission after sign-in via `expo-notifications` and registers the native device token.
+

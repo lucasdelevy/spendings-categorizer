@@ -58,6 +58,8 @@ export interface CategoryConfig {
   categories: Record<string, CategoryEntry>;
   ignore: string[];
   rename: Record<string, string>;
+  /** Notify when spend reaches this percent of a category limit. Default 80. */
+  limitAlertPercent?: number;
 }
 
 export interface CategorySummary {

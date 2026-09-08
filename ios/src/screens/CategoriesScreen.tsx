@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import type { CategoryConfig, LimitPeriod } from "@aletheia/shared";
+import { clampLimitAlertPercent } from "@aletheia/shared";
 import { Button, Card, SegmentedControl, TextField } from "../components/ui";
 import { useCategoryConfig } from "../hooks/useCategoryConfig";
 import { useTheme } from "../theme/ThemeContext";
@@ -97,10 +98,12 @@ export default function CategoriesScreen() {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [renameRaw, setRenameRaw] = useState("");
   const [renameDisplay, setRenameDisplay] = useState("");
+  const [thresholdText, setThresholdText] = useState("80");
 
   useEffect(() => {
     if (config) {
       setDraft(deepClone(config));
+      setThresholdText(String(config.limitAlertPercent ?? 80));
       setDirty(false);
     }
   }, [config]);
@@ -121,12 +124,24 @@ export default function CategoriesScreen() {
     setDirty(true);
   };
 
+  const commitThreshold = (raw: string) => {
+    const next = clampLimitAlertPercent(raw === "" ? 80 : raw);
+    setThresholdText(String(next));
+    updateDraft((d) => {
+      d.limitAlertPercent = next;
+    });
+  };
+
   const handleSave = async () => {
     if (!draft) return;
+    const percent = clampLimitAlertPercent(thresholdText === "" ? 80 : thresholdText);
+    const toSave = { ...draft, limitAlertPercent: percent };
+    setDraft(toSave);
+    setThresholdText(String(percent));
     setSaving(true);
     setError(null);
     try {
-      await save(draft);
+      await save(toSave);
       setDirty(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("error.save"));
@@ -242,6 +257,25 @@ export default function CategoriesScreen() {
           value={section}
           onChange={setSection}
         />
+
+        {section === "categories" && (
+          <Card style={styles.panel}>
+            <TextField
+              label={t("categories.alertThreshold")}
+              value={thresholdText}
+              onChangeText={(raw) => {
+                setThresholdText(raw.replace(/\D/g, "").slice(0, 3));
+                setDirty(true);
+              }}
+              onBlur={() => commitThreshold(thresholdText)}
+              keyboardType="number-pad"
+              placeholder="80"
+            />
+            <Text style={{ color: colors.textMuted, fontSize: 13 }}>
+              {t("categories.alertThresholdHint")}
+            </Text>
+          </Card>
+        )}
 
         {section === "categories" && (
           <View style={styles.sectionBody}>

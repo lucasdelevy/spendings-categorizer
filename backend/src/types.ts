@@ -131,7 +131,28 @@ export interface CategoryConfigRecord {
   categories: Record<string, CategoryEntry>;
   ignore: string[];
   rename: Record<string, string>;
+  /** Notify when spend reaches this percent of a category limit. Default 80. */
+  limitAlertPercent?: number;
   updatedAt: string;
+}
+
+export interface DeviceRecord {
+  PK: string;
+  SK: string;
+  token: string;
+  platform: "ios";
+  locale: string;
+  updatedAt: string;
+}
+
+export interface LimitAlertRecord {
+  PK: string;
+  SK: string;
+  category: string;
+  yearMonth: string;
+  percent: number;
+  threshold: number;
+  notifiedAt: string;
 }
 
 export interface JWTPayload {

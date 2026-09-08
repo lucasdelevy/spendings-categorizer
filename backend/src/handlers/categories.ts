@@ -14,6 +14,8 @@ import {
   recategorizeRemovedCategories,
 } from "../services/categoryService.js";
 import { getMonthStatements } from "../services/statementService.js";
+import { clampLimitAlertPercent } from "../services/limitAlertService.js";
+import { deleteDevice, normalizeDeviceToken, upsertDevice } from "../services/deviceService.js";
 import { PutCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient, TABLE_NAME } from "../services/dynamoClient.js";
 import type { JWTPayload, StatementRecord } from "../types.js";
@@ -41,6 +43,23 @@ async function handleGet(
   user: JWTPayload,
 ): Promise<APIGatewayProxyResultV2> {
   const origin = event.headers?.origin;
+  const headers = event.headers ?? {};
+  const unregister = normalizeDeviceToken(headers["x-push-unregister"] ?? headers["X-Push-Unregister"] ?? "");
+  if (unregister) {
+    await deleteDevice(user.userId, unregister);
+  } else {
+    const pushToken = normalizeDeviceToken(headers["x-push-token"] ?? headers["X-Push-Token"] ?? "");
+    if (pushToken) {
+      const localeHeader = headers["x-push-locale"] ?? headers["X-Push-Locale"] ?? "en";
+      await upsertDevice({
+        userId: user.userId,
+        token: pushToken,
+        platform: "ios",
+        locale: localeHeader || "en",
+      });
+    }
+  }
+
   const userRecord = await getUser(user.userId);
   const config = await getConfig(user.userId, userRecord?.familyId);
 
@@ -48,6 +67,7 @@ async function handleGet(
     categories: config.categories,
     ignore: config.ignore,
     rename: config.rename,
+    limitAlertPercent: config.limitAlertPercent ?? 80,
   }, origin);
 }
 
@@ -58,7 +78,7 @@ async function handlePut(
   const origin = event.headers?.origin;
   const body = JSON.parse(event.body || "{}");
 
-  const { categories, ignore, rename } = body;
+  const { categories, ignore, rename, limitAlertPercent } = body;
   if (!categories) {
     return respond(400, { error: "categories is required" }, origin);
   }
@@ -75,6 +95,10 @@ async function handlePut(
     categories,
     ignore: ignore ?? [],
     rename: rename ?? {},
+    limitAlertPercent:
+      limitAlertPercent === undefined
+        ? (previous.limitAlertPercent ?? 80)
+        : clampLimitAlertPercent(limitAlertPercent),
     updatedAt: "",
   });
 
@@ -91,6 +115,7 @@ async function handlePut(
     categories: saved.categories,
     ignore: saved.ignore,
     rename: saved.rename,
+    limitAlertPercent: saved.limitAlertPercent ?? 80,
     removedCategories: removed,
     recategorized,
   }, origin);
