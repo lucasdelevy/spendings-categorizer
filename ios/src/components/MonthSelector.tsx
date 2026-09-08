@@ -36,8 +36,15 @@ export default function MonthSelector({ months, selected, onChange, allowNew, lo
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        <Pressable onPress={goPrev} disabled={!hasPrev} style={styles.arrow}>
-          <Text style={{ color: colors.textMuted, fontSize: 22 }}>‹</Text>
+        <Pressable
+          onPress={goPrev}
+          disabled={!hasPrev}
+          accessibilityState={{ disabled: !hasPrev }}
+          style={styles.arrow}
+        >
+          <Text style={{ color: hasPrev ? colors.text : colors.textMuted, fontSize: 22, opacity: hasPrev ? 1 : 0.35 }}>
+            ‹
+          </Text>
         </Pressable>
         <View style={styles.center}>
           <Text style={[styles.label, { color: colors.text }]}>{formatYearMonth(selected)}</Text>
@@ -46,8 +53,15 @@ export default function MonthSelector({ months, selected, onChange, allowNew, lo
           )}
           {loading && <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 4 }} />}
         </View>
-        <Pressable onPress={goNext} disabled={!hasNext} style={styles.arrow}>
-          <Text style={{ color: colors.textMuted, fontSize: 22 }}>›</Text>
+        <Pressable
+          onPress={goNext}
+          disabled={!hasNext}
+          accessibilityState={{ disabled: !hasNext }}
+          style={styles.arrow}
+        >
+          <Text style={{ color: hasNext ? colors.text : colors.textMuted, fontSize: 22, opacity: hasNext ? 1 : 0.35 }}>
+            ›
+          </Text>
         </Pressable>
       </View>
     </View>
