@@ -48,6 +48,11 @@ const ptBR = {
     googleSignIn: "Entrar com o Google",
     googleFailed: "Falha no login do Google",
     appleFailed: "Falha no login da Apple",
+    orEmail: "ou e-mail",
+    email: "E-mail",
+    password: "Senha",
+    emailSignIn: "Entrar com e-mail",
+    emailFailed: "E-mail ou senha inválidos",
   },
 
   account: {
@@ -360,6 +365,9 @@ const ptBR = {
       phase19Title: "Admins da família",
       phase19Desc:
         "Donos e admins podem convidar ou remover membros, editar categorias, ocultar transações e gerenciar contas. No iOS, deslize para a direita em um membro na lista da família (ou toque em Tornar admin na web) para promovê-lo. Só o dono pode excluir a família.",
+      phase20Title: "Login por e-mail para a App Review",
+      phase20Desc:
+        "A tela de login aceita e-mail e senha além de Apple e Google. Uma conta de demonstração já vem com meses de exemplo para a App Review abrir o dashboard sem OAuth. No dia a dia o login continua sendo Apple ou Google; e-mail não é cadastro público.",
     },
   },
 

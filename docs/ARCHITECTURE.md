@@ -9,12 +9,12 @@
 │                                                                  │
 │  React 18 + TypeScript + Vite + Tailwind                        │
 │  - Client-side CSV parsing + categorization                      │
-│  - Google Sign-In (ID token)                                    │
+│  - Google Sign-In (ID token) + demo email login                 │
 │  - JWT stored in localStorage                                   │
 ├──────────────────────────────────────────────────────────────────┤
 │  iOS App (Expo React Native) — see ios/                         │
 │  - Same API; JWT in expo-secure-store                           │
-│  - Sign in with Apple + Google; native fetch (no CORS)          │
+│  - Sign in with Apple, Google, or demo email; native fetch      │
 └────────────────────┬─────────────────────────────────────────────┘
                      │ HTTPS (Bearer JWT)
                      ▼
@@ -29,8 +29,10 @@
 ┌────────────────┐  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
 │  Auth Lambda    │  │ Statements Lambda │  │ Families Lambda   │  │ Categories Lambda │
 │  /auth/google   │  │ /statements       │  │ /families         │  │ /categories       │
-│  /auth/me       │  │ /statements/{id}  │  │ /families/mine    │  │ /categories/      │
-│  /auth/logout   │  │                   │  │ /families/members │  │   recategorize    │
+│  /auth/apple    │  │ /statements/{id}  │  │ /families/mine    │  │ /categories/      │
+│  /auth/email    │  │                   │  │ /families/members │  │   recategorize    │
+│  /auth/me       │  │                   │  │                   │  │                   │
+│  /auth/logout   │  │                   │  │                   │  │                   │
 └───────┬────────┘  └────────┬─────────┘  └────────┬─────────┘  └────────┬─────────┘
         │                     │                      │                     │
         ▼                     ▼                      ▼                     ▼
@@ -55,6 +57,7 @@
 | Account       | `FAMILY#<familyId>` or `USER#<userId>` | `ACCT#<accountId>` | name, type (bank/card), closingDay?, dueDay?, apiKeyEncrypted?, apiKeyHint?, apiKeyStatus?, createdBy, createdAt, updatedAt |
 | Device        | `USER#<userId>`       | `DEVICE#<token>`          | token, platform (`ios`), locale, updatedAt                  |
 | Limit alert   | `FAMILY#<familyId>` or `USER#<userId>` | `LIMITALERT#<YYYYMM>#<category>` | percent, threshold, notifiedAt |
+| Demo seed     | `USER#review-aletheia` | `DEMOSEED`               | seededAt (App Review sample months) |
 | Email lookup  | `EMAILFAM#<email>`    | `LINK`                    | familyId                                                |
 | User lookup   | `EMAILUSER#<email>`   | `LINK`                    | userId (links Google and Apple for the same email)      |
 
@@ -77,9 +80,9 @@ When reading a month in family mode, all `STMT#<YYYYMM>#*` records are fetched a
 
 ## Authentication Flow
 
-1. Web loads Google Identity Services. iOS can use Sign in with Apple or Google.
-2. The client sends a Google ID token to `POST /auth/google` or an Apple identity token to `POST /auth/apple`.
-3. Auth Lambda verifies the token, resolves `userId` (existing profile, `EMAILUSER#<email>`, or new `sub`), upserts the user, and creates a session.
+1. Web loads Google Identity Services (plus an email/password form). iOS can use Sign in with Apple, Google, or the same email form.
+2. The client sends a Google ID token to `POST /auth/google`, an Apple identity token to `POST /auth/apple`, or email/password to `POST /auth/email` (App Review demo account only).
+3. Auth Lambda verifies the credential, resolves `userId` (existing profile, `EMAILUSER#<email>`, or new `sub`), upserts the user, and creates a session. Email login seeds sample months on first success.
 4. Returns a JWT (HS256, 7-day expiry) containing `{ userId, sessionId }`.
 5. Clients store the JWT (localStorage or SecureStore) and send `Authorization: Bearer <jwt>` on subsequent requests.
 6. Protected endpoints decode JWT, check session exists and is not expired in DDB.
@@ -92,6 +95,7 @@ When reading a month in family mode, all `STMT#<YYYYMM>#*` records are fetched a
 |--------|----------------------------|----- |--------------------------------------------|
 | POST   | `/auth/google`             | none | Exchange Google ID token for JWT           |
 | POST   | `/auth/apple`              | none | Exchange Apple identity token for JWT (iOS) |
+| POST   | `/auth/email`              | none | Demo email/password login (App Review)     |
 | GET    | `/auth/me`                 | JWT  | Get current user profile (incl. familyId, familyRole) |
 | DELETE | `/auth/me`                 | JWT  | Permanently delete the signed-in account   |
 | POST   | `/auth/logout`             | JWT  | Invalidate session                         |

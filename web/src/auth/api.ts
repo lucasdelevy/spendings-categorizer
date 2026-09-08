@@ -32,9 +32,12 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
 
   if (response.status === 401) {
-    clearToken();
-    window.location.reload();
-    throw new Error("Unauthorized");
+    const body = await response.json().catch(() => ({ error: "Unauthorized" }));
+    if (token) {
+      clearToken();
+      window.location.reload();
+    }
+    throw new Error(body.error || "Unauthorized");
   }
 
   if (!response.ok) {

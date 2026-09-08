@@ -48,6 +48,11 @@ const en = {
     googleSignIn: "Sign in with Google",
     googleFailed: "Google sign-in failed",
     appleFailed: "Apple sign-in failed",
+    orEmail: "or email",
+    email: "Email",
+    password: "Password",
+    emailSignIn: "Sign in with email",
+    emailFailed: "Invalid email or password",
   },
 
   account: {
@@ -354,6 +359,9 @@ const en = {
       phase19Title: "Family Admins",
       phase19Desc:
         "Owners and admins can invite or remove members, edit categories, hide transactions, and manage accounts. Swipe right on a member in the iOS family list (or tap Make admin on the web) to promote them. Only the owner can delete the family.",
+      phase20Title: "Email Sign-In for App Review",
+      phase20Desc:
+        "The login screen accepts email and password in addition to Apple and Google. A demo account is seeded with sample months so App Review can open the dashboard without an OAuth account. Everyday users still sign in with Apple or Google; email login is not a public sign-up.",
     },
   },
 

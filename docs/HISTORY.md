@@ -262,4 +262,13 @@ Key changes:
 - `DELETE /families` is owner-only and wipes the family partition after clearing each member's `familyId`.
 - `GET /auth/me` now includes `familyRole` so clients hide mutation controls instead of showing 403s.
 
+## Phase 20: Email Sign-In for App Review
+
+App Review needs a username and password. Everyday users still sign in with Apple or Google. Email login is a review-only path: `POST /auth/email` accepts the demo account, creates it if needed, and seeds August and September 2026 sample statements so the dashboard is not empty.
+
+Key changes:
+- iOS and web login screens add email and password under Apple/Google.
+- There is no public email sign-up. Other addresses are rejected.
+- Demo data is written once (`DEMOSEED`) on first successful login.
+
 

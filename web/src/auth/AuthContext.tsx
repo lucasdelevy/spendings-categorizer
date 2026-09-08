@@ -15,6 +15,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (googleIdToken: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -49,6 +50,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   }, []);
 
+  const loginWithEmail = useCallback(async (email: string, password: string) => {
+    const res = await api.post<{ token: string; user: User }>("/auth/email", {
+      email,
+      password,
+    });
+    setToken(res.token);
+    setUser(res.user);
+  }, []);
+
   const refreshUser = useCallback(async () => {
     if (!isAuthenticated()) {
       setUser(null);
@@ -74,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, deleteAccount, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, loginWithEmail, logout, deleteAccount, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

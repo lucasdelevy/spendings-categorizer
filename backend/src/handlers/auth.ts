@@ -13,6 +13,7 @@ import { lookupFamilyByEmail, activateMember } from "../services/familyService.j
 import { getFamilyRole } from "../services/familyAuth.js";
 import { verifyAppleIdentityToken } from "../services/appleAuth.js";
 import { deleteAccount } from "../services/accountDeletion.js";
+import { REVIEW_USER_ID, ensureReviewAccount, isReviewLogin } from "../services/reviewAccount.js";
 import type { UserRecord } from "../types.js";
 
 /** Web + iOS OAuth client IDs (comma-separated GOOGLE_CLIENT_ID also supported). */
@@ -143,6 +144,31 @@ async function handleAppleLogin(event: APIGatewayProxyEventV2): Promise<APIGatew
   }
 }
 
+async function handleEmailLogin(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {
+  const origin = event.headers?.origin;
+  const body = JSON.parse(event.body || "{}");
+  const email = typeof body.email === "string" ? body.email : "";
+  const password = typeof body.password === "string" ? body.password : "";
+
+  if (!email.trim() || !password) {
+    return respond(400, { error: "email and password are required" }, origin);
+  }
+
+  if (!isReviewLogin(email, password)) {
+    return respond(401, { error: "Invalid email or password" }, origin);
+  }
+
+  try {
+    await ensureReviewAccount();
+    const user = await getUser(REVIEW_USER_ID);
+    if (!user) return respond(500, { error: "Review account missing" }, origin);
+    return issueSession(REVIEW_USER_ID, user, origin);
+  } catch (err) {
+    console.error("Email auth error:", err);
+    return respond(500, { error: "Authentication failed" }, origin);
+  }
+}
+
 async function handleGetMe(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {
   const origin = event.headers?.origin;
   const token = extractBearerToken(event.headers?.authorization);
@@ -209,6 +235,7 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
 
   if (method === "POST" && path === "/auth/google") return handleGoogleLogin(event);
   if (method === "POST" && path === "/auth/apple") return handleAppleLogin(event);
+  if (method === "POST" && path === "/auth/email") return handleEmailLogin(event);
   if (method === "GET" && path === "/auth/me") return handleGetMe(event);
   if (method === "POST" && path === "/auth/logout") return handleLogout(event);
   if (method === "DELETE" && path === "/auth/me") return handleDeleteMe(event);

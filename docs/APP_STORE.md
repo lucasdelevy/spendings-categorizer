@@ -31,13 +31,13 @@ Guideline 4.8: Google Sign-In on iOS requires **Sign in with Apple** as an equiv
 2. Enable **Sign in with Apple** → Save. If Xcode asks to add the capability on the next Archive, accept.
 3. Confirm `ios/ios/Aletheia/Aletheia.entitlements` contains `com.apple.developer.applesignin` = `Default`.
 
-The login screen shows Apple above Google. Web stays Google-only.
+The login screen shows Apple above Google, then email/password for the App Review demo account. Web has Google plus the same email form.
 
 Google and Apple accounts that share the same email become one Aletheia user. Hide My Email (`@privaterelay.appleid.com`) will **not** match a Gmail family invite.
 
 ### 3. Account deletion is implemented (Guideline 5.1.1(v))
 
-Do not submit until this backend is **deployed** (CDK: new `POST /auth/apple` and `DELETE /auth/me` routes).
+Do not submit until this backend is **deployed** (CDK: `POST /auth/apple`, `POST /auth/email`, and `DELETE /auth/me`).
 
 - iOS and web: **Delete account** in the side menu, with a confirmation.
 - Backend: `DELETE /auth/me` removes `USER#<id>` (profile, sessions, devices, solo statements, category config, accounts, limit alerts) and `EMAILUSER#<email>`. Family: remaining members keep the group (a successor is promoted if you were the owner); a sole remaining owner dissolves the family.
@@ -71,7 +71,18 @@ Fill these on the app record before you can submit:
 | Description | Short pitch: personal / family spending categorizer, Open Finance + CSV, categories and limits |
 | Keywords | spending, budget, categorias, extrato, open finance, … (100 character cap) |
 | What’s New | `Initial release.` |
-| Review notes | Explain Google Sign-In **and** Sign in with Apple on iOS. Provide a demo Google account. Say the user can delete the account from the side menu. Open Finance keys are optional. Push permission is for limit alerts. |
+| Review notes | Paste the block in **App Review Information** below. |
+
+**App Review Information** (Connect → App Review Information → Sign-in information + Notes):
+
+```
+Username: test@aletheia.com
+Password: admin123
+
+Sign in with Apple and Google are on the login screen. Reviewers can skip those and use email/password instead. First login creates the demo user and loads August and September 2026 sample statements.
+
+Open Finance / Pierre bank keys are optional. Push permission is for category limit alerts. Delete account is in the side menu.
+```
 
 **Screenshots (required):** at least one **6.9-inch iPhone** set, 1–10 images.
 

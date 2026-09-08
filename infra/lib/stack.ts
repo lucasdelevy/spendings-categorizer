@@ -203,6 +203,11 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       methods: [apigatewayv2.HttpMethod.POST],
       integration: authIntegration,
     });
+    const authEmailRoutes = httpApi.addRoutes({
+      path: "/auth/email",
+      methods: [apigatewayv2.HttpMethod.POST],
+      integration: authIntegration,
+    });
     httpApi.addRoutes({
       path: "/statements",
       methods: [apigatewayv2.HttpMethod.GET, apigatewayv2.HttpMethod.POST],
@@ -307,7 +312,13 @@ export class SpendingsCategorizerStack extends cdk.Stack {
 
     // Stage RouteSettings 404 if CloudFormation updates the stage before the
     // named routes exist (and rollback hits the same bug in reverse).
-    for (const route of [...authGoogleRoutes, ...authAppleRoutes, ...authMeRoutes, ...authLogoutRoutes]) {
+    for (const route of [
+      ...authGoogleRoutes,
+      ...authAppleRoutes,
+      ...authMeRoutes,
+      ...authLogoutRoutes,
+      ...authEmailRoutes,
+    ]) {
       defaultStage.addDependency(route.node.defaultChild as cdk.CfnResource);
     }
 

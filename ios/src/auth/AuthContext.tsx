@@ -25,6 +25,7 @@ interface AuthContextValue {
   loading: boolean;
   login: (googleIdToken: string) => Promise<void>;
   loginWithApple: (identityToken: string, fullName?: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -82,6 +83,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   }, []);
 
+  const loginWithEmail = useCallback(async (email: string, password: string) => {
+    const res = await api.post<{ token: string; user: AuthUser }>("/auth/email", {
+      email,
+      password,
+    });
+    await setToken(res.token);
+    setUser(res.user);
+  }, []);
+
   const refreshUser = useCallback(async () => {
     if (!(await isAuthenticated())) {
       setUser(null);
@@ -113,8 +123,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, login, loginWithApple, logout, deleteAccount, refreshUser }),
-    [user, loading, login, loginWithApple, logout, deleteAccount, refreshUser],
+    () => ({ user, loading, login, loginWithApple, loginWithEmail, logout, deleteAccount, refreshUser }),
+    [user, loading, login, loginWithApple, loginWithEmail, logout, deleteAccount, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
