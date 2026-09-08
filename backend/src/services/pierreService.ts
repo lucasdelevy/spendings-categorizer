@@ -4,6 +4,34 @@ import { isRefund } from "./refunds.js";
 
 const PIERRE_BASE_URL = "https://pierre.finance/tools/api";
 
+export class PierreAuthError extends Error {
+  readonly pierreType: "expired_api_key" | "invalid_api_key";
+
+  constructor(pierreType: "expired_api_key" | "invalid_api_key", message: string) {
+    super(message);
+    this.name = "PierreAuthError";
+    this.pierreType = pierreType;
+  }
+}
+
+export function isPierreAuthError(err: unknown): err is PierreAuthError {
+  return err instanceof PierreAuthError;
+}
+
+function throwPierreError(status: number, text: string, action: string): never {
+  let type: string | undefined;
+  try {
+    const parsed = JSON.parse(text) as { type?: string };
+    type = parsed.type;
+  } catch {
+    /* body is not JSON */
+  }
+  if (type === "expired_api_key" || type === "invalid_api_key") {
+    throw new PierreAuthError(type, `Pierre ${action} failed (${status}): ${text}`);
+  }
+  throw new Error(`Pierre ${action} failed (${status}): ${text}`);
+}
+
 export interface PierreTransaction {
   id: string;
   account_id: string;
@@ -46,7 +74,7 @@ export async function fetchTransactions(
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`Pierre get-transactions failed (${res.status}): ${text}`);
+    throwPierreError(res.status, text, "get-transactions");
   }
 
   const json = (await res.json()) as { data?: PierreTransaction[] };
@@ -65,7 +93,7 @@ export async function triggerManualSync(apiKey: string): Promise<unknown> {
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(`Pierre manual-update failed (${res.status}): ${text}`);
+    throwPierreError(res.status, text, "manual-update");
   }
 
   return res.json();

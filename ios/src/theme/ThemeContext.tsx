@@ -25,6 +25,9 @@ interface ThemeColors {
   danger: string;
   dangerBg: string;
   dangerBorder: string;
+  success: string;
+  successBg: string;
+  successBorder: string;
   chartBar: string;
   chartLine: string;
 }
@@ -42,6 +45,9 @@ const LIGHT: ThemeColors = {
   danger: "#dc2626",
   dangerBg: "#fef2f2",
   dangerBorder: "#fecaca",
+  success: "#059669",
+  successBg: "#ecfdf5",
+  successBorder: "#a7f3d0",
   chartBar: "#6366f1",
   chartLine: "#f59e0b",
 };
@@ -59,6 +65,9 @@ const DARK: ThemeColors = {
   danger: "#f87171",
   dangerBg: "#450a0a",
   dangerBorder: "#991b1b",
+  success: "#34d399",
+  successBg: "#064e3b",
+  successBorder: "#065f46",
   chartBar: "#818cf8",
   chartLine: "#fbbf24",
 };

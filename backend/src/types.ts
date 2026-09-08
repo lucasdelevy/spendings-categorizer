@@ -105,6 +105,8 @@ export interface AccountRecord {
   closingDay?: number;
   apiKeyEncrypted?: string;
   apiKeyHint?: string;
+  /** Set by Pierre sync when the stored key is expired or invalid. */
+  apiKeyStatus?: "expired";
   createdBy: string;
   createdAt: string;
   updatedAt: string;

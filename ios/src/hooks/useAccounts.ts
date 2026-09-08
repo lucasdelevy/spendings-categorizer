@@ -15,36 +15,42 @@ export interface UpdateAccountInput {
   apiKey?: string | null;
 }
 
+function normalizeAccount(account: Account): Account {
+  return { ...account, apiKeyExpired: account.apiKeyExpired === true };
+}
+
 export function useAccounts(authenticated: boolean) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
+  const refresh = useCallback(async (opts?: { silent?: boolean }) => {
+    if (!opts?.silent) setLoading(true);
     try {
       const data = await api.get<{ accounts: Account[] }>("/accounts");
-      setAccounts(data.accounts);
+      setAccounts((data.accounts ?? []).map(normalizeAccount));
     } catch {
-      setAccounts([]);
+      /* keep the last known list */
     } finally {
-      setLoading(false);
+      if (!opts?.silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (authenticated) refresh();
+    if (authenticated) void refresh();
   }, [authenticated, refresh]);
 
   const create = useCallback(async (input: CreateAccountInput) => {
     const res = await api.post<{ account: Account }>("/accounts", input);
-    setAccounts((prev) => [...prev, res.account]);
-    return res.account;
+    const account = normalizeAccount(res.account);
+    setAccounts((prev) => [...prev, account]);
+    return account;
   }, []);
 
   const update = useCallback(async (accountId: string, input: UpdateAccountInput) => {
     const res = await api.put<{ account: Account }>(`/accounts/${accountId}`, input);
-    setAccounts((prev) => prev.map((a) => (a.accountId === accountId ? res.account : a)));
-    return res.account;
+    const account = normalizeAccount(res.account);
+    setAccounts((prev) => prev.map((a) => (a.accountId === accountId ? account : a)));
+    return account;
   }, []);
 
   const remove = useCallback(async (accountId: string) => {

@@ -32,9 +32,14 @@ export function useAccounts(authenticated: boolean): UseAccountsResult {
     setLoading(true);
     try {
       const data = await api.get<{ accounts: Account[] }>("/accounts");
-      setAccounts(data.accounts);
+      setAccounts(
+        (data.accounts ?? []).map((account) => ({
+          ...account,
+          apiKeyExpired: account.apiKeyExpired === true,
+        })),
+      );
     } catch {
-      setAccounts([]);
+      /* keep the last known list */
     } finally {
       setLoading(false);
     }
@@ -52,10 +57,11 @@ export function useAccounts(authenticated: boolean): UseAccountsResult {
 
   const update = useCallback(async (accountId: string, input: UpdateAccountInput) => {
     const res = await api.put<{ account: Account }>(`/accounts/${accountId}`, input);
+    const account = { ...res.account, apiKeyExpired: res.account.apiKeyExpired === true };
     setAccounts((prev) =>
-      prev.map((a) => (a.accountId === accountId ? res.account : a)),
+      prev.map((a) => (a.accountId === accountId ? account : a)),
     );
-    return res.account;
+    return account;
   }, []);
 
   const remove = useCallback(async (accountId: string) => {

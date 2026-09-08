@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import type { Account, AccountType } from "@aletheia/shared";
 import { useAccounts } from "../hooks/useAccounts";
 import type { CreateAccountInput, UpdateAccountInput } from "../hooks/useAccounts";
+import OpenFinanceExpiredBanner from "../components/OpenFinanceExpiredBanner";
+import { openPierreApiKeyPage } from "../utils/pierre";
 
 interface Props {
   onBack: () => void;
@@ -100,6 +102,14 @@ export default function AccountsPage({ onBack }: Props) {
         input.apiKey = trimmed === "" ? null : trimmed;
       }
       await update(editing.accountId, input);
+      if (input.apiKey && input.apiKey !== null) {
+        const siblings = accounts.filter(
+          (a) => a.accountId !== editing.accountId && a.apiKeyExpired,
+        );
+        for (const sibling of siblings) {
+          await update(sibling.accountId, { apiKey: input.apiKey });
+        }
+      }
       cancelEdit();
     } catch (e) {
       setError(e instanceof Error ? e.message : t("error.updateAccount"));
@@ -138,6 +148,8 @@ export default function AccountsPage({ onBack }: Props) {
       <p className="mb-6 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
         {t("accounts.intro")}
       </p>
+
+      <OpenFinanceExpiredBanner accounts={accounts} />
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
@@ -189,9 +201,14 @@ export default function AccountsPage({ onBack }: Props) {
                         )}
                         <span>
                           {t("accounts.apiKeyLabel")}:{" "}
-                          {account.hasApiKey ? (
+                          {account.apiKeyExpired ? (
+                            <strong className="text-red-600 dark:text-red-400">
+                              {t("accounts.apiKeyExpired")}
+                            </strong>
+                          ) : account.hasApiKey ? (
                             <strong className="text-emerald-600 dark:text-emerald-400">
-                              {account.apiKeyHint || t("accounts.apiKeyConfigured")}
+                              {t("accounts.apiKeyActive")}
+                              {account.apiKeyHint ? ` · ${account.apiKeyHint}` : ""}
                             </strong>
                           ) : (
                             <span className="italic text-gray-400">
@@ -199,6 +216,15 @@ export default function AccountsPage({ onBack }: Props) {
                             </span>
                           )}
                         </span>
+                        {account.apiKeyExpired && (
+                          <button
+                            type="button"
+                            onClick={openPierreApiKeyPage}
+                            className="font-medium text-amber-700 underline hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300"
+                          >
+                            {t("accounts.getNewPierreKey")}
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -35,6 +35,7 @@ export interface Account {
   closingDay?: number;
   hasApiKey: boolean;
   apiKeyHint?: string;
+  apiKeyExpired?: boolean;
   createdBy: string;
   createdAt: string;
   updatedAt: string;

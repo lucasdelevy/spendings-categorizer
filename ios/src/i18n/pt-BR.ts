@@ -192,6 +192,15 @@ const ptBR = {
     apiKeyConfigured: "configurada",
     apiKeyNotSet: "não definida",
     apiKeyRemove: "Remover chave",
+    apiKeyExpired: "expirada",
+    apiKeyActive: "ativa",
+    apiKeyAppliesToExpired: "Esta chave Pierre será salva em todas as contas Open Finance expiradas.",
+    apiKeyExpiredBanner: "Chave Open Finance expirada",
+    apiKeyExpiredBody:
+      "A sincronização parou para {{names}}. Gere uma nova chave na Pierre e cole-a na conta.",
+    getNewPierreKey: "Gerar nova chave Pierre",
+    pasteKeyOnAccount: "Colar chave na conta",
+    saveKey: "Salvar chave",
     edit: "Editar",
     delete: "Excluir",
     save: "Salvar alterações",
@@ -305,6 +314,9 @@ const ptBR = {
       phase14Title: "Gerenciamento de Contas e Cartões",
       phase14Desc:
         "Contas e cartões agora são entidades de primeira classe: cada transação pode ser vinculada a uma conta bancária ou cartão de crédito. Cartões têm um dia de fechamento (vencimento, padrão 30) para que as transações sejam agrupadas na fatura mensal correta. Chaves de API Open Finance por conta são armazenadas criptografadas com AES-256-GCM e descriptografadas apenas dentro do worker de sincronização — o frontend só vê os últimos 4 caracteres como dica. A sincronização Pierre itera por todas as contas com chave, suportando múltiplos bancos e cartões em paralelo.",
+      phase15Title: "Reconexão da chave Open Finance",
+      phase15Desc:
+        "Quando a Pierre informa que a chave de API expirou ou é inválida, a conta é marcada e um aviso no dashboard pede para gerar uma nova chave no site da Pierre e colá-la em Contas. Salvar a chave nova limpa o aviso e retoma a sincronização a cada 5 minutos.",
     },
   },
 

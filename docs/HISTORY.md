@@ -212,3 +212,13 @@ Key changes:
 - `App.tsx` `remoteToResult` now also sorts each category's transactions newest-first after rebuilding from the backend payload.
 - `TransactionFilters` now imports the shared `parseDateToNum` instead of defining its own.
 - New `table.category` and `app.tabAllTransactions` / `app.tabByCategory` i18n keys (EN + PT-BR).
+
+## Phase 15: Open Finance Key Reconnect
+
+Pierre API keys expire, and the 5-minute sync then fails silently from the user's point of view. There is no Pierre OAuth or key-rotation API, so reconnect stays a manual paste — but the app now detects the failure and walks the user through it.
+
+Key changes:
+- Pierre sync classifies `expired_api_key` / `invalid_api_key` responses and sets `apiKeyStatus: "expired"` on the affected account records. A successful sync, or saving a new key, clears the flag.
+- `GET /accounts` exposes `apiKeyExpired` (never the key itself).
+- Dashboard and Accounts pages show a reconnect banner with a button that opens https://pierre.finance/api-key. On iOS, expired accounts also get an in-place paste field so the new `sk-…` key can be saved without leaving the app.
+

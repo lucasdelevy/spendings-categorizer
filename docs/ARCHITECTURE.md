@@ -52,7 +52,7 @@
 | Family meta   | `FAMILY#<familyId>`   | `META`                    | name, createdBy, createdAt                              |
 | Family member | `FAMILY#<familyId>`   | `MEMBER#<userId>`         | email, name, picture, role, status, joinedAt            |
 | Category config | `FAMILY#<familyId>` or `USER#<userId>` | `CATCONFIG` | bankCategories, cardCategories, bankIgnore, cardIgnore, bankRename, cardRename, updatedAt |
-| Account       | `FAMILY#<familyId>` or `USER#<userId>` | `ACCT#<accountId>` | name, type (bank/card), closingDay?, dueDay?, apiKeyEncrypted?, apiKeyHint?, createdBy, createdAt, updatedAt |
+| Account       | `FAMILY#<familyId>` or `USER#<userId>` | `ACCT#<accountId>` | name, type (bank/card), closingDay?, dueDay?, apiKeyEncrypted?, apiKeyHint?, apiKeyStatus?, createdBy, createdAt, updatedAt |
 | Email lookup  | `EMAILFAM#<email>`    | `LINK`                    | familyId                                                |
 
 - `userId` = Google's `sub` claim (googleId), used directly.
@@ -144,7 +144,8 @@ Open Finance API keys attached to an account are encrypted before being persiste
 - Key source: `ACCOUNT_KEY_SECRET` Lambda env var. Treated as raw base64-encoded 32 bytes when possible; otherwise SHA-256-derived from the provided string.
 - Storage format: `v1:<base64-iv>:<base64-tag>:<base64-ciphertext>` in the `apiKeyEncrypted` attribute.
 - Side-channel hint: a `apiKeyHint` field stores `••<last4>` so the UI can show the user which key is configured without exposing it.
-- Decryption: only the Pierre sync Lambda imports `decryptApiKey`. The accounts handler never returns the ciphertext or plaintext — it returns a sanitized `{ hasApiKey, apiKeyHint }` projection via `toPublicAccount`.
+- Expiry flag: Pierre sync sets `apiKeyStatus: "expired"` when Pierre returns `expired_api_key` or `invalid_api_key`. The accounts API exposes this as `apiKeyExpired: true`. Saving a new key (or a successful sync) clears the flag.
+- Decryption: only the Pierre sync Lambda imports `decryptApiKey`. The accounts handler never returns the ciphertext or plaintext — it returns a sanitized `{ hasApiKey, apiKeyHint, apiKeyExpired }` projection via `toPublicAccount`.
 - Rotation: rotate by setting a new `ACCOUNT_KEY_SECRET` and re-saving each account's API key (frontend re-submits the value), since the legacy ciphertext will no longer authenticate.
 
 ## Card Statement Bucketing (vencimento)

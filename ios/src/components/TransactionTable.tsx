@@ -27,7 +27,7 @@ import TransactionFilters, {
   matchesFilters,
   type FilterState,
 } from "./TransactionFilters";
-import { getTableLayout, TransactionTableBody } from "./TransactionTableRows";
+import { getCardLayout, TransactionCardList } from "./TransactionCards";
 import { Button, Card } from "./ui";
 
 export type TransactionTableMode = "all" | "byCategory";
@@ -127,8 +127,8 @@ export default function TransactionTable({
   const configCategoryNames = catConfig ? Object.keys(catConfig.categories) : [];
   const allCategoryNames = Array.from(new Set([...visibleCategoryNames, ...configCategoryNames]));
 
-  const allLayout = getTableLayout(statementType, hasAvatars, hasActions, !!onHide, true);
-  const categoryLayout = getTableLayout(statementType, hasAvatars, hasActions, !!onHide, false);
+  const allLayout = getCardLayout(statementType, hasAvatars, hasActions, !!onHide, true);
+  const categoryLayout = getCardLayout(statementType, hasAvatars, hasActions, !!onHide, false);
 
   const toggle = (cat: string) =>
     setExpanded((prev) => {
@@ -162,18 +162,15 @@ export default function TransactionTable({
       )}
 
       {mode === "all" && flatRows.length > 0 && (
-        <Card style={styles.tableCard}>
-          <TransactionTableBody
-            statementType={statementType}
-            layout={allLayout}
-            rows={flatRows}
-            catConfig={catConfig}
-            accountNameMap={accountNameMap}
-            hasActions={hasActions}
-            onHide={onHide}
-            onOpenModal={setModalTarget}
-          />
-        </Card>
+        <TransactionCardList
+          layout={allLayout}
+          rows={flatRows}
+          catConfig={catConfig}
+          accountNameMap={accountNameMap}
+          hasActions={hasActions}
+          onHide={onHide}
+          onOpenModal={setModalTarget}
+        />
       )}
 
       {mode === "byCategory" && (
@@ -260,16 +257,18 @@ export default function TransactionTable({
                   )}
                 </Pressable>
                 {isOpen && (
-                  <TransactionTableBody
-                    statementType={statementType}
-                    layout={categoryLayout}
-                    rows={rows}
-                    catConfig={catConfig}
-                    accountNameMap={accountNameMap}
-                    hasActions={hasActions}
-                    onHide={onHide}
-                    onOpenModal={setModalTarget}
-                  />
+                  <View style={[styles.categoryBody, { borderTopColor: colors.border }]}>
+                    <TransactionCardList
+                      layout={categoryLayout}
+                      rows={rows}
+                      catConfig={catConfig}
+                      accountNameMap={accountNameMap}
+                      hasActions={hasActions}
+                      nested
+                      onHide={onHide}
+                      onOpenModal={setModalTarget}
+                    />
+                  </View>
                 )}
               </Card>
             );
@@ -306,9 +305,9 @@ export default function TransactionTable({
 const styles = StyleSheet.create({
   filterToggle: { alignSelf: "flex-start", marginBottom: 8 },
   noResults: { textAlign: "center", paddingVertical: 24, fontSize: 14 },
-  tableCard: { overflow: "hidden" },
   categoryList: { gap: 8 },
   categoryCard: { overflow: "hidden" },
+  categoryBody: { borderTopWidth: StyleSheet.hairlineWidth },
   categoryHeader: { padding: 14, gap: 8 },
   categoryHeaderTop: {
     flexDirection: "row",

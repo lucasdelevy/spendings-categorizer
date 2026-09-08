@@ -24,6 +24,7 @@ import DailySpendingChart from "./components/DailySpendingChart";
 import TransactionTable from "./components/TransactionTable";
 import type { HidePayload } from "./components/TransactionTable";
 import SideMenu from "./components/SideMenu";
+import OpenFinanceExpiredBanner from "./components/OpenFinanceExpiredBanner";
 
 interface RemoteStatement {
   id: string;
@@ -466,6 +467,17 @@ export default function App() {
               loading={loadingData}
             />
           </div>
+
+          <OpenFinanceExpiredBanner
+              accounts={accounts}
+              onManageAccounts={() => {
+                setShowCategories(false);
+                setShowFamily(false);
+                setShowManage(false);
+                setShowAbout(false);
+                setShowAccounts(true);
+              }}
+            />
 
           {canAddFiles && (
             <div className="mb-6">

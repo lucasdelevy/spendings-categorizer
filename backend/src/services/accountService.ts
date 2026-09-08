@@ -147,6 +147,7 @@ export async function getAccount(
     new GetCommand({
       TableName: TABLE_NAME,
       Key: { PK: ownerPK(userId, familyId), SK: accountSK(accountId) },
+      ConsistentRead: true,
     }),
   );
   return (result.Item as AccountRecord | undefined) ?? null;
@@ -188,12 +189,14 @@ export async function updateAccount(
     if (update.apiKey === null || update.apiKey.trim() === "") {
       removes.push("apiKeyEncrypted");
       removes.push("apiKeyHint");
+      removes.push("apiKeyStatus");
     } else {
       const trimmed = update.apiKey.trim();
       sets.push("apiKeyEncrypted = :enc");
       sets.push("apiKeyHint = :hint");
       values[":enc"] = encryptApiKey(trimmed);
       values[":hint"] = buildApiKeyHint(trimmed);
+      removes.push("apiKeyStatus");
     }
   }
 
@@ -202,17 +205,18 @@ export async function updateAccount(
     expr += ` REMOVE ${removes.join(", ")}`;
   }
 
-  await docClient.send(
+  const updated = await docClient.send(
     new UpdateCommand({
       TableName: TABLE_NAME,
       Key: { PK: ownerPK(userId, familyId), SK: accountSK(accountId) },
       UpdateExpression: expr,
       ExpressionAttributeValues: values,
       ExpressionAttributeNames: Object.keys(names).length > 0 ? names : undefined,
+      ReturnValues: "ALL_NEW",
     }),
   );
 
-  return getAccount(userId, familyId, accountId);
+  return (updated.Attributes as AccountRecord | undefined) ?? getAccount(userId, familyId, accountId);
 }
 
 export interface AccountOwner {
@@ -287,6 +291,7 @@ export interface PublicAccount {
   closingDay?: number;
   hasApiKey: boolean;
   apiKeyHint?: string;
+  apiKeyExpired?: boolean;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -300,10 +305,45 @@ export function toPublicAccount(record: AccountRecord): PublicAccount {
     closingDay: record.closingDay,
     hasApiKey: !!record.apiKeyEncrypted,
     apiKeyHint: record.apiKeyHint,
+    apiKeyExpired: record.apiKeyStatus === "expired",
     createdBy: record.createdBy,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
   };
+}
+
+export async function setApiKeyStatusForAccounts(
+  accounts: AccountRecord[],
+  status: "expired" | null,
+): Promise<void> {
+  const targets = accounts.filter((a) =>
+    status === "expired" ? a.apiKeyStatus !== "expired" : a.apiKeyStatus === "expired",
+  );
+  if (targets.length === 0) return;
+
+  await Promise.all(
+    targets.map((account) =>
+      docClient.send(
+        new UpdateCommand({
+          TableName: TABLE_NAME,
+          Key: { PK: account.PK, SK: account.SK },
+          UpdateExpression:
+            status === "expired"
+              ? "SET apiKeyStatus = :st, updatedAt = :now"
+              : "SET updatedAt = :now REMOVE apiKeyStatus",
+          ExpressionAttributeValues: {
+            ":now": new Date().toISOString(),
+            ...(status === "expired" ? { ":st": "expired" } : {}),
+          },
+        }),
+      ),
+    ),
+  );
+
+  for (const account of targets) {
+    if (status === "expired") account.apiKeyStatus = "expired";
+    else delete account.apiKeyStatus;
+  }
 }
 
 /**

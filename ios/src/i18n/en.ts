@@ -189,6 +189,15 @@ const en = {
     apiKeyConfigured: "configured",
     apiKeyNotSet: "not set",
     apiKeyRemove: "Remove key",
+    apiKeyExpired: "expired",
+    apiKeyActive: "active",
+    apiKeyAppliesToExpired: "This Pierre key will be saved on all expired Open Finance accounts.",
+    apiKeyExpiredBanner: "Open Finance key expired",
+    apiKeyExpiredBody:
+      "Sync has stopped for {{names}}. Generate a new Pierre API key, then paste it on the account.",
+    getNewPierreKey: "Get new Pierre key",
+    pasteKeyOnAccount: "Paste key on account",
+    saveKey: "Save key",
     edit: "Edit",
     delete: "Delete",
     save: "Save changes",
@@ -301,6 +310,9 @@ const en = {
       phase14Title: "Bank Accounts & Cards Management",
       phase14Desc:
         "First-class accounts and cards: each transaction can be tied to a bank account or credit card. Cards have a closing day (vencimento, default 30) so transactions are bucketed into the correct monthly bill window. Per-account Open Finance API keys are stored encrypted with AES-256-GCM and only decrypted inside the sync worker — the frontend only ever sees a last-4 hint. Pierre sync iterates every account with a key, supporting multiple banks and cards in parallel.",
+      phase15Title: "Open Finance Key Reconnect",
+      phase15Desc:
+        "When Pierre reports an expired or invalid API key, the account is flagged and a dashboard banner asks you to generate a new key on Pierre and paste it back into Accounts. Saving a new key clears the flag and resumes the 5-minute sync.",
     },
   },
 

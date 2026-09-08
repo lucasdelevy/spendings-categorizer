@@ -9,6 +9,7 @@ import {
   fetchTransactions,
   triggerManualSync,
   mapPierreTransaction,
+  isPierreAuthError,
   type PierreTransaction,
 } from "../services/pierreService.js";
 import { findDuplicates } from "../services/dedupService.js";
@@ -17,6 +18,7 @@ import {
   listOwnersWithApiKeys,
   decryptApiKey,
   computeBillingMonth,
+  setApiKeyStatusForAccounts,
 } from "../services/accountService.js";
 import { listMembers } from "../services/familyService.js";
 import type {
@@ -342,8 +344,12 @@ async function syncMonths(
       );
       totalImported += result.imported;
       totalDupes += result.duplicates;
+      await setApiKeyStatusForAccounts(batch.tokenAccounts, null);
     } catch (err) {
       console.error(`Pierre sync failed for batch ${batch.label}:`, err);
+      if (isPierreAuthError(err)) {
+        await setApiKeyStatusForAccounts(batch.tokenAccounts, "expired");
+      }
     }
   }
 

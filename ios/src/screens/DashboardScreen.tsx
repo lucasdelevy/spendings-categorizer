@@ -1,12 +1,16 @@
-import { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useState } from "react";
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import type { DrawerNavigationProp } from "@react-navigation/drawer";
+import { api } from "../auth/api";
 import { useTranslation } from "react-i18next";
 import { limitProgress } from "@aletheia/shared";
 import { useAuth } from "../auth/AuthContext";
 import DailySpendingChart from "../components/DailySpendingChart";
 import FamilyUploader from "../components/FamilyUploader";
 import MonthSelector from "../components/MonthSelector";
+import OpenFinanceExpiredBanner from "../components/OpenFinanceExpiredBanner";
 import SaveConfirmBar from "../components/SaveConfirmBar";
 import SpendingPieChart from "../components/SpendingPieChart";
 import SummaryBar from "../components/SummaryBar";
@@ -17,14 +21,17 @@ import { useCategoryConfig } from "../hooks/useCategoryConfig";
 import { useDashboard } from "../hooks/useDashboard";
 import { useLocalPreview } from "../hooks/useLocalPreview";
 import { useTransactionActions } from "../hooks/useTransactionActions";
+import type { DrawerParamList } from "../navigation/types";
 import { useTheme } from "../theme/ThemeContext";
 
 export default function DashboardScreen() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { colors } = useTheme();
+  const navigation = useNavigation<DrawerNavigationProp<DrawerParamList>>();
   const { config: catConfig, refresh: refreshConfig } = useCategoryConfig(!!user);
-  const { accounts } = useAccounts(!!user);
+  const { accounts, refresh: refreshAccounts } = useAccounts(!!user);
+  const [refreshing, setRefreshing] = useState(false);
   const {
     selectorMonths,
     selectedMonth,
@@ -80,14 +87,50 @@ export default function DashboardScreen() {
 
   const visibleTransactions = result?.transactions.filter((tx) => !tx.hidden) ?? [];
 
+  useFocusEffect(
+    useCallback(() => {
+      void refreshAccounts({ silent: true });
+    }, [refreshAccounts]),
+  );
+
+  const onPullRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshAccounts({ silent: true });
+      await api.post("/pierre/sync").catch(() => undefined);
+      await refreshAccounts({ silent: true });
+      monthCache.current.delete(selectedMonth);
+      await loadSavedMonths();
+      await loadMonthFromRemote(selectedMonth, true);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => {
+            void onPullRefresh();
+          }}
+          tintColor={colors.primary}
+        />
+      }
+    >
       <MonthSelector
         months={selectorMonths}
         selected={selectedMonth}
         onChange={handleMonthChange}
         allowNew
         loading={loadingData}
+      />
+
+      <OpenFinanceExpiredBanner
+        accounts={accounts}
+        onManageAccounts={() => navigation.navigate("Accounts")}
       />
 
       {error && (
