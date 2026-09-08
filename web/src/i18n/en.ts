@@ -6,6 +6,7 @@ const en = {
     family: "Family",
     manageMonths: "Manage Months",
     about: "About Aletheia",
+    dashboard: "Dashboard",
     logout: "Sign Out",
     uploadStatements: "Upload my statements",
     uploadOverlayDescription:

@@ -391,6 +391,7 @@ export default function App() {
       <SideMenu
         open={sideMenuOpen}
         onClose={() => setSideMenuOpen(false)}
+        onDashboard={() => { setShowCategories(false); setShowAccounts(false); setShowFamily(false); setShowManage(false); setShowAbout(false); }}
         onCategories={() => { setShowAccounts(false); setShowFamily(false); setShowManage(false); setShowAbout(false); setShowCategories(true); }}
         onAccounts={() => { setShowCategories(false); setShowFamily(false); setShowManage(false); setShowAbout(false); setShowAccounts(true); }}
         onFamily={() => { setShowCategories(false); setShowAccounts(false); setShowManage(false); setShowAbout(false); setShowFamily(true); }}

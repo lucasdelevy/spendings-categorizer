@@ -6,6 +6,7 @@ const ptBR = {
     family: "Família",
     manageMonths: "Gerenciar Meses",
     about: "Sobre Aletheia",
+    dashboard: "Painel",
     logout: "Sair",
     uploadStatements: "Enviar meus extratos",
     uploadOverlayDescription:

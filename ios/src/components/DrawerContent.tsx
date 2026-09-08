@@ -46,10 +46,8 @@ export default function DrawerContent({ user, onLogout, ...props }: Props) {
         },
       ]}
     >
-      <LanguageSwitcher />
-      <Text style={[styles.section, { color: colors.textMuted }]}>{t("sidebar.navigation")}</Text>
       <DrawerItem
-        label={t("app.title")}
+        label={t("app.dashboard")}
         onPress={() => navigation.navigate("Dashboard")}
         {...itemColors}
       />
@@ -87,20 +85,16 @@ export default function DrawerContent({ user, onLogout, ...props }: Props) {
       >
         <Text style={[styles.logoutText, { color: colors.text }]}>{t("app.logout")}</Text>
       </TouchableOpacity>
-      <DarkModeToggle />
+      <View style={[styles.prefsRow, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <LanguageSwitcher compact />
+        <DarkModeToggle />
+      </View>
     </DrawerContentScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flexGrow: 1 },
-  section: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    fontSize: 12,
-    fontWeight: "600",
-    textTransform: "uppercase",
-  },
   itemLabel: { fontWeight: "500", marginLeft: -8 },
   spacer: { flex: 1 },
   userSection: {
@@ -124,4 +118,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   logoutText: { fontSize: 14, fontWeight: "500" },
+  prefsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 4,
+  },
 });
