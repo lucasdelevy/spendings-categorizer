@@ -43,6 +43,19 @@ const en = {
   login: {
     subtitle: "Sign in to save and view your statements",
     loading: "Loading...",
+    googleSignIn: "Sign in with Google",
+    googleFailed: "Google sign-in failed",
+    appleFailed: "Apple sign-in failed",
+  },
+
+  account: {
+    delete: "Delete account",
+    deleteTitle: "Delete your account?",
+    deleteConfirm: "Delete account",
+    deleteCancel: "Cancel",
+    deleteFailed: "Could not delete account",
+    deleteConfirmBody:
+      "This permanently deletes your profile, statements, categories, accounts, and device tokens. If you own a family and someone else is in it, they become the owner. If you are the only member, the family is removed. This cannot be undone.",
   },
 
   categories: {
@@ -70,6 +83,7 @@ const en = {
     newCategory: "New category...",
     createCategory: "Create Category",
     keywordsCount: "{{count}} keywords",
+    color: "Color",
     ignoreDescription:
       "Transactions containing any of these terms will be ignored when processing the CSV.",
     noIgnoreFilters: "No ignore filters",
@@ -324,6 +338,9 @@ const en = {
       phase17Title: "Unmatched Transactions Stay Uncategorized",
       phase17Desc:
         "Open Finance categories from Pierre are no longer imported as new Aletheia categories. If a transaction does not match one of your keyword rules, it stays in Sem Categoria. Opening a month re-applies the rules so older Pierre labels collapse into that bucket unless a keyword matches.",
+      phase18Title: "Account Deletion & Sign in with Apple",
+      phase18Desc:
+        "iOS offers Sign in with Apple next to Google (App Store Guideline 4.8). Google and Apple logins that share an email become one Aletheia user. You can permanently delete your account from the side menu: personal data is removed, and a family you own is transferred to another member or dissolved.",
     },
   },
 

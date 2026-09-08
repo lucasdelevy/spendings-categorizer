@@ -101,7 +101,7 @@ function remoteToResult(remote: RemoteStatement): StatementResult {
 
 export default function App() {
   const { t } = useTranslation();
-  const { user, loading: authLoading, logout } = useAuth();
+  const { user, loading: authLoading, logout, deleteAccount } = useAuth();
   const { config: catConfig, refresh: refreshConfig, save: saveCatConfig } = useCategoryConfig(!!user);
   const { accounts, refresh: refreshAccounts } = useAccounts(!!user);
 
@@ -399,6 +399,7 @@ export default function App() {
         onAbout={() => { setShowCategories(false); setShowAccounts(false); setShowFamily(false); setShowManage(false); setShowAbout(true); }}
         user={user}
         onLogout={logout}
+        onDeleteAccount={deleteAccount}
       />
 
       <header className="mb-8 flex items-center gap-4">

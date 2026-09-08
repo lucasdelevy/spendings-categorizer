@@ -50,6 +50,147 @@ function RemovableChip({ label, onRemove }: { label: string; onRemove: () => voi
   );
 }
 
+function CategoryEditor({
+  color,
+  keywords,
+  limit,
+  onColor,
+  onAddKeyword,
+  onRemoveKeyword,
+  onSetLimit,
+  onRemoveLimit,
+  onChangeLimitAmount,
+  onChangeLimitPeriod,
+  onRename,
+  onDelete,
+}: {
+  color: string;
+  keywords: string[];
+  limit?: { amount: number; period: LimitPeriod };
+  onColor: (color: string) => void;
+  onAddKeyword: (keyword: string) => void;
+  onRemoveKeyword: (keyword: string) => void;
+  onSetLimit: () => void;
+  onRemoveLimit: () => void;
+  onChangeLimitAmount: (raw: string) => void;
+  onChangeLimitPeriod: (period: LimitPeriod) => void;
+  onRename: () => void;
+  onDelete: () => void;
+}) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const [showPalette, setShowPalette] = useState(false);
+  const [showKeywords, setShowKeywords] = useState(false);
+  const swatches = PALETTE.includes(color) ? PALETTE : [color, ...PALETTE];
+
+  return (
+    <View style={[styles.catBody, { borderTopColor: colors.border }]}>
+      <Pressable
+        onPress={() => setShowPalette((open) => !open)}
+        style={[
+          styles.disclosure,
+          { borderColor: colors.border, backgroundColor: colors.background },
+        ]}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: showPalette }}
+        accessibilityLabel={t("categories.color")}
+      >
+        <View style={[styles.dotLg, { backgroundColor: color }]} />
+        <Text style={[styles.disclosureLabel, { color: colors.text }]}>{t("categories.color")}</Text>
+        <Ionicons
+          name={showPalette ? "chevron-up" : "chevron-down"}
+          size={16}
+          color={colors.textMuted}
+        />
+      </Pressable>
+      {showPalette ? (
+        <View style={styles.swatches}>
+          {swatches.map((swatch) => (
+            <Pressable
+              key={swatch}
+              onPress={() => {
+                onColor(swatch);
+                setShowPalette(false);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={swatch}
+              style={[
+                styles.swatch,
+                { backgroundColor: swatch },
+                color === swatch ? { borderColor: colors.text, borderWidth: 2 } : null,
+              ]}
+            />
+          ))}
+        </View>
+      ) : null}
+
+      <Pressable
+        onPress={() => setShowKeywords((open) => !open)}
+        style={[
+          styles.disclosure,
+          { borderColor: colors.border, backgroundColor: colors.background },
+        ]}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: showKeywords }}
+        accessibilityLabel={t("categories.keywordsCount", { count: keywords.length })}
+      >
+        <Text style={[styles.disclosureLabel, { color: colors.text }]}>
+          {t("categories.keywordsCount", { count: keywords.length })}
+        </Text>
+        <Ionicons
+          name={showKeywords ? "chevron-up" : "chevron-down"}
+          size={16}
+          color={colors.textMuted}
+        />
+      </Pressable>
+      {showKeywords ? (
+        <View style={styles.keywordsBody}>
+          <View style={styles.chipWrap}>
+            {keywords.map((kw) => (
+              <RemovableChip key={kw} label={kw} onRemove={() => onRemoveKeyword(kw)} />
+            ))}
+            {keywords.length === 0 && (
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>{t("categories.noKeywords")}</Text>
+            )}
+          </View>
+          <AddRow
+            placeholder={t("categories.newKeyword")}
+            onAdd={(keyword) => onAddKeyword(keyword.toLowerCase())}
+          />
+        </View>
+      ) : null}
+
+      {limit ? (
+        <View style={styles.limitBlock}>
+          <TextField
+            label={t("categories.limitAmount")}
+            value={limit.amount ? String(limit.amount) : ""}
+            onChangeText={onChangeLimitAmount}
+            keyboardType="decimal-pad"
+          />
+          <SegmentedControl
+            options={[
+              { value: "daily", label: t("categories.limitDaily") },
+              { value: "weekly", label: t("categories.limitWeekly") },
+              { value: "monthly", label: t("categories.limitMonthly") },
+            ]}
+            value={limit.period}
+            onChange={onChangeLimitPeriod}
+          />
+          <Button compact variant="ghost" label={t("categories.removeLimit")} onPress={onRemoveLimit} />
+        </View>
+      ) : (
+        <Button compact variant="secondary" label={t("categories.setLimit")} onPress={onSetLimit} />
+      )}
+
+      <View style={styles.catActions}>
+        <Button compact variant="secondary" label={t("categories.renameTitle")} onPress={onRename} />
+        <Button compact variant="ghost" label={t("categories.deleteTitle")} onPress={onDelete} />
+      </View>
+    </View>
+  );
+}
+
 function AddRow({
   placeholder,
   onAdd,
@@ -282,9 +423,6 @@ export default function CategoriesScreen() {
             {categoryNames.map((name) => {
               const entry = draft.categories[name];
               const isOpen = expanded === name;
-              const swatches = PALETTE.includes(entry.color)
-                ? PALETTE
-                : [entry.color, ...PALETTE];
               return (
                 <Card key={name}>
                   <Pressable
@@ -295,136 +433,64 @@ export default function CategoriesScreen() {
                     <Text style={[styles.catName, { color: colors.text }]} numberOfLines={1}>
                       {name}
                     </Text>
-                    <Text style={[styles.countBadge, { color: colors.textMuted }]}>
-                      {t("categories.keywordsCount", { count: entry.keywords.length })}
-                    </Text>
                     <Ionicons
                       name={isOpen ? "chevron-up" : "chevron-down"}
                       size={18}
                       color={colors.textMuted}
                     />
                   </Pressable>
-                  {isOpen && (
-                    <View style={[styles.catBody, { borderTopColor: colors.border }]}>
-                      <View style={styles.swatches}>
-                        {swatches.map((color) => (
-                          <Pressable
-                            key={color}
-                            onPress={() =>
-                              updateDraft((d) => {
-                                if (d.categories[name]) d.categories[name].color = color;
-                              })
-                            }
-                            style={[
-                              styles.swatch,
-                              { backgroundColor: color },
-                              entry.color === color ? { borderColor: colors.text, borderWidth: 2 } : null,
-                            ]}
-                          />
-                        ))}
-                      </View>
-
-                      <View style={styles.chipWrap}>
-                        {entry.keywords.map((kw) => (
-                          <RemovableChip
-                            key={kw}
-                            label={kw}
-                            onRemove={() =>
-                              updateDraft((d) => {
-                                const cat = d.categories[name];
-                                if (cat) cat.keywords = cat.keywords.filter((k) => k !== kw);
-                              })
-                            }
-                          />
-                        ))}
-                        {entry.keywords.length === 0 && (
-                          <Text style={{ color: colors.textMuted, fontSize: 12 }}>
-                            {t("categories.noKeywords")}
-                          </Text>
-                        )}
-                      </View>
-                      <AddRow
-                        placeholder={t("categories.newKeyword")}
-                        onAdd={(keyword) => {
-                          const lower = keyword.toLowerCase();
-                          updateDraft((d) => {
-                            const cat = d.categories[name];
-                            if (cat && !cat.keywords.includes(lower)) cat.keywords.push(lower);
-                          });
-                        }}
-                      />
-
-                      {entry.limit ? (
-                        <View style={styles.limitBlock}>
-                          <TextField
-                            label={t("categories.limitAmount")}
-                            value={entry.limit.amount ? String(entry.limit.amount) : ""}
-                            onChangeText={(raw) =>
-                              updateDraft((d) => {
-                                const cat = d.categories[name];
-                                if (cat?.limit) {
-                                  cat.limit.amount = raw === "" ? 0 : Math.max(0, parseFloat(raw) || 0);
-                                }
-                              })
-                            }
-                            keyboardType="decimal-pad"
-                          />
-                          <SegmentedControl
-                            options={[
-                              { value: "daily", label: t("categories.limitDaily") },
-                              { value: "weekly", label: t("categories.limitWeekly") },
-                              { value: "monthly", label: t("categories.limitMonthly") },
-                            ]}
-                            value={entry.limit.period}
-                            onChange={(period: LimitPeriod) =>
-                              updateDraft((d) => {
-                                const cat = d.categories[name];
-                                if (cat?.limit) cat.limit.period = period;
-                              })
-                            }
-                          />
-                          <Button
-                            compact
-                            variant="ghost"
-                            label={t("categories.removeLimit")}
-                            onPress={() =>
-                              updateDraft((d) => {
-                                const cat = d.categories[name];
-                                if (cat) delete cat.limit;
-                              })
-                            }
-                          />
-                        </View>
-                      ) : (
-                        <Button
-                          compact
-                          variant="secondary"
-                          label={t("categories.setLimit")}
-                          onPress={() =>
-                            updateDraft((d) => {
-                              const cat = d.categories[name];
-                              if (cat) cat.limit = { amount: 0, period: "monthly" };
-                            })
+                  {isOpen ? (
+                    <CategoryEditor
+                      color={entry.color}
+                      keywords={entry.keywords}
+                      limit={entry.limit}
+                      onColor={(color) =>
+                        updateDraft((d) => {
+                          if (d.categories[name]) d.categories[name].color = color;
+                        })
+                      }
+                      onAddKeyword={(keyword) =>
+                        updateDraft((d) => {
+                          const cat = d.categories[name];
+                          if (cat && !cat.keywords.includes(keyword)) cat.keywords.push(keyword);
+                        })
+                      }
+                      onRemoveKeyword={(keyword) =>
+                        updateDraft((d) => {
+                          const cat = d.categories[name];
+                          if (cat) cat.keywords = cat.keywords.filter((k) => k !== keyword);
+                        })
+                      }
+                      onSetLimit={() =>
+                        updateDraft((d) => {
+                          const cat = d.categories[name];
+                          if (cat) cat.limit = { amount: 0, period: "monthly" };
+                        })
+                      }
+                      onRemoveLimit={() =>
+                        updateDraft((d) => {
+                          const cat = d.categories[name];
+                          if (cat) delete cat.limit;
+                        })
+                      }
+                      onChangeLimitAmount={(raw) =>
+                        updateDraft((d) => {
+                          const cat = d.categories[name];
+                          if (cat?.limit) {
+                            cat.limit.amount = raw === "" ? 0 : Math.max(0, parseFloat(raw) || 0);
                           }
-                        />
-                      )}
-
-                      <View style={styles.catActions}>
-                        <Button
-                          compact
-                          variant="secondary"
-                          label={t("categories.renameTitle")}
-                          onPress={() => promptRename(name)}
-                        />
-                        <Button
-                          compact
-                          variant="ghost"
-                          label={t("categories.deleteTitle")}
-                          onPress={() => confirmDelete(name)}
-                        />
-                      </View>
-                    </View>
-                  )}
+                        })
+                      }
+                      onChangeLimitPeriod={(period) =>
+                        updateDraft((d) => {
+                          const cat = d.categories[name];
+                          if (cat?.limit) cat.limit.period = period;
+                        })
+                      }
+                      onRename={() => promptRename(name)}
+                      onDelete={() => confirmDelete(name)}
+                    />
+                  ) : null}
                 </Card>
               );
             })}
@@ -566,10 +632,22 @@ const styles = StyleSheet.create({
   },
   dot: { width: 12, height: 12, borderRadius: 6 },
   catName: { flex: 1, fontWeight: "600", fontSize: 15 },
-  countBadge: { fontSize: 11 },
   catBody: { borderTopWidth: StyleSheet.hairlineWidth, padding: 12, gap: 12 },
-  swatches: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  disclosure: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    minHeight: 44,
+  },
+  disclosureLabel: { flex: 1, fontSize: 14, fontWeight: "500" },
+  dotLg: { width: 22, height: 22, borderRadius: 11 },
+  swatches: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 2 },
   swatch: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: "transparent" },
+  keywordsBody: { gap: 10 },
   chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   chip: {
     flexDirection: "row",

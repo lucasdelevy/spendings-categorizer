@@ -4,7 +4,8 @@ export interface UserRecord {
   email: string;
   name: string;
   picture: string;
-  googleId: string;
+  googleId?: string;
+  appleId?: string;
   familyId?: string;
   createdAt: string;
 }
@@ -35,6 +36,12 @@ export interface EmailFamilyLookup {
   PK: string;
   SK: "LINK";
   familyId: string;
+}
+
+export interface EmailUserLookup {
+  PK: string;
+  SK: "LINK";
+  userId: string;
 }
 
 export interface UploadedBy {

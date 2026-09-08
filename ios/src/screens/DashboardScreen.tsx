@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useLayoutEffect, useState } from "react";
+import { Modal, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { DrawerNavigationProp } from "@react-navigation/drawer";
@@ -9,6 +9,7 @@ import { limitProgress } from "@aletheia/shared";
 import { useAuth } from "../auth/AuthContext";
 import DailySpendingChart from "../components/DailySpendingChart";
 import FamilyUploader from "../components/FamilyUploader";
+import BrandSplash from "../components/BrandSplash";
 import MonthSelector from "../components/MonthSelector";
 import OpenFinanceExpiredBanner from "../components/OpenFinanceExpiredBanner";
 import SaveConfirmBar from "../components/SaveConfirmBar";
@@ -37,6 +38,7 @@ export default function DashboardScreen() {
     selectedMonth,
     handleMonthChange,
     loadingData,
+    initializing,
     monthHasData,
     result: remoteResult,
     dataSource,
@@ -106,6 +108,18 @@ export default function DashboardScreen() {
       setRefreshing(false);
     }
   };
+
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: !initializing });
+  }, [navigation, initializing]);
+
+  if (initializing) {
+    return (
+      <Modal visible animationType="none" statusBarTranslucent>
+        <BrandSplash />
+      </Modal>
+    );
+  }
 
   return (
     <ScrollView

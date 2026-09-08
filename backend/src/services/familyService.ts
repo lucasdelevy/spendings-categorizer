@@ -143,14 +143,31 @@ export async function removeMember(
 export async function lookupFamilyByEmail(
   email: string,
 ): Promise<string | null> {
-  const result = await docClient.send(
-    new GetCommand({
+  const trimmed = email.trim();
+  const candidates = [...new Set([trimmed, trimmed.toLowerCase()].filter(Boolean))];
+  for (const candidate of candidates) {
+    const result = await docClient.send(
+      new GetCommand({
+        TableName: TABLE_NAME,
+        Key: { PK: `EMAILFAM#${candidate}`, SK: "LINK" },
+      }),
+    );
+    const record = result.Item as EmailFamilyLookup | undefined;
+    if (record?.familyId) return record.familyId;
+  }
+  return null;
+}
+
+export async function removeMemberByUserId(
+  familyId: string,
+  userId: string,
+): Promise<void> {
+  await docClient.send(
+    new DeleteCommand({
       TableName: TABLE_NAME,
-      Key: { PK: `EMAILFAM#${email}`, SK: "LINK" },
+      Key: { PK: `FAMILY#${familyId}`, SK: `MEMBER#${userId}` },
     }),
   );
-  const record = result.Item as EmailFamilyLookup | undefined;
-  return record?.familyId ?? null;
 }
 
 export async function activateMember(
@@ -159,8 +176,19 @@ export async function activateMember(
   user: { userId: string; name: string; picture: string },
 ): Promise<void> {
   const members = await listMembers(familyId);
+  const normalized = email.trim().toLowerCase();
+  const alreadyActive = members.find(
+    (m) =>
+      m.status === "active" &&
+      !m.SK.includes("pending-") &&
+      m.email.trim().toLowerCase() === normalized,
+  );
+  if (alreadyActive) {
+    return;
+  }
+
   const pending = members.find(
-    (m) => m.email === email && m.status === "pending",
+    (m) => m.email.trim().toLowerCase() === normalized && m.status === "pending",
   );
 
   if (pending) {
@@ -200,6 +228,18 @@ export async function updateFamilyName(
       UpdateExpression: "SET #n = :name",
       ExpressionAttributeNames: { "#n": "name" },
       ExpressionAttributeValues: { ":name": name },
+    }),
+  );
+}
+
+export async function promoteToOwner(familyId: string, userId: string): Promise<void> {
+  await docClient.send(
+    new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: `FAMILY#${familyId}`, SK: `MEMBER#${userId}` },
+      UpdateExpression: "SET #r = :owner",
+      ExpressionAttributeNames: { "#r": "role" },
+      ExpressionAttributeValues: { ":owner": "owner" },
     }),
   );
 }

@@ -14,7 +14,7 @@
 ├──────────────────────────────────────────────────────────────────┤
 │  iOS App (Expo React Native) — see ios/                         │
 │  - Same API; JWT in expo-secure-store                           │
-│  - Native fetch bypasses browser CORS                           │
+│  - Sign in with Apple + Google; native fetch (no CORS)          │
 └────────────────────┬─────────────────────────────────────────────┘
                      │ HTTPS (Bearer JWT)
                      ▼
@@ -56,14 +56,16 @@
 | Device        | `USER#<userId>`       | `DEVICE#<token>`          | token, platform (`ios`), locale, updatedAt                  |
 | Limit alert   | `FAMILY#<familyId>` or `USER#<userId>` | `LIMITALERT#<YYYYMM>#<category>` | percent, threshold, notifiedAt |
 | Email lookup  | `EMAILFAM#<email>`    | `LINK`                    | familyId                                                |
+| User lookup   | `EMAILUSER#<email>`   | `LINK`                    | userId (links Google and Apple for the same email)      |
 
-- `userId` = Google's `sub` claim (googleId), used directly.
+- `userId` is the first OAuth `sub` we see for that person (Google or Apple). A later sign-in with the other provider and the same email reuses that `userId`.
 - `sessionId` = ULID generated at login time.
 - `familyId` = ULID generated when creating a family.
 - Statement `status`: `"active"` or `"overridden"` (soft-delete).
 - Each transaction in a family statement includes `uploadedBy: { userId, name, picture }`.
 - No GSI required. JWT contains `{ userId, sessionId }` for direct lookups.
-- Email lookup enables auto-linking on login: when a user signs in, the system checks `EMAILFAM#<email>` to find pending family invites.
+- `EMAILFAM#<email>` auto-links pending family invites on login.
+- `EMAILUSER#<email>` merges Google and Apple identities that share an email. Apple Hide My Email will not match a Gmail invite.
 
 ### Dual-mode statement scoping
 
@@ -75,21 +77,23 @@ When reading a month in family mode, all `STMT#<YYYYMM>#*` records are fetched a
 
 ## Authentication Flow
 
-1. Frontend loads Google Identity Services script.
-2. User clicks Google Sign-In button → receives a Google ID token.
-3. Frontend POSTs `{ idToken }` to `/auth/google`.
-4. Auth Lambda verifies token with `google-auth-library`, upserts user in DDB, creates session.
-5. Returns a JWT (HS256, 7-day expiry) containing `{ userId, sessionId }`.
-6. Frontend stores JWT in localStorage, sends as `Authorization: Bearer <jwt>` on subsequent requests.
-7. Protected endpoints decode JWT, check session exists and is not expired in DDB.
-8. Logout: deletes session from DDB, frontend clears localStorage.
+1. Web loads Google Identity Services. iOS can use Sign in with Apple or Google.
+2. The client sends a Google ID token to `POST /auth/google` or an Apple identity token to `POST /auth/apple`.
+3. Auth Lambda verifies the token, resolves `userId` (existing profile, `EMAILUSER#<email>`, or new `sub`), upserts the user, and creates a session.
+4. Returns a JWT (HS256, 7-day expiry) containing `{ userId, sessionId }`.
+5. Clients store the JWT (localStorage or SecureStore) and send `Authorization: Bearer <jwt>` on subsequent requests.
+6. Protected endpoints decode JWT, check session exists and is not expired in DDB.
+7. Logout: deletes session from DDB, client clears the token.
+8. Delete account: `DELETE /auth/me` removes the user's data and family membership (or dissolves a sole-owner family), then the client clears the token.
 
 ## API Endpoints
 
 | Method | Path                       | Auth | Description                                |
 |--------|----------------------------|----- |--------------------------------------------|
 | POST   | `/auth/google`             | none | Exchange Google ID token for JWT           |
+| POST   | `/auth/apple`              | none | Exchange Apple identity token for JWT (iOS) |
 | GET    | `/auth/me`                 | JWT  | Get current user profile (incl. familyId)  |
+| DELETE | `/auth/me`                 | JWT  | Permanently delete the signed-in account   |
 | POST   | `/auth/logout`             | JWT  | Invalidate session                         |
 | GET    | `/statements`              | JWT  | List statements (family or solo scoped)    |
 | POST   | `/statements`              | JWT  | Save a processed statement                 |

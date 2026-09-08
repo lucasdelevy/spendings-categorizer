@@ -65,6 +65,7 @@ export function useDashboard(authenticated: boolean) {
   const [result, setResult] = useState<StatementResult | null>(null);
   const [dataSource, setDataSource] = useState<"local" | "remote" | null>(null);
   const [loadingData, setLoadingData] = useState(false);
+  const [initializing, setInitializing] = useState(authenticated);
   const [error, setError] = useState<string | null>(null);
   const monthCache = useRef<Map<string, StatementResult>>(new Map());
 
@@ -90,6 +91,7 @@ export function useDashboard(authenticated: boolean) {
       if (cached) {
         setResult(cached);
         setDataSource("remote");
+        setInitializing(false);
         return;
       }
     }
@@ -107,18 +109,25 @@ export function useDashboard(authenticated: boolean) {
       setDataSource(null);
     } finally {
       setLoadingData(false);
+      setInitializing(false);
     }
   }, []);
 
   useEffect(() => {
-    if (!authenticated) return;
+    if (!authenticated) {
+      setInitializing(false);
+      return;
+    }
+    setInitializing(true);
     loadSavedMonths().then((items) => {
       if (items.length > 0) {
         const months = Array.from(
           new Set(items.map((s) => s.id.split("#")[0])),
         ).sort((a, b) => b.localeCompare(a));
         setSelectedMonth(months[0]);
+        return;
       }
+      setInitializing(false);
     });
   }, [authenticated, loadSavedMonths]);
 
@@ -156,6 +165,7 @@ export function useDashboard(authenticated: boolean) {
     result,
     dataSource,
     loadingData,
+    initializing,
     error,
     setError,
     monthHasData,

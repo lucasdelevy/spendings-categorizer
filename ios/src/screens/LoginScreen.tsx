@@ -1,23 +1,29 @@
 import { useTranslation } from "react-i18next";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
+import * as AppleAuthentication from "expo-apple-authentication";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { useAuth } from "../auth/AuthContext";
+import { useTheme } from "../theme/ThemeContext";
 
 WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const { t } = useTranslation();
-  const { login } = useAuth();
+  const { colors, mode } = useTheme();
+  const { login, loginWithApple } = useAuth();
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [busyKind, setBusyKind] = useState<"apple" | "google" | null>(null);
+  const [appleAvailable, setAppleAvailable] = useState(false);
+  const busy = busyKind !== null;
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
@@ -25,35 +31,90 @@ export default function LoginScreen() {
   });
 
   useEffect(() => {
+    if (Platform.OS !== "ios") return;
+    void AppleAuthentication.isAvailableAsync().then(setAppleAvailable);
+  }, []);
+
+  useEffect(() => {
     if (response?.type !== "success") return;
     const idToken = response.authentication?.idToken;
     if (!idToken) {
-      setError("Google did not return an ID token");
+      setError(t("login.googleFailed"));
       return;
     }
-    setBusy(true);
+    setBusyKind("google");
     setError(null);
     login(idToken)
-      .catch((e) => setError(e instanceof Error ? e.message : "Login failed"))
-      .finally(() => setBusy(false));
-  }, [response, login]);
+      .catch((e) => setError(e instanceof Error ? e.message : t("login.googleFailed")))
+      .finally(() => setBusyKind(null));
+  }, [response, login, t]);
+
+  async function handleApple() {
+    if (busy) return;
+    setBusyKind("apple");
+    setError(null);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      if (!credential.identityToken) {
+        setError(t("login.appleFailed"));
+        return;
+      }
+      const fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      await loginWithApple(credential.identityToken, fullName || undefined);
+    } catch (e) {
+      if ((e as { code?: string }).code === "ERR_REQUEST_CANCELED") return;
+      setError(e instanceof Error ? e.message : t("login.appleFailed"));
+    } finally {
+      setBusyKind(null);
+    }
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{t("app.title")}</Text>
-      <Text style={styles.subtitle}>{t("login.subtitle", "Sign in to continue")}</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>{t("app.title")}</Text>
+      <Text style={[styles.subtitle, { color: colors.textMuted }]}>{t("login.subtitle")}</Text>
 
-      {error && <Text style={styles.error}>{error}</Text>}
+      {error && <Text style={[styles.error, { color: colors.danger }]}>{error}</Text>}
+
+      {appleAvailable && (
+        busyKind === "apple" ? (
+          <View style={[styles.appleBusy, { backgroundColor: mode === "dark" ? "#fff" : "#000" }]}>
+            <ActivityIndicator color={mode === "dark" ? "#000" : "#fff"} />
+          </View>
+        ) : (
+          <View pointerEvents={busy ? "none" : "auto"} style={busy ? styles.dimmed : undefined}>
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+              buttonStyle={
+                mode === "dark"
+                  ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+                  : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+              }
+              cornerRadius={10}
+              style={styles.appleButton}
+              onPress={() => void handleApple()}
+            />
+          </View>
+        )
+      )}
 
       <Pressable
-        style={[styles.button, (!request || busy) && styles.buttonDisabled]}
+        style={[styles.button, { backgroundColor: colors.primary }, (!request || busy) && styles.buttonDisabled]}
         disabled={!request || busy}
         onPress={() => promptAsync()}
       >
-        {busy ? (
+        {busyKind === "google" ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>{t("login.googleSignIn", "Sign in with Google")}</Text>
+          <Text style={styles.buttonText}>{t("login.googleSignIn")}</Text>
         )}
       </Pressable>
     </View>
@@ -65,32 +126,38 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f9fafb",
     padding: 24,
   },
   title: {
     fontSize: 32,
     fontWeight: "700",
-    color: "#111827",
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: "#6b7280",
     marginBottom: 32,
   },
   error: {
-    color: "#dc2626",
     fontSize: 14,
     marginBottom: 16,
     textAlign: "center",
   },
+  appleButton: { width: 280, height: 48, marginBottom: 12 },
+  appleBusy: {
+    width: 280,
+    height: 48,
+    marginBottom: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dimmed: { opacity: 0.6 },
   button: {
-    backgroundColor: "#4f46e5",
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 10,
     minWidth: 220,
+    width: 280,
     alignItems: "center",
   },
   buttonDisabled: { opacity: 0.6 },

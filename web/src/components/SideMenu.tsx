@@ -20,6 +20,7 @@ interface Props {
   onAbout: () => void;
   user: User;
   onLogout: () => void;
+  onDeleteAccount: () => Promise<void>;
 }
 
 export default function SideMenu({
@@ -33,6 +34,7 @@ export default function SideMenu({
   onAbout,
   user,
   onLogout,
+  onDeleteAccount,
 }: Props) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -56,6 +58,17 @@ export default function SideMenu({
     onClose();
     cb();
   };
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm(t("account.deleteConfirmBody"))) return;
+    try {
+      await onDeleteAccount();
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : t("account.deleteFailed"));
+    }
+  };
+
+  const initial = (user.name || user.email || "?").charAt(0).toUpperCase();
 
   return (
     <>
@@ -146,12 +159,18 @@ export default function SideMenu({
         {/* User section */}
         <div className="border-t border-gray-200 p-4 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <img
-              src={user.picture}
-              alt={user.name}
-              className="h-9 w-9 shrink-0 rounded-full border border-gray-200 object-cover dark:border-gray-600"
-              referrerPolicy="no-referrer"
-            />
+            {user.picture ? (
+              <img
+                src={user.picture}
+                alt={user.name}
+                className="h-9 w-9 shrink-0 rounded-full border border-gray-200 object-cover dark:border-gray-600"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200">
+                {initial}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                 {user.name}
@@ -166,6 +185,12 @@ export default function SideMenu({
             className="mt-3 w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             {t("app.logout")}
+          </button>
+          <button
+            onClick={() => { void handleDeleteAccount(); }}
+            className="mt-2 w-full rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
+          >
+            {t("account.delete")}
           </button>
         </div>
       </div>

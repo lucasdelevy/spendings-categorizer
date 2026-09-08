@@ -22,7 +22,9 @@ interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   login: (googleIdToken: string) => Promise<void>;
+  loginWithApple: (identityToken: string, fullName?: string) => Promise<void>;
   logout: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -68,6 +70,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   }, []);
 
+  const loginWithApple = useCallback(async (identityToken: string, fullName?: string) => {
+    const res = await api.post<{ token: string; user: AuthUser }>("/auth/apple", {
+      identityToken,
+      fullName,
+    });
+    await setToken(res.token);
+    setUser(res.user);
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await unregisterPushNotifications();
@@ -78,9 +89,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const deleteAccount = useCallback(async () => {
+    try {
+      await unregisterPushNotifications();
+    } catch {
+      // Continue deleting even if the device token cannot be unregistered.
+    }
+    await api.delete("/auth/me");
+    await clearToken();
+    setUser(null);
+  }, []);
+
   const value = useMemo(
-    () => ({ user, loading, login, logout }),
-    [user, loading, login, logout],
+    () => ({ user, loading, login, loginWithApple, logout, deleteAccount }),
+    [user, loading, login, loginWithApple, logout, deleteAccount],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
