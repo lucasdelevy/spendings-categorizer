@@ -12,6 +12,11 @@ interface FeatureEntry {
 
 const featureLog: FeatureEntry[] = [
   {
+    phase: "19",
+    title: "about.features.phase19Title",
+    description: "about.features.phase19Desc",
+  },
+  {
     phase: "18",
     title: "about.features.phase18Title",
     description: "about.features.phase18Desc",

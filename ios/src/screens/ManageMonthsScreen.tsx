@@ -3,12 +3,16 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-nati
 import { useTranslation } from "react-i18next";
 import { useNavigation } from "@react-navigation/native";
 import { api } from "../auth/api";
+import { useAuth } from "../auth/AuthContext";
+import { canManageFamily } from "../auth/permissions";
 import { formatYearMonth, type SavedStatementItem } from "../utils";
 import { useTheme } from "../theme/ThemeContext";
 
 export default function ManageMonthsScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const canManage = canManageFamily(user);
   const navigation = useNavigation();
   const [items, setItems] = useState<SavedStatementItem[]>([]);
 
@@ -43,7 +47,7 @@ export default function ManageMonthsScreen() {
               >
                 <Text style={{ color: colors.primary }}>{t("manage.view", "View")}</Text>
               </Pressable>
-              {monthItems.map((item) => (
+              {canManage && monthItems.map((item) => (
                 <Pressable
                   key={item.id}
                   onPress={() =>

@@ -10,6 +10,7 @@ import {
 } from "../services/userService.js";
 import { createSession, getSession, deleteSession } from "../services/sessionService.js";
 import { lookupFamilyByEmail, activateMember } from "../services/familyService.js";
+import { getFamilyRole } from "../services/familyAuth.js";
 import { verifyAppleIdentityToken } from "../services/appleAuth.js";
 import { deleteAccount } from "../services/accountDeletion.js";
 import type { UserRecord } from "../types.js";
@@ -35,12 +36,13 @@ function respond(statusCode: number, body: unknown, origin?: string): APIGateway
   };
 }
 
-function publicUser(user: UserRecord) {
+async function publicUser(userId: string, user: UserRecord) {
   return {
     email: user.email,
     name: user.name,
     picture: user.picture,
     familyId: user.familyId || null,
+    familyRole: await getFamilyRole(userId, user.familyId),
   };
 }
 
@@ -48,7 +50,7 @@ async function issueSession(userId: string, user: UserRecord, origin?: string) {
   const session = await createSession(userId);
   const sessionId = session.SK.replace("SESS#", "");
   const jwt = await createJWT({ userId, sessionId });
-  return respond(200, { token: jwt, user: publicUser(user) }, origin);
+  return respond(200, { token: jwt, user: await publicUser(userId, user) }, origin);
 }
 
 async function linkFamilyIfNeeded(
@@ -162,7 +164,7 @@ async function handleGetMe(event: APIGatewayProxyEventV2): Promise<APIGatewayPro
     }
   }
 
-  return respond(200, { user: publicUser(user) }, origin);
+  return respond(200, { user: await publicUser(payload.userId, user) }, origin);
 }
 
 async function handleLogout(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {

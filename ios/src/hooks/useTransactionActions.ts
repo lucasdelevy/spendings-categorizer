@@ -7,9 +7,10 @@ export function useTransactionActions(
   dataSource: "local" | "remote" | null,
   refreshConfig: () => Promise<void>,
   reloadMonth: () => Promise<void>,
+  canManage = true,
 ) {
   const statementId = `${selectedMonth}#family`;
-  const enabled = dataSource === "remote";
+  const enabled = dataSource === "remote" && canManage;
 
   const handleRecategorize = useCallback(
     async (payload: RecategorizePayload) => {

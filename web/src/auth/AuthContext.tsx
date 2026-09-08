@@ -1,12 +1,14 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { ReactNode } from "react";
 import { api, setToken, clearToken, isAuthenticated } from "./api";
+import type { FamilyRole } from "./permissions";
 
 interface User {
   email: string;
   name: string;
   picture: string;
   familyId: string | null;
+  familyRole: FamilyRole;
 }
 
 interface AuthContextType {
@@ -15,6 +17,7 @@ interface AuthContextType {
   login: (googleIdToken: string) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -46,6 +49,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    if (!isAuthenticated()) {
+      setUser(null);
+      return;
+    }
+    const res = await api.get<{ user: User }>("/auth/me");
+    setUser(res.user);
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await api.post("/auth/logout");
@@ -62,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, deleteAccount }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, deleteAccount, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

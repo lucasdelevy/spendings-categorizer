@@ -7,6 +7,7 @@ interface Props {
   config: CategoryConfig | null;
   onSave: (config: CategoryConfig) => Promise<void>;
   onBack: () => void;
+  readOnly?: boolean;
 }
 
 type Section = "categories" | "ignore" | "rename";
@@ -96,7 +97,7 @@ function ColorDot({
   );
 }
 
-export default function CategoriesPage({ config, onSave, onBack }: Props) {
+export default function CategoriesPage({ config, onSave, onBack, readOnly = false }: Props) {
   const { t, i18n } = useTranslation();
   const [draft, setDraft] = useState<CategoryConfig | null>(null);
   const [section, setSection] = useState<Section>("categories");
@@ -123,6 +124,7 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
   }
 
   const updateDraft = (fn: (d: CategoryConfig) => void) => {
+    if (readOnly) return;
     setDraft((prev) => {
       if (!prev) return prev;
       const next = deepClone(prev);
@@ -263,7 +265,7 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
             {t("categories.title")}
           </h1>
         </div>
-        {dirty && (
+        {dirty && !readOnly && (
           <button
             onClick={handleSave}
             disabled={saving}
@@ -273,6 +275,12 @@ export default function CategoriesPage({ config, onSave, onBack }: Props) {
           </button>
         )}
       </div>
+
+      {readOnly && (
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
+          {t("family.managersOnly")}
+        </div>
+      )}
 
       <div className="mb-6 flex gap-2">
         {(["categories", "ignore", "rename"] as Section[]).map((s) => (

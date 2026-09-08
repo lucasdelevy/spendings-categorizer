@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import type { Account, AccountType } from "@aletheia/shared";
 import { useAccounts } from "../hooks/useAccounts";
 import type { CreateAccountInput, UpdateAccountInput } from "../hooks/useAccounts";
+import { useAuth } from "../auth/AuthContext";
+import { canManageFamily } from "../auth/permissions";
 import OpenFinanceExpiredBanner from "../components/OpenFinanceExpiredBanner";
 import { openPierreApiKeyPage } from "../utils/pierre";
 
@@ -31,6 +33,8 @@ function formatDayLabel(day: number | undefined): string {
 
 export default function AccountsPage({ onBack }: Props) {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const canManage = canManageFamily(user);
   const { accounts, loading, refresh, create, update, remove } = useAccounts(true);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -229,18 +233,22 @@ export default function AccountsPage({ onBack }: Props) {
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <button
-                      onClick={() => startEdit(account)}
-                      className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                    >
-                      {t("accounts.edit")}
-                    </button>
-                    <button
-                      onClick={() => handleDelete(account)}
-                      className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
-                    >
-                      {t("accounts.delete")}
-                    </button>
+                    {canManage && (
+                      <>
+                        <button
+                          onClick={() => startEdit(account)}
+                          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                        >
+                          {t("accounts.edit")}
+                        </button>
+                        <button
+                          onClick={() => handleDelete(account)}
+                          className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
+                        >
+                          {t("accounts.delete")}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -270,7 +278,8 @@ export default function AccountsPage({ onBack }: Props) {
         })}
       </div>
 
-      {creating ? (
+      {canManage &&
+        (creating ? (
         <div className="mt-6 rounded-xl border border-indigo-200 bg-white p-4 dark:border-indigo-800 dark:bg-gray-800">
           <h3 className="mb-3 text-sm font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
             {t("accounts.newTitle")}
@@ -295,7 +304,7 @@ export default function AccountsPage({ onBack }: Props) {
         >
           + {t("accounts.addNew")}
         </button>
-      )}
+      ))}
     </>
   );
 }

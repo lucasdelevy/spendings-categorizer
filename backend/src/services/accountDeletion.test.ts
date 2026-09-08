@@ -31,4 +31,11 @@ describe("chooseFamilySuccessor", () => {
     const pending = member("pending-abc", { status: "pending", SK: "MEMBER#pending-abc" });
     expect(chooseFamilySuccessor([owner, pending], "owner")).toBeNull();
   });
+
+  it("prefers an admin over a regular member", () => {
+    const owner = member("owner", { role: "owner" });
+    const regular = member("regular");
+    const admin = member("admin", { role: "admin" });
+    expect(chooseFamilySuccessor([owner, regular, admin], "owner")?.SK).toBe("MEMBER#admin");
+  });
 });

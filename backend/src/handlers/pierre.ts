@@ -3,6 +3,7 @@ import { getCorsHeaders } from "../middleware/cors.js";
 import { verifyJWT, extractBearerToken } from "../middleware/auth.js";
 import { getSession } from "../services/sessionService.js";
 import { getUser } from "../services/userService.js";
+import { requireFamilyManager } from "../services/familyAuth.js";
 import { getMonthStatements, saveStatement } from "../services/statementService.js";
 import { getConfig } from "../services/categoryService.js";
 import { matchCategory } from "../services/categoryMatch.js";
@@ -471,6 +472,9 @@ async function handleManualSync(
 
   const user = await authenticate(event);
   if (!user) return respond(401, { error: "Unauthorized" }, origin);
+
+  const gate = await requireFamilyManager(user.userId);
+  if (!gate.ok) return respond(gate.status, { error: gate.error }, origin);
 
   const body = JSON.parse(event.body || "{}");
   const requestedMonth = body.yearMonth as string | undefined;

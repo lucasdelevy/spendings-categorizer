@@ -1,4 +1,5 @@
 import {
+  BatchWriteCommand,
   PutCommand,
   GetCommand,
   DeleteCommand,
@@ -10,6 +11,7 @@ import { docClient, TABLE_NAME } from "./dynamoClient.js";
 import type {
   FamilyRecord,
   FamilyMemberRecord,
+  FamilyMemberRole,
   EmailFamilyLookup,
 } from "../types.js";
 
@@ -78,6 +80,104 @@ export async function listMembers(familyId: string): Promise<FamilyMemberRecord[
   return (result.Items as FamilyMemberRecord[]) ?? [];
 }
 
+export async function getMember(
+  familyId: string,
+  userId: string,
+): Promise<FamilyMemberRecord | null> {
+  const result = await docClient.send(
+    new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: `FAMILY#${familyId}`, SK: `MEMBER#${userId}` },
+    }),
+  );
+  return (result.Item as FamilyMemberRecord) ?? null;
+}
+
+export async function setMemberRole(
+  familyId: string,
+  userId: string,
+  role: FamilyMemberRole,
+): Promise<void> {
+  await docClient.send(
+    new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: `FAMILY#${familyId}`, SK: `MEMBER#${userId}` },
+      UpdateExpression: "SET #r = :role",
+      ExpressionAttributeNames: { "#r": "role" },
+      ExpressionAttributeValues: { ":role": role },
+    }),
+  );
+}
+
+async function clearFamilyId(userId: string): Promise<void> {
+  await docClient.send(
+    new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: `USER#${userId}`, SK: "PROFILE" },
+      UpdateExpression: "REMOVE familyId",
+    }),
+  );
+}
+
+async function deleteKeys(keys: { PK: string; SK: string }[]): Promise<void> {
+  for (let i = 0; i < keys.length; i += 25) {
+    const chunk = keys.slice(i, i + 25);
+    let requestItems = chunk.map((Key) => ({ DeleteRequest: { Key } }));
+    for (let attempt = 0; attempt < 4 && requestItems.length > 0; attempt++) {
+      const result = await docClient.send(
+        new BatchWriteCommand({
+          RequestItems: { [TABLE_NAME]: requestItems },
+        }),
+      );
+      const unprocessed = result.UnprocessedItems?.[TABLE_NAME] ?? [];
+      requestItems = unprocessed as typeof requestItems;
+    }
+  }
+}
+
+async function deletePartition(pk: string): Promise<void> {
+  const items: Record<string, unknown>[] = [];
+  let ExclusiveStartKey: Record<string, unknown> | undefined;
+  do {
+    const result = await docClient.send(
+      new QueryCommand({
+        TableName: TABLE_NAME,
+        KeyConditionExpression: "PK = :pk",
+        ExpressionAttributeValues: { ":pk": pk },
+        ExclusiveStartKey,
+      }),
+    );
+    items.push(...((result.Items as Record<string, unknown>[]) ?? []));
+    ExclusiveStartKey = result.LastEvaluatedKey as Record<string, unknown> | undefined;
+  } while (ExclusiveStartKey);
+
+  await deleteKeys(
+    items
+      .filter((item) => typeof item.PK === "string" && typeof item.SK === "string")
+      .map((item) => ({ PK: item.PK as string, SK: item.SK as string })),
+  );
+}
+
+export async function deleteFamily(familyId: string): Promise<void> {
+  const members = await listMembers(familyId);
+  await Promise.all(
+    members.map(async (member) => {
+      if (member.email) {
+        await docClient.send(
+          new DeleteCommand({
+            TableName: TABLE_NAME,
+            Key: { PK: `EMAILFAM#${member.email}`, SK: "LINK" },
+          }),
+        );
+      }
+      if (member.status === "active" && !member.SK.includes("pending-")) {
+        await clearFamilyId(member.SK.replace("MEMBER#", ""));
+      }
+    }),
+  );
+  await deletePartition(`FAMILY#${familyId}`);
+}
+
 export async function addMember(
   familyId: string,
   email: string,
@@ -135,6 +235,9 @@ export async function removeMember(
         }),
       ),
     );
+    if (member.status === "active" && !member.SK.includes("pending-")) {
+      deletes.push(clearFamilyId(member.SK.replace("MEMBER#", "")));
+    }
   }
 
   await Promise.all(deletes);

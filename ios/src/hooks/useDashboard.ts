@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { api } from "../auth/api";
+import { useAuth } from "../auth/AuthContext";
+import { canManageFamily } from "../auth/permissions";
 import type {
   CategorySummary,
   StatementResult,
@@ -60,6 +62,8 @@ function remoteToResult(remote: RemoteStatement): StatementResult {
 }
 
 export function useDashboard(authenticated: boolean) {
+  const { user } = useAuth();
+  const canManage = canManageFamily(user);
   const [savedMonths, setSavedMonths] = useState<SavedStatementItem[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(currentYearMonth());
   const [result, setResult] = useState<StatementResult | null>(null);
@@ -98,7 +102,9 @@ export function useDashboard(authenticated: boolean) {
     setLoadingData(true);
     setError(null);
     try {
-      await api.post("/categories/apply", { yearMonth: ym }).catch(() => {});
+      if (canManage) {
+        await api.post("/categories/apply", { yearMonth: ym }).catch(() => {});
+      }
       const remote = await api.get<RemoteStatement>(`/statements/${ym}%23family`);
       const parsed = remoteToResult(remote);
       monthCache.current.set(ym, parsed);
@@ -111,7 +117,7 @@ export function useDashboard(authenticated: boolean) {
       setLoadingData(false);
       setInitializing(false);
     }
-  }, []);
+  }, [canManage]);
 
   useEffect(() => {
     if (!authenticated) {

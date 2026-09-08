@@ -18,7 +18,7 @@ export interface FamilyRecord {
   createdAt: string;
 }
 
-export type FamilyMemberRole = "owner" | "member";
+export type FamilyMemberRole = "owner" | "admin" | "member";
 export type FamilyMemberStatus = "active" | "pending";
 
 export interface FamilyMemberRecord {

@@ -15,14 +15,13 @@ export function chooseFamilySuccessor(
   members: FamilyMemberRecord[],
   leavingUserId: string,
 ): FamilyMemberRecord | null {
-  return (
-    members.find(
-      (m) =>
-        m.status === "active" &&
-        m.SK !== `MEMBER#${leavingUserId}` &&
-        !m.SK.includes("pending-"),
-    ) ?? null
+  const candidates = members.filter(
+    (m) =>
+      m.status === "active" &&
+      m.SK !== `MEMBER#${leavingUserId}` &&
+      !m.SK.includes("pending-"),
   );
+  return candidates.find((m) => m.role === "admin") ?? candidates[0] ?? null;
 }
 
 function memberUserId(member: FamilyMemberRecord): string {

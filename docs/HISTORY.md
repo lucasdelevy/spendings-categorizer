@@ -252,4 +252,14 @@ Key changes:
 - iOS login shows the system Sign in with Apple button above Google. Web stays Google-only. Both clients expose **Delete account** in the side menu with a confirmation.
 - Native Sign in with Apple does not need a Services ID or Sign in with Apple key — only the App ID capability.
 
+## Phase 19: Family Admins
+
+Family sharing had a single owner who could invite or remove people, while every member could already edit shared categories and hide transactions. Admins close that gap: they get the same powers as the owner except deleting the family itself.
+
+Key changes:
+- Member role is now `owner | admin | member`. Owners and admins (managers) can invite/remove members, rename the family, promote an active member to admin, edit categories, hide/recategorize, manage accounts, delete statements, and trigger Pierre sync. Regular members can view shared data and upload their own statements.
+- `PUT /families/members/{email}` with `{ role: "admin" }` promotes a member. iOS: swipe right on a member card (same gesture as tagging a transaction). Web: **Make admin**. Pending invites cannot be promoted.
+- `DELETE /families` is owner-only and wipes the family partition after clearing each member's `familyId`.
+- `GET /auth/me` now includes `familyRole` so clients hide mutation controls instead of showing 403s.
+
 

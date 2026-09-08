@@ -33,6 +33,8 @@ const en = {
     createFamily: "Error creating family",
     addMember: "Error adding member",
     removeMember: "Error removing member",
+    makeAdmin: "Error promoting member",
+    deleteFamily: "Error deleting family",
     readFile: "Failed to read {{fileName}}",
     createAccount: "Error creating account",
     updateAccount: "Error updating account",
@@ -122,6 +124,16 @@ const en = {
     members: "Members ({{count}})",
     pending: "Pending",
     owner: "Owner",
+    admin: "Admin",
+    member: "Member",
+    makeAdmin: "Make admin",
+    madeAdmin: "{{email}} is now an admin",
+    swipeHint: "Swipe right on a member to make them admin, or left to remove them.",
+    managersOnly: "Only family owners and admins can edit this.",
+    deleteFamily: "Delete family",
+    deleteFamilyConfirm:
+      "This permanently deletes the family for everyone: shared statements, categories, and accounts. Members keep their own accounts. Continue?",
+    deleted: "Family deleted",
     removeTitle: "Remove",
     addMember: "Add member",
     addMemberDescription:
@@ -341,6 +353,9 @@ const en = {
       phase18Title: "Account Deletion & Sign in with Apple",
       phase18Desc:
         "iOS offers Sign in with Apple next to Google (App Store Guideline 4.8). Google and Apple logins that share an email become one Aletheia user. You can permanently delete your account from the side menu: personal data is removed, and a family you own is transferred to another member or dissolved.",
+      phase19Title: "Family Admins",
+      phase19Desc:
+        "Owners and admins can invite or remove members, edit categories, hide transactions, and manage accounts. Swipe right on a member in the iOS family list (or tap Make admin on the web) to promote them. Only the owner can delete the family.",
     },
   },
 

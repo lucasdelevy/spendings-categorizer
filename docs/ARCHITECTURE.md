@@ -92,7 +92,7 @@ When reading a month in family mode, all `STMT#<YYYYMM>#*` records are fetched a
 |--------|----------------------------|----- |--------------------------------------------|
 | POST   | `/auth/google`             | none | Exchange Google ID token for JWT           |
 | POST   | `/auth/apple`              | none | Exchange Apple identity token for JWT (iOS) |
-| GET    | `/auth/me`                 | JWT  | Get current user profile (incl. familyId)  |
+| GET    | `/auth/me`                 | JWT  | Get current user profile (incl. familyId, familyRole) |
 | DELETE | `/auth/me`                 | JWT  | Permanently delete the signed-in account   |
 | POST   | `/auth/logout`             | JWT  | Invalidate session                         |
 | GET    | `/statements`              | JWT  | List statements (family or solo scoped)    |
@@ -101,9 +101,11 @@ When reading a month in family mode, all `STMT#<YYYYMM>#*` records are fetched a
 | DELETE | `/statements/{id}`         | JWT  | Soft-delete a statement                    |
 | POST   | `/families`                | JWT  | Create a family                            |
 | GET    | `/families/mine`           | JWT  | Get user's family + members                |
-| PUT    | `/families`                | JWT  | Update family name (owner only)            |
-| POST   | `/families/members`        | JWT  | Add member by email (owner only)           |
-| DELETE | `/families/members/{email}`| JWT  | Remove member (owner only)                 |
+| PUT    | `/families`                | JWT  | Update family name (owner/admin)           |
+| DELETE | `/families`                | JWT  | Delete family (owner only)                 |
+| POST   | `/families/members`        | JWT  | Add member by email (owner/admin)          |
+| PUT    | `/families/members/{email}`| JWT  | Promote member to admin (owner/admin)      |
+| DELETE | `/families/members/{email}`| JWT  | Remove member (owner/admin)                |
 | GET    | `/categories`              | JWT  | Get category config (seeds defaults if missing) |
 | PUT    | `/categories`              | JWT  | Replace full category config               |
 | POST   | `/categories/recategorize` | JWT  | Re-categorize a transaction + update keyword rules |

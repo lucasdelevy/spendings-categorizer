@@ -11,6 +11,8 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import type { Account } from "@aletheia/shared";
 import { api } from "../auth/api";
+import { useAuth } from "../auth/AuthContext";
+import { canManageFamily } from "../auth/permissions";
 import OpenFinanceExpiredBanner, {
   openPierreApiKeyPage,
 } from "../components/OpenFinanceExpiredBanner";
@@ -29,6 +31,8 @@ function keyStatus(account: Account): "expired" | "active" | "none" {
 export default function AccountsScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const canManage = canManageFamily(user);
   const { accounts, loading, refresh, update } = useAccounts(true);
   const [keyDrafts, setKeyDrafts] = useState<Record<string, string>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -179,7 +183,7 @@ export default function AccountsScreen() {
               {a.closingDay ? ` · ${t("accounts.closingDay", "Closing")} ${a.closingDay}` : ""}
               {a.hasApiKey && a.apiKeyHint ? ` · ${a.apiKeyHint}` : ""}
             </Text>
-            {a.apiKeyExpired && (
+            {a.apiKeyExpired && canManage && (
               <View style={styles.reconnect}>
                 <Button
                   compact

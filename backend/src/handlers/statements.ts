@@ -3,6 +3,7 @@ import { getCorsHeaders } from "../middleware/cors.js";
 import { verifyJWT, extractBearerToken } from "../middleware/auth.js";
 import { getSession } from "../services/sessionService.js";
 import { getUser } from "../services/userService.js";
+import { requireFamilyManager } from "../services/familyAuth.js";
 import {
   saveStatement,
   getMonthStatements,
@@ -338,6 +339,8 @@ async function handleAssignAccount(
   user: JWTPayload,
 ): Promise<APIGatewayProxyResultV2> {
   const origin = event.headers?.origin;
+  const gate = await requireFamilyManager(user.userId);
+  if (!gate.ok) return respond(gate.status, { error: gate.error }, origin);
   const id = event.pathParameters?.id;
   if (!id) return respond(400, { error: "Missing statement id" }, origin);
 
@@ -439,6 +442,8 @@ async function handleDelete(
   user: JWTPayload,
 ): Promise<APIGatewayProxyResultV2> {
   const origin = event.headers?.origin;
+  const gate = await requireFamilyManager(user.userId);
+  if (!gate.ok) return respond(gate.status, { error: gate.error }, origin);
   const id = event.pathParameters?.id;
   if (!id) return respond(400, { error: "Missing statement id" }, origin);
 

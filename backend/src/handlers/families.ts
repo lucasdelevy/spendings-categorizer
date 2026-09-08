@@ -3,6 +3,7 @@ import { getCorsHeaders } from "../middleware/cors.js";
 import { verifyJWT, extractBearerToken } from "../middleware/auth.js";
 import { getSession } from "../services/sessionService.js";
 import { getUser, setFamilyId } from "../services/userService.js";
+import { isFamilyManager } from "../services/familyAuth.js";
 import {
   createFamily,
   getFamily,
@@ -10,8 +11,10 @@ import {
   addMember,
   removeMember,
   updateFamilyName,
+  setMemberRole,
+  deleteFamily,
 } from "../services/familyService.js";
-import type { JWTPayload } from "../types.js";
+import type { FamilyMemberRecord, JWTPayload } from "../types.js";
 
 function respond(statusCode: number, body: unknown, origin?: string): APIGatewayProxyResultV2 {
   return {
@@ -32,6 +35,22 @@ async function authenticate(event: APIGatewayProxyEventV2): Promise<JWTPayload |
   if (!session) return null;
 
   return payload;
+}
+
+function findCaller(members: FamilyMemberRecord[], userId: string): FamilyMemberRecord | undefined {
+  return members.find((m) => m.SK === `MEMBER#${userId}`);
+}
+
+function requireManager(
+  members: FamilyMemberRecord[],
+  userId: string,
+  origin: string | undefined,
+): APIGatewayProxyResultV2 | null {
+  const caller = findCaller(members, userId);
+  if (!isFamilyManager(caller?.role)) {
+    return respond(403, { error: "Only family owners and admins can do this" }, origin);
+  }
+  return null;
 }
 
 async function handleCreate(
@@ -83,6 +102,7 @@ async function handleGetMine(
   if (!family) return respond(200, { family: null }, origin);
 
   const members = await listMembers(userRecord.familyId);
+  const me = findCaller(members, user.userId);
 
   return respond(200, {
     family: {
@@ -90,6 +110,7 @@ async function handleGetMine(
       name: family.name,
       createdBy: family.createdBy,
       createdAt: family.createdAt,
+      myRole: me?.role ?? "member",
       members: members.map((m) => ({
         email: m.email,
         name: m.name,
@@ -118,12 +139,8 @@ async function handleAddMember(
   }
 
   const members = await listMembers(userRecord.familyId);
-  const ownerMember = members.find(
-    (m) => m.SK === `MEMBER#${user.userId}` && m.role === "owner",
-  );
-  if (!ownerMember) {
-    return respond(403, { error: "Only the family owner can add members" }, origin);
-  }
+  const forbidden = requireManager(members, user.userId, origin);
+  if (forbidden) return forbidden;
 
   const existing = members.find((m) => m.email === email);
   if (existing) {
@@ -153,12 +170,8 @@ async function handleRemoveMember(
   }
 
   const members = await listMembers(userRecord.familyId);
-  const ownerMember = members.find(
-    (m) => m.SK === `MEMBER#${user.userId}` && m.role === "owner",
-  );
-  if (!ownerMember) {
-    return respond(403, { error: "Only the family owner can remove members" }, origin);
-  }
+  const forbidden = requireManager(members, user.userId, origin);
+  if (forbidden) return forbidden;
 
   const target = members.find((m) => m.email === email);
   if (!target) {
@@ -171,6 +184,47 @@ async function handleRemoveMember(
   await removeMember(userRecord.familyId, email);
 
   return respond(200, { message: "Member removed" }, origin);
+}
+
+async function handleSetMemberRole(
+  event: APIGatewayProxyEventV2,
+  user: JWTPayload,
+): Promise<APIGatewayProxyResultV2> {
+  const origin = event.headers?.origin;
+  const email = decodeURIComponent(event.pathParameters?.email || "");
+  if (!email) return respond(400, { error: "email is required" }, origin);
+
+  const body = JSON.parse(event.body || "{}");
+  if (body.role !== "admin") {
+    return respond(400, { error: "role must be admin" }, origin);
+  }
+
+  const userRecord = await getUser(user.userId);
+  if (!userRecord?.familyId) {
+    return respond(400, { error: "User does not belong to a family" }, origin);
+  }
+
+  const members = await listMembers(userRecord.familyId);
+  const forbidden = requireManager(members, user.userId, origin);
+  if (forbidden) return forbidden;
+
+  const target = members.find((m) => m.email === email);
+  if (!target) {
+    return respond(404, { error: "Member not found" }, origin);
+  }
+  if (target.status !== "active" || target.SK.includes("pending-")) {
+    return respond(400, { error: "Cannot promote a pending invite" }, origin);
+  }
+  if (target.role === "owner") {
+    return respond(400, { error: "Cannot change the family owner's role" }, origin);
+  }
+
+  const targetUserId = target.SK.replace("MEMBER#", "");
+  if (target.role !== "admin") {
+    await setMemberRole(userRecord.familyId, targetUserId, "admin");
+  }
+
+  return respond(200, { email: target.email, role: "admin" }, origin);
 }
 
 async function handleUpdate(
@@ -189,16 +243,32 @@ async function handleUpdate(
   }
 
   const members = await listMembers(userRecord.familyId);
-  const ownerMember = members.find(
-    (m) => m.SK === `MEMBER#${user.userId}` && m.role === "owner",
-  );
-  if (!ownerMember) {
-    return respond(403, { error: "Only the family owner can update the family" }, origin);
-  }
+  const forbidden = requireManager(members, user.userId, origin);
+  if (forbidden) return forbidden;
 
   await updateFamilyName(userRecord.familyId, name);
 
   return respond(200, { name }, origin);
+}
+
+async function handleDeleteFamily(
+  event: APIGatewayProxyEventV2,
+  user: JWTPayload,
+): Promise<APIGatewayProxyResultV2> {
+  const origin = event.headers?.origin;
+  const userRecord = await getUser(user.userId);
+  if (!userRecord?.familyId) {
+    return respond(400, { error: "User does not belong to a family" }, origin);
+  }
+
+  const members = await listMembers(userRecord.familyId);
+  const caller = findCaller(members, user.userId);
+  if (caller?.role !== "owner") {
+    return respond(403, { error: "Only the family owner can delete the family" }, origin);
+  }
+
+  await deleteFamily(userRecord.familyId);
+  return respond(200, { message: "Family deleted" }, origin);
 }
 
 export async function handler(event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> {
@@ -217,7 +287,9 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
   if (method === "POST" && path === "/families") return handleCreate(event, user);
   if (method === "GET" && path === "/families/mine") return handleGetMine(event, user);
   if (method === "PUT" && path === "/families") return handleUpdate(event, user);
+  if (method === "DELETE" && path === "/families") return handleDeleteFamily(event, user);
   if (method === "POST" && path === "/families/members") return handleAddMember(event, user);
+  if (method === "PUT" && path.startsWith("/families/members/")) return handleSetMemberRole(event, user);
   if (method === "DELETE" && path.startsWith("/families/members/")) return handleRemoveMember(event, user);
 
   return respond(404, { error: "Not found" }, origin);

@@ -1,6 +1,8 @@
+import type { FamilyMemberRole } from "../types.js";
+
 export type FamilyEmailMatch = {
   userId: string;
-  role: "owner" | "member";
+  role: FamilyMemberRole;
   joinedAt: string;
 };
 
@@ -11,7 +13,7 @@ export type ScannedProfile = {
 
 /**
  * Pick the surviving user when Google and Apple (or two family rows) share an email.
- * Prefer the family owner, then the oldest family member, then the oldest
+ * Prefer the family owner, then an admin, then the oldest family member, then the oldest
  * scanned profile, then an EMAILUSER link, then the current OAuth subject.
  */
 export function pickCanonicalUserId(input: {
@@ -21,6 +23,7 @@ export function pickCanonicalUserId(input: {
   familyMatches: FamilyEmailMatch[];
 }): { canonicalId: string; duplicateIds: string[] } {
   const owner = input.familyMatches.find((m) => m.role === "owner");
+  const admin = input.familyMatches.find((m) => m.role === "admin");
   const oldestMember = [...input.familyMatches].sort((a, b) =>
     a.joinedAt.localeCompare(b.joinedAt),
   )[0];
@@ -30,6 +33,7 @@ export function pickCanonicalUserId(input: {
 
   const canonicalId =
     owner?.userId ??
+    admin?.userId ??
     oldestMember?.userId ??
     oldestScanned?.userId ??
     input.emailLinkUserId ??
@@ -49,7 +53,7 @@ export function familyEmailMatches(
   members: Array<{
     SK: string;
     email: string;
-    role: "owner" | "member";
+    role: FamilyMemberRole;
     status: string;
     joinedAt: string;
   }>,

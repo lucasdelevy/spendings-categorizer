@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { api, clearToken, isAuthenticated, setToken, setUnauthorizedHandler } from "./api";
+import type { FamilyRole } from "./permissions";
 import { registerPushNotifications, unregisterPushNotifications } from "../notifications/registerPush";
 
 export interface AuthUser {
@@ -16,6 +17,7 @@ export interface AuthUser {
   name: string;
   picture: string;
   familyId: string | null;
+  familyRole: FamilyRole;
 }
 
 interface AuthContextValue {
@@ -25,6 +27,7 @@ interface AuthContextValue {
   loginWithApple: (identityToken: string, fullName?: string) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -79,6 +82,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   }, []);
 
+  const refreshUser = useCallback(async () => {
+    if (!(await isAuthenticated())) {
+      setUser(null);
+      return;
+    }
+    const res = await api.get<{ user: AuthUser }>("/auth/me");
+    setUser(res.user);
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await unregisterPushNotifications();
@@ -101,8 +113,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, login, loginWithApple, logout, deleteAccount }),
-    [user, loading, login, loginWithApple, logout, deleteAccount],
+    () => ({ user, loading, login, loginWithApple, logout, deleteAccount, refreshUser }),
+    [user, loading, login, loginWithApple, logout, deleteAccount, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -33,6 +33,8 @@ const ptBR = {
     createFamily: "Erro ao criar família",
     addMember: "Erro ao adicionar membro",
     removeMember: "Erro ao remover membro",
+    makeAdmin: "Erro ao promover membro",
+    deleteFamily: "Erro ao excluir família",
     readFile: "Falha ao ler {{fileName}}",
     createAccount: "Erro ao criar conta",
     updateAccount: "Erro ao atualizar conta",
@@ -123,6 +125,16 @@ const ptBR = {
     members: "Membros ({{count}})",
     pending: "Pendente",
     owner: "Dono",
+    admin: "Admin",
+    member: "Membro",
+    makeAdmin: "Tornar admin",
+    madeAdmin: "{{email}} agora é admin",
+    swipeHint: "Deslize para a direita em um membro para torná-lo admin, ou para a esquerda para removê-lo.",
+    managersOnly: "Somente donos e admins da família podem editar isto.",
+    deleteFamily: "Excluir família",
+    deleteFamilyConfirm:
+      "Isso apaga a família para todos: extratos, categorias e contas compartilhados. Os membros mantêm as contas pessoais. Continuar?",
+    deleted: "Família excluída",
     removeTitle: "Remover",
     addMember: "Adicionar membro",
     addMemberDescription:
@@ -345,6 +357,9 @@ const ptBR = {
       phase18Title: "Exclusão de conta e Sign in with Apple",
       phase18Desc:
         "No iOS, o Sign in with Apple aparece junto com o Google (diretriz 4.8 da App Store). Logins Google e Apple com o mesmo e-mail viram o mesmo usuário no Aletheia. Você pode excluir a conta de forma permanente no menu lateral: os dados pessoais são apagados, e uma família da qual você é dono é transferida para outro membro ou dissolvida.",
+      phase19Title: "Admins da família",
+      phase19Desc:
+        "Donos e admins podem convidar ou remover membros, editar categorias, ocultar transações e gerenciar contas. No iOS, deslize para a direita em um membro na lista da família (ou toque em Tornar admin na web) para promovê-lo. Só o dono pode excluir a família.",
     },
   },
 

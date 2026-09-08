@@ -7,6 +7,7 @@ import { api } from "../auth/api";
 import { useTranslation } from "react-i18next";
 import { limitProgress } from "@aletheia/shared";
 import { useAuth } from "../auth/AuthContext";
+import { canManageFamily } from "../auth/permissions";
 import DailySpendingChart from "../components/DailySpendingChart";
 import FamilyUploader from "../components/FamilyUploader";
 import BrandSplash from "../components/BrandSplash";
@@ -27,7 +28,8 @@ import { useTheme } from "../theme/ThemeContext";
 
 export default function DashboardScreen() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const canManage = canManageFamily(user);
   const { colors } = useTheme();
   const navigation = useNavigation<DrawerNavigationProp<DrawerParamList>>();
   const { config: catConfig, refresh: refreshConfig } = useCategoryConfig(!!user);
@@ -61,7 +63,13 @@ export default function DashboardScreen() {
     await loadMonthFromRemote(selectedMonth, true);
   };
 
-  const actions = useTransactionActions(selectedMonth, activeSource, refreshConfig, reloadMonth);
+  const actions = useTransactionActions(
+    selectedMonth,
+    activeSource,
+    refreshConfig,
+    reloadMonth,
+    canManage,
+  );
 
   const handleSaved = async (ym: string) => {
     clearLocal();
@@ -92,7 +100,8 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       void refreshAccounts({ silent: true });
-    }, [refreshAccounts]),
+      void refreshUser();
+    }, [refreshAccounts, refreshUser]),
   );
 
   const onPullRefresh = async () => {

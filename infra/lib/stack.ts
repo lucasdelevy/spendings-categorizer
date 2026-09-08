@@ -68,7 +68,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
         exclude: ["auth.*", "statements.*", "categories.*", "accounts.*", "devices.*"],
       }),
       environment: sharedEnv,
-      timeout: cdk.Duration.seconds(10),
+      timeout: cdk.Duration.seconds(30),
       memorySize: 256,
     });
 
@@ -220,7 +220,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
     });
     httpApi.addRoutes({
       path: "/families",
-      methods: [apigatewayv2.HttpMethod.POST, apigatewayv2.HttpMethod.PUT],
+      methods: [apigatewayv2.HttpMethod.POST, apigatewayv2.HttpMethod.PUT, apigatewayv2.HttpMethod.DELETE],
       integration: familiesIntegration,
     });
     httpApi.addRoutes({
@@ -235,7 +235,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
     });
     httpApi.addRoutes({
       path: "/families/members/{email}",
-      methods: [apigatewayv2.HttpMethod.DELETE],
+      methods: [apigatewayv2.HttpMethod.DELETE, apigatewayv2.HttpMethod.PUT],
       integration: familiesIntegration,
     });
 

@@ -3,6 +3,7 @@ import { getCorsHeaders } from "../middleware/cors.js";
 import { verifyJWT, extractBearerToken } from "../middleware/auth.js";
 import { getSession } from "../services/sessionService.js";
 import { getUser } from "../services/userService.js";
+import { requireFamilyManager } from "../services/familyAuth.js";
 import {
   getConfig,
   saveConfig,
@@ -392,6 +393,11 @@ export async function handler(event: APIGatewayProxyEventV2): Promise<APIGateway
 
   const path = event.requestContext.http.path;
   const method = event.requestContext.http.method;
+
+  if (method !== "GET") {
+    const gate = await requireFamilyManager(user.userId);
+    if (!gate.ok) return respond(gate.status, { error: gate.error }, origin);
+  }
 
   if (method === "GET" && path === "/categories") return handleGet(event, user);
   if (method === "PUT" && path === "/categories") return handlePut(event, user);

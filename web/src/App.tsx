@@ -4,6 +4,7 @@ import type { StatementType, StatementResult, CategorySummary, CategoryConfig } 
 import { limitProgress, parseCSV, processBankCSV, processCardCSV, processFamilyStatements, toEngineConfig, compareDatesDesc } from "@aletheia/shared";
 import { useCategoryConfig } from "./hooks/useCategoryConfig";
 import { useAuth } from "./auth/AuthContext";
+import { canManageFamily } from "./auth/permissions";
 import { api } from "./auth/api";
 import { currentYearMonth } from "./utils";
 import type { SavedStatementItem } from "./utils";
@@ -102,6 +103,7 @@ function remoteToResult(remote: RemoteStatement): StatementResult {
 export default function App() {
   const { t } = useTranslation();
   const { user, loading: authLoading, logout, deleteAccount } = useAuth();
+  const canManage = canManageFamily(user);
   const { config: catConfig, refresh: refreshConfig, save: saveCatConfig } = useCategoryConfig(!!user);
   const { accounts, refresh: refreshAccounts } = useAccounts(!!user);
 
@@ -152,7 +154,9 @@ export default function App() {
     setLoadingData(true);
     setError(null);
     try {
-      await api.post("/categories/apply", { yearMonth: ym }).catch(() => {});
+      if (canManage) {
+        await api.post("/categories/apply", { yearMonth: ym }).catch(() => {});
+      }
       const remote = await api.get<RemoteStatement>(`/statements/${ym}%23family`);
       const parsed = remoteToResult(remote);
       monthCache.current.set(ym, parsed);
@@ -164,7 +168,7 @@ export default function App() {
     } finally {
       setLoadingData(false);
     }
-  }, []);
+  }, [canManage]);
 
   useEffect(() => {
     if (!user) return;
@@ -423,6 +427,7 @@ export default function App() {
       {activePage === "categories" && (
         <CategoriesPage
           config={catConfig}
+          readOnly={!canManage}
           onSave={async (updated) => {
             await saveCatConfig(updated);
             monthCache.current.clear();
@@ -449,8 +454,8 @@ export default function App() {
           accounts={accounts}
           onBack={() => setShowManage(false)}
           onView={(ym) => { setShowManage(false); handleMonthChange(ym); }}
-          onDelete={handleDeleteMonth}
-          onAssignAccount={handleAssignAccount}
+          onDelete={canManage ? handleDeleteMonth : undefined}
+          onAssignAccount={canManage ? handleAssignAccount : undefined}
         />
       )}
 
@@ -645,10 +650,10 @@ export default function App() {
                   yearMonth={selectedMonth}
                   mode={transactionsTab === "all" ? "all" : "byCategory"}
                   accounts={accounts}
-                  onRecategorize={dataSource === "remote" ? handleRecategorize : undefined}
-                  onRename={dataSource === "remote" ? handleRename : undefined}
-                  onIgnore={dataSource === "remote" ? handleIgnore : undefined}
-                  onHide={dataSource === "remote" ? handleHide : undefined}
+                  onRecategorize={dataSource === "remote" && canManage ? handleRecategorize : undefined}
+                  onRename={dataSource === "remote" && canManage ? handleRename : undefined}
+                  onIgnore={dataSource === "remote" && canManage ? handleIgnore : undefined}
+                  onHide={dataSource === "remote" && canManage ? handleHide : undefined}
                 />
               </div>
             </div>

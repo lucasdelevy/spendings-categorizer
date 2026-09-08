@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { api } from "../auth/api";
+import { useAuth } from "../auth/AuthContext";
+import { canManageFamily, isFamilyOwner } from "../auth/permissions";
 
 interface FamilyMember {
   email: string;
   name: string;
   picture: string;
-  role: "owner" | "member";
+  role: "owner" | "admin" | "member";
   status: "active" | "pending";
   joinedAt: string;
 }
@@ -16,6 +18,7 @@ interface FamilyData {
   name: string;
   createdBy: string;
   createdAt: string;
+  myRole?: FamilyMember["role"];
   members: FamilyMember[];
 }
 
@@ -25,6 +28,7 @@ interface Props {
 
 export default function FamilyPage({ onBack }: Props) {
   const { t } = useTranslation();
+  const { user, refreshUser } = useAuth();
   const [family, setFamily] = useState<FamilyData | null>(null);
   const [loading, setLoading] = useState(true);
   const [newEmail, setNewEmail] = useState("");
@@ -32,16 +36,20 @@ export default function FamilyPage({ onBack }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const canManage = canManageFamily(user);
+  const owner = isFamilyOwner(user);
+
   const loadFamily = useCallback(async () => {
     try {
       const res = await api.get<{ family: FamilyData | null }>("/families/mine");
       setFamily(res.family);
+      await refreshUser();
     } catch {
       setFamily(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [refreshUser]);
 
   useEffect(() => {
     loadFamily();
@@ -54,6 +62,7 @@ export default function FamilyPage({ onBack }: Props) {
       await api.post("/families", { name: familyName.trim() });
       setSuccess(t("family.created"));
       setFamilyName("");
+      await refreshUser();
       await loadFamily();
     } catch (e) {
       setError(e instanceof Error ? e.message : t("error.createFamily"));
@@ -74,6 +83,18 @@ export default function FamilyPage({ onBack }: Props) {
     }
   };
 
+  const handleMakeAdmin = async (email: string) => {
+    setError(null);
+    setSuccess(null);
+    try {
+      await api.put(`/families/members/${encodeURIComponent(email)}`, { role: "admin" });
+      setSuccess(t("family.madeAdmin", { email }));
+      await loadFamily();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("error.makeAdmin"));
+    }
+  };
+
   const handleRemove = async (email: string) => {
     setError(null);
     setSuccess(null);
@@ -83,6 +104,20 @@ export default function FamilyPage({ onBack }: Props) {
       await loadFamily();
     } catch (e) {
       setError(e instanceof Error ? e.message : t("error.removeMember"));
+    }
+  };
+
+  const handleDeleteFamily = async () => {
+    if (!window.confirm(t("family.deleteFamilyConfirm"))) return;
+    setError(null);
+    setSuccess(null);
+    try {
+      await api.delete("/families");
+      setSuccess(t("family.deleted"));
+      await refreshUser();
+      await loadFamily();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("error.deleteFamily"));
     }
   };
 
@@ -161,83 +196,125 @@ export default function FamilyPage({ onBack }: Props) {
               {t("family.members", { count: family.members.length })}
             </h3>
             <div className="space-y-3">
-              {family.members.map((member) => (
-                <div
-                  key={member.email}
-                  className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-3 dark:border-gray-700"
-                >
-                  <div className="flex items-center gap-3">
-                    {member.picture ? (
-                      <img
-                        src={member.picture}
-                        alt={member.name}
-                        className="h-9 w-9 shrink-0 rounded-full border border-gray-200 object-cover dark:border-gray-600"
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 text-sm font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
-                        {member.email[0].toUpperCase()}
+              {family.members.map((member) => {
+                const canPromote =
+                  canManage &&
+                  member.status === "active" &&
+                  member.role === "member" &&
+                  member.email !== user?.email;
+                const canRemove =
+                  canManage && member.role !== "owner" && member.email !== user?.email;
+                return (
+                  <div
+                    key={member.email}
+                    className="flex items-center justify-between rounded-lg border border-gray-100 px-4 py-3 dark:border-gray-700"
+                  >
+                    <div className="flex items-center gap-3">
+                      {member.picture ? (
+                        <img
+                          src={member.picture}
+                          alt={member.name}
+                          className="h-9 w-9 shrink-0 rounded-full border border-gray-200 object-cover dark:border-gray-600"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 text-sm font-medium text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+                          {member.email[0].toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {member.name}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{member.email}</div>
                       </div>
-                    )}
-                    <div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {member.name}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{member.email}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {member.status === "pending" && (
+                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
+                          {t("family.pending")}
+                        </span>
+                      )}
+                      {member.role === "owner" && (
+                        <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+                          {t("family.owner")}
+                        </span>
+                      )}
+                      {member.role === "admin" && (
+                        <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">
+                          {t("family.admin")}
+                        </span>
+                      )}
+                      {canPromote && (
+                        <button
+                          onClick={() => handleMakeAdmin(member.email)}
+                          className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 transition hover:bg-indigo-100 dark:bg-indigo-950 dark:text-indigo-300 dark:hover:bg-indigo-900"
+                        >
+                          {t("family.makeAdmin")}
+                        </button>
+                      )}
+                      {canRemove && (
+                        <button
+                          onClick={() => handleRemove(member.email)}
+                          className="text-red-400 transition hover:text-red-600"
+                          title={t("family.removeTitle")}
+                        >
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {member.status === "pending" && (
-                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-                        {t("family.pending")}
-                      </span>
-                    )}
-                    {member.role === "owner" ? (
-                      <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
-                        {t("family.owner")}
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleRemove(member.email)}
-                        className="text-red-400 transition hover:text-red-600"
-                        title={t("family.removeTitle")}
-                      >
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-            <h3 className="mb-4 text-sm font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              {t("family.addMember")}
-            </h3>
-            <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
-              {t("family.addMemberDescription")}
-            </p>
-            <div className="flex gap-3">
-              <input
-                type="email"
-                placeholder={t("family.emailPlaceholder")}
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAddMember()}
-                className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:placeholder-gray-500"
-              />
+          {canManage && (
+            <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+              <h3 className="mb-4 text-sm font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                {t("family.addMember")}
+              </h3>
+              <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+                {t("family.addMemberDescription")}
+              </p>
+              <div className="flex gap-3">
+                <input
+                  type="email"
+                  placeholder={t("family.emailPlaceholder")}
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddMember()}
+                  className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:placeholder-gray-500"
+                />
+                <button
+                  onClick={handleAddMember}
+                  disabled={!newEmail.trim()}
+                  className="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {t("family.addButton")}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {owner && (
+            <div className="rounded-xl border border-red-200 bg-white p-6 dark:border-red-900 dark:bg-gray-800">
+              <h3 className="mb-2 text-sm font-medium uppercase tracking-wider text-red-500">
+                {t("family.deleteFamily")}
+              </h3>
+              <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+                {t("family.deleteFamilyConfirm")}
+              </p>
               <button
-                onClick={handleAddMember}
-                disabled={!newEmail.trim()}
-                className="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-50"
+                onClick={handleDeleteFamily}
+                className="rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
               >
-                {t("family.addButton")}
+                {t("family.deleteFamily")}
               </button>
             </div>
-          </div>
+          )}
         </div>
       )}
     </>

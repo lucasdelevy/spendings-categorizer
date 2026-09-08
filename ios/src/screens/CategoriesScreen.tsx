@@ -14,6 +14,8 @@ import { useTranslation } from "react-i18next";
 import type { CategoryConfig, LimitPeriod } from "@aletheia/shared";
 import { clampLimitAlertPercent } from "@aletheia/shared";
 import { Button, Card, SegmentedControl, TextField } from "../components/ui";
+import { useAuth } from "../auth/AuthContext";
+import { canManageFamily } from "../auth/permissions";
 import { useCategoryConfig } from "../hooks/useCategoryConfig";
 import { useTheme } from "../theme/ThemeContext";
 
@@ -229,6 +231,8 @@ function AddRow({
 export default function CategoriesScreen() {
   const { t, i18n } = useTranslation();
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const canManage = canManageFamily(user);
   const { config, loading, save } = useCategoryConfig(true);
   const [draft, setDraft] = useState<CategoryConfig | null>(null);
   const [section, setSection] = useState<Section>("categories");
@@ -256,6 +260,7 @@ export default function CategoriesScreen() {
   }, [draft, sortLocale]);
 
   const updateDraft = (fn: (d: CategoryConfig) => void) => {
+    if (!canManage) return;
     setDraft((prev) => {
       if (!prev) return prev;
       const next = deepClone(prev);
@@ -373,7 +378,7 @@ export default function CategoriesScreen() {
       >
         <View style={styles.header}>
           <Text style={[styles.heading, { color: colors.text }]}>{t("categories.title")}</Text>
-          {dirty ? (
+          {dirty && canManage ? (
             <Button
               compact
               label={saving ? t("categories.saving") : t("categories.saveChanges")}
@@ -387,6 +392,10 @@ export default function CategoriesScreen() {
 
         {error ? (
           <Text style={{ color: colors.danger, marginBottom: 12 }}>{error}</Text>
+        ) : null}
+
+        {!canManage ? (
+          <Text style={{ color: colors.textMuted, marginBottom: 12 }}>{t("family.managersOnly")}</Text>
         ) : null}
 
         <SegmentedControl
