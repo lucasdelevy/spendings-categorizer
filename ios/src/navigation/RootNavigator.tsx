@@ -35,7 +35,11 @@ function MainDrawer() {
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
-      <Drawer.Screen name="Dashboard" component={DashboardScreen} options={{ title: "Aletheia" }} />
+      <Drawer.Screen
+        name="Dashboard"
+        component={DashboardScreen}
+        options={{ title: "Aletheia", swipeEnabled: false }}
+      />
       <Drawer.Screen name="Categories" component={CategoriesScreen} />
       <Drawer.Screen name="Accounts" component={AccountsScreen} />
       <Drawer.Screen name="Family" component={FamilyScreen} />

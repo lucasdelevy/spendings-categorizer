@@ -127,8 +127,8 @@ export default function TransactionTable({
   const configCategoryNames = catConfig ? Object.keys(catConfig.categories) : [];
   const allCategoryNames = Array.from(new Set([...visibleCategoryNames, ...configCategoryNames]));
 
-  const allLayout = getCardLayout(statementType, hasAvatars, hasActions, !!onHide, true);
-  const categoryLayout = getCardLayout(statementType, hasAvatars, hasActions, !!onHide, false);
+  const allLayout = getCardLayout(statementType, hasAvatars, true);
+  const categoryLayout = getCardLayout(statementType, hasAvatars, false);
 
   const toggle = (cat: string) =>
     setExpanded((prev) => {
