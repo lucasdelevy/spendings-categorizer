@@ -89,7 +89,9 @@ export default function FamilyScreen() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={[styles.heading, { color: colors.text }]}>{family.name}</Text>
-      <Text style={[styles.sub, { color: colors.textMuted }]}>{t("family.members", "Members")}</Text>
+      <Text style={[styles.sub, { color: colors.textMuted }]}>
+        {t("family.members", { count: family.members.length })}
+      </Text>
       {family.members.map((m) => (
         <View key={m.email} style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]}>
           <Text style={{ color: colors.text, fontWeight: "600" }}>{m.name || m.email}</Text>
