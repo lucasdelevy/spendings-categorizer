@@ -1,5 +1,5 @@
 import { createDrawerNavigator } from "@react-navigation/drawer";
-import { NavigationContainer } from "@react-navigation/native";
+import { DarkTheme, DefaultTheme, NavigationContainer } from "@react-navigation/native";
 import { ActivityIndicator, View } from "react-native";
 import { useAuth } from "../auth/AuthContext";
 import DrawerContent from "../components/DrawerContent";
@@ -10,12 +10,14 @@ import DashboardScreen from "../screens/DashboardScreen";
 import FamilyScreen from "../screens/FamilyScreen";
 import LoginScreen from "../screens/LoginScreen";
 import ManageMonthsScreen from "../screens/ManageMonthsScreen";
+import { useTheme } from "../theme/ThemeContext";
 import type { DrawerParamList } from "./types";
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
 
 function MainDrawer() {
   const { user, logout } = useAuth();
+  const { colors } = useTheme();
   if (!user) return null;
 
   return (
@@ -25,8 +27,12 @@ function MainDrawer() {
         <DrawerContent {...props} user={user} onLogout={logout} />
       )}
       screenOptions={{
-        headerTintColor: "#4f46e5",
-        headerTitleStyle: { fontWeight: "600" },
+        headerTintColor: colors.primary,
+        headerTitleStyle: { fontWeight: "600", color: colors.text },
+        headerStyle: { backgroundColor: colors.surface },
+        headerShadowVisible: false,
+        drawerStyle: { backgroundColor: colors.surface },
+        sceneStyle: { backgroundColor: colors.background },
       }}
     >
       <Drawer.Screen name="Dashboard" component={DashboardScreen} options={{ title: "Aletheia" }} />
@@ -41,17 +47,31 @@ function MainDrawer() {
 
 export default function RootNavigator() {
   const { user, loading } = useAuth();
+  const { isDark, colors } = useTheme();
+
+  const navTheme = {
+    ...(isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+      primary: colors.primary,
+      background: colors.background,
+      card: colors.surface,
+      text: colors.text,
+      border: colors.border,
+      notification: colors.primary,
+    },
+  };
 
   if (loading) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator size="large" color="#4f46e5" />
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navTheme}>
       {user ? <MainDrawer /> : <LoginScreen />}
     </NavigationContainer>
   );
