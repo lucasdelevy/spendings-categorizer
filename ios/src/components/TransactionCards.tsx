@@ -179,6 +179,7 @@ export function TransactionCard({
 
         <View style={styles.metaRow}>
           <Text style={[styles.date, { color: colors.textMuted }]}>{formatDate(tx.date)}</Text>
+          <OriginLabel origin={tx.origin} />
           {layout.showSource && <SourceBadge source={tx.source} />}
           {accountName ? (
             <MetaChip label={accountName} backgroundColor={colors.border} color={colors.textMuted} />
@@ -192,46 +193,67 @@ export function TransactionCard({
           ) : null}
         </View>
 
-        <View style={styles.footerRow}>
-          {layout.showCategory ? (
-            <View style={styles.categoryChip}>
-              <View style={[styles.dot, { backgroundColor: categoryColor }]} />
-              <Text style={[styles.categoryLabel, { color: colors.textMuted }]} numberOfLines={1}>
-                {category}
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.footerSpacer} />
-          )}
+        {layout.showCategory ? (
+          <View style={styles.categoryChip}>
+            <View style={[styles.dot, { backgroundColor: categoryColor }]} />
+            <Text style={[styles.categoryLabel, { color: colors.textMuted }]} numberOfLines={1}>
+              {category}
+            </Text>
+          </View>
+        ) : null}
 
-          <View style={styles.actions}>
-            <OriginLabel origin={tx.origin} />
+        {layout.hasActions && (
+          <View style={styles.actionsRow}>
             {onHide && (
               <Pressable
                 onPress={() => onHide({ globalIndex: globalIdx })}
-                hitSlop={8}
+                accessibilityRole="button"
                 accessibilityLabel={isHidden ? t("table.unhide") : t("table.hide")}
-                style={styles.iconBtn}
+                style={({ pressed }) => [
+                  styles.actionBtn,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: pressed
+                      ? colors.primaryMutedBg
+                      : nested
+                        ? colors.surface
+                        : colors.background,
+                  },
+                ]}
               >
                 <Ionicons
                   name={isHidden ? "eye-outline" : "eye-off-outline"}
-                  size={18}
-                  color={isHidden ? colors.primary : colors.textMuted}
+                  size={20}
+                  color={isHidden ? colors.primary : colors.text}
                 />
+                <Text style={[styles.actionLabel, { color: isHidden ? colors.primary : colors.text }]}>
+                  {isHidden ? t("table.unhide") : t("table.hide")}
+                </Text>
               </Pressable>
             )}
             {hasActions && !isHidden && (
               <Pressable
                 onPress={() => onOpenModal({ transaction: tx, globalIndex: globalIdx, category })}
-                hitSlop={8}
-                accessibilityLabel={t("modal.recategorize")}
-                style={styles.iconBtn}
+                accessibilityRole="button"
+                accessibilityLabel={t("table.tag")}
+                style={({ pressed }) => [
+                  styles.actionBtn,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: pressed
+                      ? colors.primaryMutedBg
+                      : nested
+                        ? colors.surface
+                        : colors.background,
+                  },
+                ]}
               >
-                <Ionicons name="pricetag-outline" size={18} color={colors.textMuted} />
+                <Ionicons name="pricetag-outline" size={20} color={colors.text} />
+                <Text style={[styles.actionLabel, { color: colors.text }]}>{t("table.tag")}</Text>
               </Pressable>
             )}
           </View>
-        </View>
+        )}
       </View>
     </View>
   );
@@ -334,23 +356,25 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     maxWidth: 160,
   },
-  footerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    marginTop: 2,
-  },
-  footerSpacer: { flex: 1 },
   categoryChip: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    flex: 1,
     minWidth: 0,
   },
   categoryLabel: { fontSize: 12, fontWeight: "500", flexShrink: 1 },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  actions: { flexDirection: "row", alignItems: "center", gap: 2 },
-  iconBtn: { padding: 4 },
+  actionsRow: { flexDirection: "row", alignItems: "stretch", gap: 8, marginTop: 4 },
+  actionBtn: {
+    flex: 1,
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+  },
+  actionLabel: { fontSize: 13, fontWeight: "600" },
 });

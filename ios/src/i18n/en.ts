@@ -230,6 +230,7 @@ const en = {
     actions: "Actions",
     hide: "Hide",
     unhide: "Unhide",
+    tag: "Tag",
     bank: "Bank",
     card: "Card",
     noResults: "No transactions found matching the selected filters.",

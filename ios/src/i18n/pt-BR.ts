@@ -234,6 +234,7 @@ const ptBR = {
     actions: "Ações",
     hide: "Ocultar",
     unhide: "Mostrar",
+    tag: "Categorizar",
     bank: "Banco",
     card: "Cartão",
     noResults: "Nenhuma transação encontrada com os filtros selecionados.",
