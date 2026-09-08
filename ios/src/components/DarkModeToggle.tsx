@@ -30,7 +30,7 @@ export default function DarkModeToggle() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { alignItems: "center", paddingVertical: 12 },
+  wrap: { alignItems: "center", paddingVertical: 8 },
   track: {
     width: 52,
     height: 32,

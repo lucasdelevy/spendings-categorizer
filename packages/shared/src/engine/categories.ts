@@ -1,3 +1,5 @@
+export const FALLBACK_CATEGORY = "Sem Categoria";
+
 export const BANK_CATEGORIES: Record<string, string[]> = {
   Moradia: [
     "aluguel", "condominio", "condomínio", "iptu", "imobiliaria",

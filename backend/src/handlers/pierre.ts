@@ -5,6 +5,7 @@ import { getSession } from "../services/sessionService.js";
 import { getUser } from "../services/userService.js";
 import { getMonthStatements, saveStatement } from "../services/statementService.js";
 import { getConfig } from "../services/categoryService.js";
+import { matchCategory } from "../services/categoryMatch.js";
 import {
   fetchTransactions,
   triggerManualSync,
@@ -60,31 +61,6 @@ function getMonthRange(yearMonth: string): { startDate: string; endDate: string 
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
   return { startDate: fmt(start), endDate: fmt(end) };
-}
-
-function categorizeTransaction(
-  tx: TransactionItem,
-  config: CategoryConfigRecord,
-): TransactionItem {
-  const desc = tx.originalDescription.toLowerCase();
-
-  let bestMatch = "";
-  let bestCategory = "";
-
-  for (const [catName, entry] of Object.entries(config.categories)) {
-    for (const kw of entry.keywords) {
-      const kwLower = kw.toLowerCase();
-      if (desc.includes(kwLower) && kwLower.length > bestMatch.length) {
-        bestMatch = kwLower;
-        bestCategory = catName;
-      }
-    }
-  }
-
-  if (bestCategory) {
-    return { ...tx, category: bestCategory };
-  }
-  return tx;
 }
 
 function applyRenameRules(tx: TransactionItem, rename: Record<string, string>): TransactionItem {
@@ -244,7 +220,7 @@ async function syncBatch(
     if (newTransactions.length === 0) continue;
 
     const categorized = newTransactions
-      .map((tx) => categorizeTransaction(tx, config))
+      .map((tx) => ({ ...tx, category: matchCategory(tx.originalDescription, config) }))
       .map((tx) => applyRenameRules(tx, config.rename));
 
     const bankTxs = categorized.filter((tx) => tx.source === "bank");

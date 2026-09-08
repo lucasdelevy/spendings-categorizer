@@ -12,6 +12,7 @@ interface User {
 interface Props {
   open: boolean;
   onClose: () => void;
+  onDashboard: () => void;
   onCategories: () => void;
   onAccounts: () => void;
   onFamily: () => void;
@@ -19,11 +20,13 @@ interface Props {
   onAbout: () => void;
   user: User;
   onLogout: () => void;
+  onDeleteAccount: () => Promise<void>;
 }
 
 export default function SideMenu({
   open,
   onClose,
+  onDashboard,
   onCategories,
   onAccounts,
   onFamily,
@@ -31,6 +34,7 @@ export default function SideMenu({
   onAbout,
   user,
   onLogout,
+  onDeleteAccount,
 }: Props) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -54,6 +58,17 @@ export default function SideMenu({
     onClose();
     cb();
   };
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm(t("account.deleteConfirmBody"))) return;
+    try {
+      await onDeleteAccount();
+    } catch (e) {
+      window.alert(e instanceof Error ? e.message : t("account.deleteFailed"));
+    }
+  };
+
+  const initial = (user.name || user.email || "?").charAt(0).toUpperCase();
 
   return (
     <>
@@ -87,19 +102,21 @@ export default function SideMenu({
 
         {/* Settings section */}
         <p className={sectionHeader}>{t("sidebar.settings")}</p>
-        <div className="space-y-1 px-3">
-          <div className="flex items-center justify-between rounded-lg px-1 py-1">
-            <LanguageSwitcher />
-          </div>
-          <DarkModeToggle labeled />
+        <div className="flex items-center justify-between gap-2 px-3 py-1">
+          <LanguageSwitcher />
+          <DarkModeToggle />
         </div>
 
         {/* Divider */}
         <div className="mx-4 my-3 border-t border-gray-200 dark:border-gray-700" />
 
-        {/* Navigation section */}
-        <p className={sectionHeader}>{t("sidebar.navigation")}</p>
         <nav className="space-y-0.5 px-3">
+          <button onClick={() => handleNav(onDashboard)} className={navItem}>
+            <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            {t("app.dashboard")}
+          </button>
           <button onClick={() => handleNav(onCategories)} className={navItem}>
             <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -142,12 +159,18 @@ export default function SideMenu({
         {/* User section */}
         <div className="border-t border-gray-200 p-4 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <img
-              src={user.picture}
-              alt={user.name}
-              className="h-9 w-9 shrink-0 rounded-full border border-gray-200 object-cover dark:border-gray-600"
-              referrerPolicy="no-referrer"
-            />
+            {user.picture ? (
+              <img
+                src={user.picture}
+                alt={user.name}
+                className="h-9 w-9 shrink-0 rounded-full border border-gray-200 object-cover dark:border-gray-600"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200">
+                {initial}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                 {user.name}
@@ -162,6 +185,12 @@ export default function SideMenu({
             className="mt-3 w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             {t("app.logout")}
+          </button>
+          <button
+            onClick={() => { void handleDeleteAccount(); }}
+            className="mt-2 w-full rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 transition hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
+          >
+            {t("account.delete")}
           </button>
         </div>
       </div>

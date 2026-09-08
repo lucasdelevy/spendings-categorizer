@@ -1,7 +1,7 @@
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { DarkTheme, DefaultTheme, NavigationContainer } from "@react-navigation/native";
-import { ActivityIndicator, View } from "react-native";
 import { useAuth } from "../auth/AuthContext";
+import BrandSplash from "../components/BrandSplash";
 import DrawerContent from "../components/DrawerContent";
 import AboutScreen from "../screens/AboutScreen";
 import AccountsScreen from "../screens/AccountsScreen";
@@ -16,7 +16,7 @@ import type { DrawerParamList } from "./types";
 const Drawer = createDrawerNavigator<DrawerParamList>();
 
 function MainDrawer() {
-  const { user, logout } = useAuth();
+  const { user, logout, deleteAccount } = useAuth();
   const { colors } = useTheme();
   if (!user) return null;
 
@@ -24,7 +24,12 @@ function MainDrawer() {
     <Drawer.Navigator
       initialRouteName="Dashboard"
       drawerContent={(props) => (
-        <DrawerContent {...props} user={user} onLogout={logout} />
+        <DrawerContent
+          {...props}
+          user={user}
+          onLogout={logout}
+          onDeleteAccount={deleteAccount}
+        />
       )}
       screenOptions={{
         headerTintColor: colors.primary,
@@ -35,7 +40,11 @@ function MainDrawer() {
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
-      <Drawer.Screen name="Dashboard" component={DashboardScreen} options={{ title: "Aletheia" }} />
+      <Drawer.Screen
+        name="Dashboard"
+        component={DashboardScreen}
+        options={{ title: "Aletheia", swipeEnabled: false }}
+      />
       <Drawer.Screen name="Categories" component={CategoriesScreen} />
       <Drawer.Screen name="Accounts" component={AccountsScreen} />
       <Drawer.Screen name="Family" component={FamilyScreen} />
@@ -63,11 +72,7 @@ export default function RootNavigator() {
   };
 
   if (loading) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <BrandSplash />;
   }
 
   return (

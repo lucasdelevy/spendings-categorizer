@@ -20,6 +20,10 @@ npm start
 
 Google Sign-In requires a valid iOS OAuth client ID matching `app.json` → `ios.bundleIdentifier` (`com.lucasdelevy.aletheia`).
 
+## App Store
+
+Paid Developer Program + App Store Connect listing, screenshots, and archive/upload: see [docs/APP_STORE.md](../docs/APP_STORE.md).
+
 ## Standalone build on a connected iPhone
 
 Requires Xcode, an Apple Developer account, and a USB-connected device.

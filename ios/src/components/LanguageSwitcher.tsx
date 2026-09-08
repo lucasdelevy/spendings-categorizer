@@ -3,14 +3,16 @@ import { useTranslation } from "react-i18next";
 import { setLanguage } from "../i18n";
 import { useTheme } from "../theme/ThemeContext";
 
-export default function LanguageSwitcher() {
+export default function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
   const { i18n, t } = useTranslation();
   const { colors } = useTheme();
   const isPt = i18n.language.startsWith("pt");
 
   return (
-    <View style={styles.row}>
-      <Text style={[styles.label, { color: colors.text }]}>{t("sidebar.settings")}</Text>
+    <View style={[styles.row, compact && styles.compactRow]}>
+      {compact ? null : (
+        <Text style={[styles.label, { color: colors.text }]}>{t("sidebar.settings")}</Text>
+      )}
       <View style={styles.buttons}>
         <Pressable
           style={[
@@ -48,6 +50,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 8,
+  },
+  compactRow: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    flexGrow: 0,
   },
   label: { fontSize: 14, fontWeight: "500" },
   buttons: { flexDirection: "row", gap: 8 },

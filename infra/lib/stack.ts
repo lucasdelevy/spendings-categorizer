@@ -30,6 +30,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       TABLE_NAME: table.tableName,
       GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || "PLACEHOLDER",
       GOOGLE_IOS_CLIENT_ID: process.env.GOOGLE_IOS_CLIENT_ID || "",
+      APPLE_CLIENT_ID: process.env.APPLE_CLIENT_ID || "com.lucasdelevy.aletheia",
       JWT_SECRET: process.env.JWT_SECRET || "CHANGE-ME-IN-PRODUCTION",
       ACCOUNT_KEY_SECRET:
         process.env.ACCOUNT_KEY_SECRET || "CHANGE-ME-32-BYTE-BASE64-KEY",
@@ -43,7 +44,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
         exclude: ["statements.*", "categories.*", "accounts.*", "devices.*"],
       }),
       environment: sharedEnv,
-      timeout: cdk.Duration.seconds(10),
+      timeout: cdk.Duration.seconds(30),
       memorySize: 256,
     });
 
@@ -182,17 +183,22 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       "DevicesIntegration",
       devicesFunction,
     );
-    httpApi.addRoutes({
+    const authGoogleRoutes = httpApi.addRoutes({
       path: "/auth/google",
       methods: [apigatewayv2.HttpMethod.POST],
       integration: authIntegration,
     });
-    httpApi.addRoutes({
-      path: "/auth/me",
-      methods: [apigatewayv2.HttpMethod.GET],
+    const authAppleRoutes = httpApi.addRoutes({
+      path: "/auth/apple",
+      methods: [apigatewayv2.HttpMethod.POST],
       integration: authIntegration,
     });
-    httpApi.addRoutes({
+    const authMeRoutes = httpApi.addRoutes({
+      path: "/auth/me",
+      methods: [apigatewayv2.HttpMethod.GET, apigatewayv2.HttpMethod.DELETE],
+      integration: authIntegration,
+    });
+    const authLogoutRoutes = httpApi.addRoutes({
       path: "/auth/logout",
       methods: [apigatewayv2.HttpMethod.POST],
       integration: authIntegration,
@@ -299,6 +305,12 @@ export class SpendingsCategorizerStack extends cdk.Stack {
     const defaultStage = httpApi.defaultStage!.node
       .defaultChild as apigatewayv2.CfnStage;
 
+    // Stage RouteSettings 404 if CloudFormation updates the stage before the
+    // named routes exist (and rollback hits the same bug in reverse).
+    for (const route of [...authGoogleRoutes, ...authAppleRoutes, ...authMeRoutes, ...authLogoutRoutes]) {
+      defaultStage.addDependency(route.node.defaultChild as cdk.CfnResource);
+    }
+
     defaultStage.defaultRouteSettings = {
       throttlingBurstLimit: 100,
       throttlingRateLimit: 50,
@@ -309,6 +321,10 @@ export class SpendingsCategorizerStack extends cdk.Stack {
         ThrottlingBurstLimit: 10,
         ThrottlingRateLimit: 5,
       },
+      "POST /auth/apple": {
+        ThrottlingBurstLimit: 10,
+        ThrottlingRateLimit: 5,
+      },
       "POST /auth/logout": {
         ThrottlingBurstLimit: 10,
         ThrottlingRateLimit: 5,
@@ -316,6 +332,10 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       "GET /auth/me": {
         ThrottlingBurstLimit: 20,
         ThrottlingRateLimit: 10,
+      },
+      "DELETE /auth/me": {
+        ThrottlingBurstLimit: 5,
+        ThrottlingRateLimit: 2,
       },
     };
 

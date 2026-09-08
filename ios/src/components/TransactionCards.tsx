@@ -1,5 +1,7 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { useRef } from "react";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Swipeable } from "react-native-gesture-handler";
 import { useTranslation } from "react-i18next";
 import type {
   CategoryConfig,
@@ -82,19 +84,33 @@ function OriginLabel({ origin }: { origin?: TransactionOrigin }) {
   );
 }
 
+function SwipeAction({
+  label,
+  icon,
+  backgroundColor,
+}: {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  backgroundColor: string;
+}) {
+  return (
+    <View style={[styles.swipeAction, { backgroundColor }]}>
+      <Ionicons name={icon} size={22} color="#fff" />
+      <Text style={styles.swipeLabel}>{label}</Text>
+    </View>
+  );
+}
+
 export interface CardLayout {
   showSource: boolean;
   showCategory: boolean;
   showInstallment: boolean;
   hasAvatars: boolean;
-  hasActions: boolean;
 }
 
 export function getCardLayout(
   statementType: StatementType,
   hasAvatars: boolean,
-  hasActions: boolean,
-  hasHide: boolean,
   showCategory: boolean,
 ): CardLayout {
   return {
@@ -102,7 +118,6 @@ export function getCardLayout(
     showCategory,
     showInstallment: statementType === "card" || statementType === "family",
     hasAvatars,
-    hasActions: hasActions || hasHide,
   };
 }
 
@@ -133,7 +148,10 @@ export function TransactionCard({
 }: TransactionCardProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const swipeableRef = useRef<Swipeable>(null);
   const isHidden = !!tx.hidden;
+  const canTag = hasActions && !isHidden;
+  const canSwipe = !!onHide || canTag;
   const categoryColor = getCategoryColorFromConfig(category, catConfig ?? null);
   const accountName = tx.accountId ? accountNameMap?.get(tx.accountId) : undefined;
   const amountColor = isHidden
@@ -142,9 +160,27 @@ export function TransactionCard({
       ? "#16a34a"
       : colors.text;
   const strike = isHidden ? ("line-through" as const) : ("none" as const);
+  const hideLabel = isHidden ? t("table.unhide") : t("table.hide");
+  const tagLabel = t("table.tag");
 
   const body = (
-    <View style={[styles.cardBody, { opacity: isHidden ? 0.45 : 1 }]}>
+    <View
+      style={[styles.cardBody, { opacity: isHidden ? 0.45 : 1 }]}
+      accessible
+      accessibilityLabel={`${cleanPayeeName(tx.payee)}, ${formatBRL(tx.amount)}`}
+      accessibilityActions={[
+        ...(onHide ? [{ name: "hide" as const, label: hideLabel }] : []),
+        ...(canTag ? [{ name: "tag" as const, label: tagLabel }] : []),
+      ]}
+      onAccessibilityAction={(event) => {
+        if (event.nativeEvent.actionName === "hide" && onHide) {
+          onHide({ globalIndex: globalIdx });
+        }
+        if (event.nativeEvent.actionName === "tag" && canTag) {
+          onOpenModal({ transaction: tx, globalIndex: globalIdx, category });
+        }
+      }}
+    >
       {layout.hasAvatars && (
         <View style={styles.avatarWrap}>
           {tx.uploadedBy?.picture ? (
@@ -201,77 +237,74 @@ export function TransactionCard({
             </Text>
           </View>
         ) : null}
-
-        {layout.hasActions && (
-          <View style={styles.actionsRow}>
-            {onHide && (
-              <Pressable
-                onPress={() => onHide({ globalIndex: globalIdx })}
-                accessibilityRole="button"
-                accessibilityLabel={isHidden ? t("table.unhide") : t("table.hide")}
-                style={({ pressed }) => [
-                  styles.actionBtn,
-                  {
-                    borderColor: colors.border,
-                    backgroundColor: pressed
-                      ? colors.primaryMutedBg
-                      : nested
-                        ? colors.surface
-                        : colors.background,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name={isHidden ? "eye-outline" : "eye-off-outline"}
-                  size={20}
-                  color={isHidden ? colors.primary : colors.text}
-                />
-                <Text style={[styles.actionLabel, { color: isHidden ? colors.primary : colors.text }]}>
-                  {isHidden ? t("table.unhide") : t("table.hide")}
-                </Text>
-              </Pressable>
-            )}
-            {hasActions && !isHidden && (
-              <Pressable
-                onPress={() => onOpenModal({ transaction: tx, globalIndex: globalIdx, category })}
-                accessibilityRole="button"
-                accessibilityLabel={t("table.tag")}
-                style={({ pressed }) => [
-                  styles.actionBtn,
-                  {
-                    borderColor: colors.border,
-                    backgroundColor: pressed
-                      ? colors.primaryMutedBg
-                      : nested
-                        ? colors.surface
-                        : colors.background,
-                  },
-                ]}
-              >
-                <Ionicons name="pricetag-outline" size={20} color={colors.text} />
-                <Text style={[styles.actionLabel, { color: colors.text }]}>{t("table.tag")}</Text>
-              </Pressable>
-            )}
-          </View>
-        )}
       </View>
     </View>
   );
 
-  if (nested) {
-    return (
-      <View
-        style={[
-          styles.nestedCard,
-          { backgroundColor: colors.background, borderColor: colors.border },
-        ]}
-      >
-        {body}
-      </View>
-    );
-  }
+  const card = nested ? (
+    <View
+      style={[
+        styles.nestedCard,
+        { backgroundColor: colors.background, borderColor: colors.border },
+      ]}
+    >
+      {body}
+    </View>
+  ) : (
+    <Card>{body}</Card>
+  );
 
-  return <Card>{body}</Card>;
+  if (!canSwipe) return card;
+
+  return (
+    <Swipeable
+      ref={swipeableRef}
+      friction={2}
+      overshootFriction={8}
+      leftThreshold={40}
+      rightThreshold={40}
+      overshootLeft={false}
+      overshootRight={false}
+      activeOffsetX={[-15, 15]}
+      failOffsetY={[-12, 12]}
+      containerStyle={nested ? styles.nestedSwipe : styles.cardSwipe}
+      renderLeftActions={
+        canTag
+          ? () => (
+              <SwipeAction
+                label={tagLabel}
+                icon="pricetag-outline"
+                backgroundColor={colors.primary}
+              />
+            )
+          : undefined
+      }
+      renderRightActions={
+        onHide
+          ? () => (
+              <SwipeAction
+                label={hideLabel}
+                icon={isHidden ? "eye-outline" : "eye-off-outline"}
+                backgroundColor={isHidden ? colors.primary : colors.danger}
+              />
+            )
+          : undefined
+      }
+      onSwipeableOpen={(direction) => {
+        if (direction === "left" && canTag) {
+          swipeableRef.current?.close();
+          onOpenModal({ transaction: tx, globalIndex: globalIdx, category });
+          return;
+        }
+        if (direction === "right" && onHide) {
+          onHide({ globalIndex: globalIdx });
+          swipeableRef.current?.close();
+        }
+      }}
+    >
+      {card}
+    </Swipeable>
+  );
 }
 
 interface ListProps {
@@ -319,6 +352,8 @@ export function TransactionCardList({
 const styles = StyleSheet.create({
   list: { gap: 8 },
   nestedList: { gap: 8, padding: 10 },
+  nestedSwipe: { borderRadius: 10, overflow: "hidden" },
+  cardSwipe: { borderRadius: 12, overflow: "hidden" },
   nestedCard: {
     borderWidth: 1,
     borderRadius: 10,
@@ -364,17 +399,11 @@ const styles = StyleSheet.create({
   },
   categoryLabel: { fontSize: 12, fontWeight: "500", flexShrink: 1 },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  actionsRow: { flexDirection: "row", alignItems: "stretch", gap: 8, marginTop: 4 },
-  actionBtn: {
-    flex: 1,
-    minHeight: 44,
-    flexDirection: "row",
+  swipeAction: {
+    width: 88,
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
+    gap: 4,
   },
-  actionLabel: { fontSize: 13, fontWeight: "600" },
+  swipeLabel: { color: "#fff", fontSize: 12, fontWeight: "700" },
 });

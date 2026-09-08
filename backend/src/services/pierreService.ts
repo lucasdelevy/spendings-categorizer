@@ -1,4 +1,5 @@
 import type { TransactionItem } from "../types.js";
+import { FALLBACK_CATEGORY } from "../defaults/categories.js";
 import { cleanPayeeName } from "./payeeUtils.js";
 import { isRefund } from "./refunds.js";
 
@@ -131,7 +132,7 @@ export function mapPierreTransaction(tx: PierreTransaction): TransactionItem {
   return {
     date: isoDate,
     amount: Math.round(amount * 100) / 100,
-    category: tx.category || "Outros",
+    category: FALLBACK_CATEGORY,
     payee: cleanPayeeName(tx.description),
     installment,
     originalDescription: tx.description,

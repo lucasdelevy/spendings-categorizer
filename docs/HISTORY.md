@@ -233,3 +233,23 @@ Key changes:
 - Sending uses APNs HTTP/2 from the Pierre Lambda (`APNS_KEY_ID`, `APNS_KEY_P8`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID`, `APNS_PRODUCTION`). Local/dev device installs use the sandbox environment.
 - iOS requests notification permission after sign-in via `expo-notifications` and registers the native device token.
 
+## Phase 17: Unmatched Transactions Stay Sem Categoria
+
+CSV imports have always used keyword matching and fallen back to **Sem Categoria**. Pierre Open Finance sync (`02d68cf`) kept Pierre/Pluggy's own category labels when no keyword matched, which created extra dashboard groups that were not in the user's category list.
+
+Key changes:
+- Pierre mapping no longer copies Open Finance category names. Unmatched transactions are stored as `Sem Categoria`.
+- Month apply (`POST /categories/apply`) uses the same rule: keyword match wins; otherwise keep the category only if it already exists in `CATCONFIG`; unknown labels fall back to `Sem Categoria`. Manual tags on existing categories are preserved.
+- Opening a month re-applies rules, so previously imported Pierre categories collapse into Sem Categoria unless a keyword matches.
+
+## Phase 18: Account Deletion & Sign in with Apple
+
+App Store review needs in-app account deletion (Guideline 5.1.1(v)) and Sign in with Apple whenever a third-party login such as Google is offered on iOS (Guideline 4.8). Telos hit both; Aletheia ships them together.
+
+Key changes:
+- `POST /auth/apple` verifies the native identity token (JWKS, audience = bundle ID `com.lucasdelevy.aletheia`). Google and Apple identities that share an email are linked via `EMAILUSER#<email>` so they become one user.
+- `DELETE /auth/me` hard-deletes the signed-in user's partition (`PROFILE`, sessions, devices, solo statements, category config, accounts, limit alerts) and the email lookup. Family members are removed; a remaining active member is promoted if the leaver was the owner; a sole remaining owner dissolves the family.
+- iOS login shows the system Sign in with Apple button above Google. Web stays Google-only. Both clients expose **Delete account** in the side menu with a confirmation.
+- Native Sign in with Apple does not need a Services ID or Sign in with Apple key — only the App ID capability.
+
+

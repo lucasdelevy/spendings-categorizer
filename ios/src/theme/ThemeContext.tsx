@@ -8,7 +8,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useColorScheme } from "react-native";
+import { StyleSheet, useColorScheme, View } from "react-native";
+import BrandSplash from "../components/BrandSplash";
 
 export type ThemeMode = "light" | "dark";
 
@@ -113,9 +114,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     [mode, toggle],
   );
 
-  if (!loaded) return null;
-
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>
+      <View style={{ flex: 1 }}>
+        {children}
+        {!loaded && (
+          <View style={StyleSheet.absoluteFillObject}>
+            <BrandSplash />
+          </View>
+        )}
+      </View>
+    </ThemeContext.Provider>
+  );
 }
 
 export function useTheme(): ThemeContextValue {

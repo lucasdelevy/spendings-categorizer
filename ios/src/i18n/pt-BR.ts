@@ -6,6 +6,7 @@ const ptBR = {
     family: "Família",
     manageMonths: "Gerenciar Meses",
     about: "Sobre Aletheia",
+    dashboard: "Painel",
     logout: "Sair",
     uploadStatements: "Enviar meus extratos",
     uploadOverlayDescription:
@@ -42,6 +43,19 @@ const ptBR = {
   login: {
     subtitle: "Faça login para salvar e visualizar seus extratos",
     loading: "Carregando...",
+    googleSignIn: "Entrar com o Google",
+    googleFailed: "Falha no login do Google",
+    appleFailed: "Falha no login da Apple",
+  },
+
+  account: {
+    delete: "Excluir conta",
+    deleteTitle: "Excluir sua conta?",
+    deleteConfirm: "Excluir conta",
+    deleteCancel: "Cancelar",
+    deleteFailed: "Não foi possível excluir a conta",
+    deleteConfirmBody:
+      "Isso apaga de forma permanente seu perfil, extratos, categorias, contas e tokens de dispositivo. Se você for dono de uma família e houver outro membro, ele vira o dono. Se você for o único membro, a família é removida. Não dá para desfazer.",
   },
 
   categories: {
@@ -69,6 +83,7 @@ const ptBR = {
     newCategory: "Nova categoria...",
     createCategory: "Criar Categoria",
     keywordsCount: "{{count}} keywords",
+    color: "Cor",
     ignoreDescription:
       "Transações que contenham qualquer destes termos serão ignoradas ao processar o CSV.",
     noIgnoreFilters: "Nenhum filtro de ignorar",
@@ -324,6 +339,12 @@ const ptBR = {
       phase16Title: "Notificações de limite de gasto",
       phase16Desc:
         "O app iOS pode avisar quando uma categoria com limite de gasto atinge um percentual que você escolhe (padrão 80%). A sincronização da Pierre a cada 5 minutos confere o gasto atual e envia um push uma vez por categoria por mês, para não repetir o alerta enquanto o gasto continuar acima da linha.",
+      phase17Title: "Sem match fica Sem Categoria",
+      phase17Desc:
+        "As categorias da Open Finance da Pierre deixam de ser importadas como categorias novas no Aletheia. Se a transação não casar com uma keyword sua, ela fica em Sem Categoria. Abrir o mês reaplica as regras, então rótulos antigos da Pierre caem nesse bucket a menos que uma keyword case.",
+      phase18Title: "Exclusão de conta e Sign in with Apple",
+      phase18Desc:
+        "No iOS, o Sign in with Apple aparece junto com o Google (diretriz 4.8 da App Store). Logins Google e Apple com o mesmo e-mail viram o mesmo usuário no Aletheia. Você pode excluir a conta de forma permanente no menu lateral: os dados pessoais são apagados, e uma família da qual você é dono é transferida para outro membro ou dissolvida.",
     },
   },
 
