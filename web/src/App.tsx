@@ -13,6 +13,7 @@ import ManageMonths from "./pages/SavedStatements";
 import FamilyPage from "./pages/FamilyPage";
 import CategoriesPage from "./pages/CategoriesPage";
 import AccountsPage from "./pages/AccountsPage";
+import RemindersPage from "./pages/RemindersPage";
 import AboutPage from "./pages/AboutPage";
 import { useAccounts } from "./hooks/useAccounts";
 import MonthSelector from "./components/MonthSelector";
@@ -118,6 +119,7 @@ export default function App() {
   const [showFamily, setShowFamily] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [showAccounts, setShowAccounts] = useState(false);
+  const [showReminders, setShowReminders] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showUploadOverlay, setShowUploadOverlay] = useState(false);
   const [sideMenuOpen, setSideMenuOpen] = useState(false);
@@ -372,13 +374,15 @@ export default function App() {
     ? "categories"
     : showAccounts
       ? "accounts"
-      : showFamily
-        ? "family"
-        : showManage
-          ? "manage"
-          : showAbout
-            ? "about"
-            : "dashboard";
+      : showReminders
+        ? "reminders"
+        : showFamily
+          ? "family"
+          : showManage
+            ? "manage"
+            : showAbout
+              ? "about"
+              : "dashboard";
 
   const showUploader = activePage === "dashboard" && ((!monthHasData && dataSource !== "local") || showUploadOverlay);
   const showConfirmBar = activePage === "dashboard" && dataSource === "local" && result !== null;
@@ -395,12 +399,13 @@ export default function App() {
       <SideMenu
         open={sideMenuOpen}
         onClose={() => setSideMenuOpen(false)}
-        onDashboard={() => { setShowCategories(false); setShowAccounts(false); setShowFamily(false); setShowManage(false); setShowAbout(false); }}
-        onCategories={() => { setShowAccounts(false); setShowFamily(false); setShowManage(false); setShowAbout(false); setShowCategories(true); }}
-        onAccounts={() => { setShowCategories(false); setShowFamily(false); setShowManage(false); setShowAbout(false); setShowAccounts(true); }}
-        onFamily={() => { setShowCategories(false); setShowAccounts(false); setShowManage(false); setShowAbout(false); setShowFamily(true); }}
-        onManage={() => { setShowCategories(false); setShowAccounts(false); setShowFamily(false); setShowAbout(false); setShowManage(true); }}
-        onAbout={() => { setShowCategories(false); setShowAccounts(false); setShowFamily(false); setShowManage(false); setShowAbout(true); }}
+        onDashboard={() => { setShowCategories(false); setShowAccounts(false); setShowReminders(false); setShowFamily(false); setShowManage(false); setShowAbout(false); }}
+        onCategories={() => { setShowAccounts(false); setShowReminders(false); setShowFamily(false); setShowManage(false); setShowAbout(false); setShowCategories(true); }}
+        onAccounts={() => { setShowCategories(false); setShowReminders(false); setShowFamily(false); setShowManage(false); setShowAbout(false); setShowAccounts(true); }}
+        onReminders={() => { setShowCategories(false); setShowAccounts(false); setShowFamily(false); setShowManage(false); setShowAbout(false); setShowReminders(true); }}
+        onFamily={() => { setShowCategories(false); setShowAccounts(false); setShowReminders(false); setShowManage(false); setShowAbout(false); setShowFamily(true); }}
+        onManage={() => { setShowCategories(false); setShowAccounts(false); setShowReminders(false); setShowFamily(false); setShowAbout(false); setShowManage(true); }}
+        onAbout={() => { setShowCategories(false); setShowAccounts(false); setShowReminders(false); setShowFamily(false); setShowManage(false); setShowAbout(true); }}
         user={user}
         onLogout={logout}
         onDeleteAccount={deleteAccount}
@@ -442,6 +447,10 @@ export default function App() {
 
       {activePage === "accounts" && (
         <AccountsPage onBack={() => { setShowAccounts(false); refreshAccounts(); }} />
+      )}
+
+      {activePage === "reminders" && (
+        <RemindersPage onBack={() => setShowReminders(false)} />
       )}
 
       {activePage === "family" && (

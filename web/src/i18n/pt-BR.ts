@@ -3,6 +3,7 @@ const ptBR = {
     title: "Aletheia",
     categories: "Categorias",
     accounts: "Contas e Cartões",
+    reminders: "Lembretes de pagamento",
     family: "Família",
     manageMonths: "Gerenciar Meses",
     about: "Sobre Aletheia",
@@ -244,6 +245,36 @@ const ptBR = {
       'Excluir "{{name}}"? Isso não removerá as transações já importadas.',
   },
 
+  reminders: {
+    title: "Lembretes de pagamento",
+    back: "Voltar",
+    intro:
+      "Acompanhe contas recorrentes pelo dia do mês. Admins da família criam e editam lembretes. Qualquer membro pode marcar o mês como pago. O aviso chega no dia do vencimento, no horário que você escolher.",
+    loading: "Carregando lembretes…",
+    empty: "Nenhum lembrete ainda — adicione aluguel, contas ou assinaturas.",
+    notifyTime: "Horário da notificação",
+    notifyTimeHint: "Horário de Brasília. Vale para todos os lembretes no dia do vencimento.",
+    saveTime: "Salvar horário",
+    month: "Mês",
+    paid: "Pago",
+    unpaid: "Em aberto",
+    paidOn: "Pago ({{who}})",
+    dayLabel: "Vence no dia {{day}}",
+    dayOfMonth: "Dia do mês",
+    edit: "Editar",
+    delete: "Excluir",
+    save: "Salvar",
+    cancel: "Cancelar",
+    create: "Adicionar lembrete",
+    newTitle: "Novo lembrete",
+    namePlaceholder: "ex. Aluguel",
+    deleteConfirm: 'Excluir "{{name}}"? O histórico deste lembrete será apagado.',
+    showHistory: "Ver meses anteriores",
+    hideHistory: "Ocultar meses anteriores",
+    saveFailed: "Não foi possível salvar o lembrete",
+    membersReadOnly: "Só admins da família podem criar ou editar lembretes.",
+  },
+
   summary: {
     totalExpenses: "Total Gastos",
     credits: "Créditos",
@@ -366,6 +397,9 @@ const ptBR = {
       phase20Title: "Login por e-mail para a App Review",
       phase20Desc:
         "A tela de login aceita e-mail e senha além de Apple e Google. Uma conta de demonstração já vem com meses de exemplo para a App Review abrir o dashboard sem OAuth. No dia a dia o login continua sendo Apple ou Google; e-mail não é cadastro público.",
+      phase21Title: "Lembretes de pagamento",
+      phase21Desc:
+        "Admins da família cadastram contas recorrentes com nome e dia do mês. Qualquer membro marca o mês como pago, e o histórico fica guardado. No vencimento chega um push no horário que você escolher.",
     },
   },
 

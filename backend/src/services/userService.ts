@@ -201,6 +201,20 @@ export async function upsertUser(params: {
   return (await getUser(params.userId))!;
 }
 
+export async function setReminderNotifyTime(
+  userId: string,
+  notifyTime: string,
+): Promise<void> {
+  await docClient.send(
+    new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { PK: `USER#${userId}`, SK: "PROFILE" },
+      UpdateExpression: "SET reminderNotifyTime = :t",
+      ExpressionAttributeValues: { ":t": notifyTime },
+    }),
+  );
+}
+
 export async function setFamilyId(
   userId: string,
   familyId: string,

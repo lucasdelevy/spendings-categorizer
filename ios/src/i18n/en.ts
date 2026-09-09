@@ -3,6 +3,7 @@ const en = {
     title: "Aletheia",
     categories: "Categories",
     accounts: "Accounts & Cards",
+    reminders: "Payment Reminders",
     family: "Family",
     manageMonths: "Manage Months",
     about: "About Aletheia",
@@ -241,6 +242,36 @@ const en = {
     deleteConfirm: 'Delete "{{name}}"? This will not remove past transactions.',
   },
 
+  reminders: {
+    title: "Payment Reminders",
+    back: "Back",
+    intro:
+      "Track recurring bills by day of the month. Family admins add or edit reminders. Anyone can mark a month as paid. You get a push on the due day at the time you choose.",
+    loading: "Loading reminders…",
+    empty: "No reminders yet — add rent, utilities, or subscriptions.",
+    notifyTime: "Notification time",
+    notifyTimeHint: "America/São Paulo. Applies to every reminder on its due day.",
+    saveTime: "Save time",
+    month: "Month",
+    paid: "Paid",
+    unpaid: "Unpaid",
+    paidOn: "Paid ({{who}})",
+    dayLabel: "Due on day {{day}}",
+    dayOfMonth: "Day of month",
+    edit: "Edit",
+    delete: "Delete",
+    save: "Save",
+    cancel: "Cancel",
+    create: "Add reminder",
+    newTitle: "New reminder",
+    namePlaceholder: "e.g. Rent",
+    deleteConfirm: 'Delete "{{name}}"? Payment history for this reminder will be removed.',
+    showHistory: "Show previous months",
+    hideHistory: "Hide previous months",
+    saveFailed: "Could not save reminder",
+    membersReadOnly: "Only family admins can add or edit reminders.",
+  },
+
   summary: {
     totalExpenses: "Total Expenses",
     credits: "Credits",
@@ -364,6 +395,9 @@ const en = {
       phase20Title: "Email Sign-In for App Review",
       phase20Desc:
         "The login screen accepts email and password in addition to Apple and Google. A demo account is seeded with sample months so App Review can open the dashboard without an OAuth account. Everyday users still sign in with Apple or Google; email login is not a public sign-up.",
+      phase21Title: "Payment Reminders",
+      phase21Desc:
+        "Family admins can add recurring bills with a name and day of the month. Everyone can mark a month as paid, and history stays available. On the due day you get a push at the time you choose.",
     },
   },
 

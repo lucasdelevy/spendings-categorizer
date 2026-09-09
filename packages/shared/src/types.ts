@@ -41,6 +41,25 @@ export interface Account {
   updatedAt: string;
 }
 
+export interface ReminderOccurrence {
+  yearMonth: string;
+  paid: boolean;
+  paidAt?: string;
+  paidByName?: string;
+}
+
+export interface PaymentReminder {
+  reminderId: string;
+  name: string;
+  dayOfMonth: number;
+  createdAt: string;
+  updatedAt: string;
+  paid: boolean;
+  paidAt?: string;
+  paidByName?: string;
+  history: ReminderOccurrence[];
+}
+
 export type LimitPeriod = "daily" | "weekly" | "monthly";
 
 export interface CategoryLimit {

@@ -24,6 +24,7 @@ import {
 } from "../services/accountService.js";
 import { listMembers } from "../services/familyService.js";
 import { evaluateAndNotifyLimitAlerts } from "../services/limitAlertService.js";
+import { evaluateAndNotifyPaymentReminders } from "../services/reminderAlertService.js";
 import type {
   JWTPayload,
   TransactionItem,
@@ -402,6 +403,15 @@ async function resolveSyncUserId(
 }
 
 async function handleScheduled(): Promise<void> {
+  try {
+    const reminders = await evaluateAndNotifyPaymentReminders();
+    if (reminders.sent > 0 || reminders.due > 0) {
+      console.log(`Payment reminders due=${reminders.due} sent=${reminders.sent}`);
+    }
+  } catch (err) {
+    console.error("Payment reminder evaluation failed:", err);
+  }
+
   const owners = await listOwnersWithApiKeys();
   if (owners.length === 0) {
     console.log("No accounts with Open Finance API keys; skipping scheduled sync");

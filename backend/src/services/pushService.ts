@@ -174,3 +174,62 @@ export async function sendLimitAlerts(
     client.close();
   }
 }
+
+export function reminderCopy(locale: string, name: string): { title: string; body: string } {
+  const pt = locale.toLowerCase().startsWith("pt");
+  if (pt) {
+    return { title: "Aletheia", body: `${name} vence hoje` };
+  }
+  return { title: "Aletheia", body: `${name} is due today` };
+}
+
+export async function sendReminderPushes(
+  devices: DeviceRecord[],
+  reminder: { reminderId: string; name: string; yearMonth: string },
+): Promise<number> {
+  if (devices.length === 0) return 0;
+  if (!isPushConfigured()) {
+    console.warn("Skipping reminder push: APNS_KEY_ID / APNS_KEY_P8 are not set");
+    return 0;
+  }
+
+  const production = (process.env.APNS_PRODUCTION || "false").toLowerCase() === "true";
+  const host = production ? "api.push.apple.com" : "api.sandbox.push.apple.com";
+  const jwt = await getApnsJwt();
+  const client = http2.connect(`https://${host}`);
+
+  try {
+    let sent = 0;
+    for (const device of devices) {
+      const { title, body } = reminderCopy(device.locale, reminder.name);
+      const payload = {
+        aps: {
+          alert: { title, body },
+          sound: "default",
+        },
+        type: "payment-reminder",
+        reminderId: reminder.reminderId,
+        yearMonth: reminder.yearMonth,
+      };
+      try {
+        const result = await sendApns(client, jwt, device.token, payload);
+        if (result.status === 200) {
+          sent += 1;
+          continue;
+        }
+        console.warn(
+          `APNs ${result.status} ${result.reason ?? ""} token=${device.token.slice(0, 8)}…`,
+        );
+        if (result.reason && INVALID_REASONS.has(result.reason)) {
+          const userId = device.PK.startsWith("USER#") ? device.PK.slice(5) : "";
+          if (userId) await deleteDevice(userId, device.token);
+        }
+      } catch (err) {
+        console.error("APNs reminder send failed:", err);
+      }
+    }
+    return sent;
+  } finally {
+    client.close();
+  }
+}

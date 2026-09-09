@@ -47,7 +47,7 @@
 
 | Record        | PK                    | SK                        | Key Attributes                                          |
 |---------------|-----------------------|---------------------------|---------------------------------------------------------|
-| User          | `USER#<googleId>`     | `PROFILE`                 | email, name, picture, googleId, familyId?, createdAt    |
+| User          | `USER#<googleId>`     | `PROFILE`                 | email, name, picture, googleId, familyId?, reminderNotifyTime?, createdAt    |
 | Session       | `USER#<googleId>`     | `SESS#<sessionId>`        | expiresAt (TTL, epoch seconds), createdAt               |
 | Statement (solo) | `USER#<googleId>`  | `STMT#<YYYYMM>#<type>`   | fileName, uploadedAt, status, summary, transactions     |
 | Statement (family) | `FAMILY#<familyId>` | `STMT#<YYYYMM>#<userId>` | fileName, uploadedAt, status, summary, transactions     |
@@ -57,6 +57,9 @@
 | Account       | `FAMILY#<familyId>` or `USER#<userId>` | `ACCT#<accountId>` | name, type (bank/card), closingDay?, dueDay?, apiKeyEncrypted?, apiKeyHint?, apiKeyStatus?, createdBy, createdAt, updatedAt |
 | Device        | `USER#<userId>`       | `DEVICE#<token>`          | token, platform (`ios`), locale, updatedAt                  |
 | Limit alert   | `FAMILY#<familyId>` or `USER#<userId>` | `LIMITALERT#<YYYYMM>#<category>` | percent, threshold, notifiedAt |
+| Payment reminder | `FAMILY#<familyId>` or `USER#<userId>` | `REMINDER#<id>` | name, dayOfMonth, createdBy, createdAt, updatedAt |
+| Reminder paid | same PK | `REMINDEROCC#<YYYYMM>#<id>` | paid, paidAt, paidByUserId, paidByName |
+| Reminder push | same PK | `REMINDERPUSH#<YYYYMM>#<id>#<userId>` | notifiedAt |
 | Demo seed     | `USER#review-aletheia` | `DEMOSEED`               | seededAt (App Review sample months) |
 | Email lookup  | `EMAILFAM#<email>`    | `LINK`                    | familyId                                                |
 | User lookup   | `EMAILUSER#<email>`   | `LINK`                    | userId (links Google and Apple for the same email)      |
@@ -117,6 +120,12 @@ When reading a month in family mode, all `STMT#<YYYYMM>#*` records are fetched a
 | POST   | `/accounts`                | JWT  | Create a new bank account or card           |
 | PUT    | `/accounts/{id}`           | JWT  | Update name / closing day / API key         |
 | DELETE | `/accounts/{id}`           | JWT  | Delete an account or card (transactions are preserved) |
+| GET    | `/reminders`               | JWT  | List payment reminders + paid history for a month      |
+| POST   | `/reminders`               | JWT  | Create a reminder (owner/admin, or solo user)          |
+| PUT    | `/reminders/{id}`          | JWT  | Update name / day of month (owner/admin)               |
+| DELETE | `/reminders/{id}`          | JWT  | Delete a reminder and its history (owner/admin)        |
+| PUT    | `/reminders/{id}/paid`     | JWT  | Mark a month paid or unpaid (any member)               |
+| PUT    | `/reminders/settings`      | JWT  | Set this user's reminder notification time (HH:mm)     |
 | POST   | `/statements/{id}/assign-account` | JWT  | Re-tag every transaction in a saved statement to an account; rebuckets across months when the card closing day moves transactions into a different bill window |
 
 ## Project Structure

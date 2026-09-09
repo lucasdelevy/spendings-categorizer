@@ -49,6 +49,11 @@ await Promise.all([
     entryPoints: ["src/handlers/devices.ts"],
     outfile: "dist/handlers/devices.mjs",
   }),
+  build({
+    ...shared,
+    entryPoints: ["src/handlers/reminders.ts"],
+    outfile: "dist/handlers/reminders.mjs",
+  }),
 ]);
 
 console.log("Build complete");

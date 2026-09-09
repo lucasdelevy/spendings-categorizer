@@ -271,4 +271,13 @@ Key changes:
 - There is no public email sign-up. Other addresses are rejected.
 - Demo data is written once (`DEMOSEED`) on first successful login.
 
+## Phase 21: Payment Reminders
+
+Family admins needed a place for recurring bills (rent, utilities) that is not a bank account. Each reminder is a name plus a day of the month. Paid/unpaid is stored per calendar month so previous months stay visible. A push goes out on the due day at the time each user picks (America/Sao_Paulo, default 09:00).
+
+Key changes:
+- `REMINDER#<id>` under the family or solo PK; `REMINDEROCC#<YYYYMM>#<id>` for paid history; `PROFILE.reminderNotifyTime` per user.
+- GET is open to every member. Create/edit/delete require a family manager (solo users can always mutate). Any member can toggle paid.
+- Pierre's 5-minute schedule evaluates due reminders even when there is no Open Finance key, and sends APNs once per user per reminder per month.
+
 

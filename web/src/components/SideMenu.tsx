@@ -15,6 +15,7 @@ interface Props {
   onDashboard: () => void;
   onCategories: () => void;
   onAccounts: () => void;
+  onReminders: () => void;
   onFamily: () => void;
   onManage: () => void;
   onAbout: () => void;
@@ -29,6 +30,7 @@ export default function SideMenu({
   onDashboard,
   onCategories,
   onAccounts,
+  onReminders,
   onFamily,
   onManage,
   onAbout,
@@ -128,6 +130,12 @@ export default function SideMenu({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2zM7 15h2" />
             </svg>
             {t("app.accounts")}
+          </button>
+          <button onClick={() => handleNav(onReminders)} className={navItem}>
+            <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            {t("app.reminders")}
           </button>
           <button onClick={() => handleNav(onFamily)} className={navItem}>
             <svg className="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

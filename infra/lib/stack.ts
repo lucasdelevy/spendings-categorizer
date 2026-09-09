@@ -41,7 +41,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "auth.handler",
       code: lambda.Code.fromAsset(backendDist, {
-        exclude: ["statements.*", "categories.*", "accounts.*", "devices.*"],
+        exclude: ["statements.*", "categories.*", "accounts.*", "devices.*", "reminders.*"],
       }),
       environment: sharedEnv,
       timeout: cdk.Duration.seconds(30),
@@ -53,7 +53,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "statements.handler",
       code: lambda.Code.fromAsset(backendDist, {
-        exclude: ["auth.*", "families.*", "categories.*", "accounts.*", "devices.*"],
+        exclude: ["auth.*", "families.*", "categories.*", "accounts.*", "devices.*", "reminders.*"],
       }),
       environment: sharedEnv,
       timeout: cdk.Duration.seconds(10),
@@ -65,7 +65,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "families.handler",
       code: lambda.Code.fromAsset(backendDist, {
-        exclude: ["auth.*", "statements.*", "categories.*", "accounts.*", "devices.*"],
+        exclude: ["auth.*", "statements.*", "categories.*", "accounts.*", "devices.*", "reminders.*"],
       }),
       environment: sharedEnv,
       timeout: cdk.Duration.seconds(30),
@@ -77,7 +77,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "categories.handler",
       code: lambda.Code.fromAsset(backendDist, {
-        exclude: ["auth.*", "families.*", "accounts.*", "devices.*"],
+        exclude: ["auth.*", "families.*", "accounts.*", "devices.*", "reminders.*"],
       }),
       environment: sharedEnv,
       timeout: cdk.Duration.seconds(10),
@@ -89,7 +89,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "accounts.handler",
       code: lambda.Code.fromAsset(backendDist, {
-        exclude: ["auth.*", "statements.*", "categories.*", "families.*", "devices.*"],
+        exclude: ["auth.*", "statements.*", "categories.*", "families.*", "devices.*", "reminders.*"],
       }),
       environment: sharedEnv,
       timeout: cdk.Duration.seconds(10),
@@ -101,7 +101,19 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "devices.handler",
       code: lambda.Code.fromAsset(backendDist, {
-        exclude: ["auth.*", "statements.*", "categories.*", "families.*", "accounts.*", "pierre.*"],
+        exclude: ["auth.*", "statements.*", "categories.*", "families.*", "accounts.*", "pierre.*", "reminders.*"],
+      }),
+      environment: sharedEnv,
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 256,
+    });
+
+    const remindersFunction = new lambda.Function(this, "RemindersFunction", {
+      functionName: "spendings-categorizer-reminders",
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: "reminders.handler",
+      code: lambda.Code.fromAsset(backendDist, {
+        exclude: ["auth.*", "statements.*", "categories.*", "families.*", "accounts.*", "devices.*", "pierre.*"],
       }),
       environment: sharedEnv,
       timeout: cdk.Duration.seconds(10),
@@ -113,7 +125,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: "pierre.handler",
       code: lambda.Code.fromAsset(backendDist, {
-        exclude: ["auth.*", "families.*", "categories.*", "devices.*"],
+        exclude: ["auth.*", "families.*", "categories.*", "devices.*", "reminders.*"],
       }),
       environment: {
         ...sharedEnv,
@@ -138,6 +150,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
     table.grantReadWriteData(categoriesFunction);
     table.grantReadWriteData(accountsFunction);
     table.grantReadWriteData(devicesFunction);
+    table.grantReadWriteData(remindersFunction);
     table.grantReadWriteData(pierreFunction);
 
     const httpApi = new apigatewayv2.HttpApi(this, "HttpApi", {
@@ -182,6 +195,10 @@ export class SpendingsCategorizerStack extends cdk.Stack {
     const devicesIntegration = new integrations.HttpLambdaIntegration(
       "DevicesIntegration",
       devicesFunction,
+    );
+    const remindersIntegration = new integrations.HttpLambdaIntegration(
+      "RemindersIntegration",
+      remindersFunction,
     );
     const authGoogleRoutes = httpApi.addRoutes({
       path: "/auth/google",
@@ -297,6 +314,29 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       integration: devicesIntegration,
     });
 
+    const reminderRoutes = [
+      ...httpApi.addRoutes({
+        path: "/reminders",
+        methods: [apigatewayv2.HttpMethod.GET, apigatewayv2.HttpMethod.POST],
+        integration: remindersIntegration,
+      }),
+      ...httpApi.addRoutes({
+        path: "/reminders/settings",
+        methods: [apigatewayv2.HttpMethod.PUT],
+        integration: remindersIntegration,
+      }),
+      ...httpApi.addRoutes({
+        path: "/reminders/{id}",
+        methods: [apigatewayv2.HttpMethod.PUT, apigatewayv2.HttpMethod.DELETE],
+        integration: remindersIntegration,
+      }),
+      ...httpApi.addRoutes({
+        path: "/reminders/{id}/paid",
+        methods: [apigatewayv2.HttpMethod.PUT],
+        integration: remindersIntegration,
+      }),
+    ];
+
     const pierreIntegration = new integrations.HttpLambdaIntegration(
       "PierreIntegration",
       pierreFunction,
@@ -318,6 +358,7 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       ...authMeRoutes,
       ...authLogoutRoutes,
       ...authEmailRoutes,
+      ...reminderRoutes,
     ]) {
       defaultStage.addDependency(route.node.defaultChild as cdk.CfnResource);
     }

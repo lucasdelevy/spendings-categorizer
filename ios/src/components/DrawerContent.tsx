@@ -20,6 +20,7 @@ interface Props extends DrawerContentComponentProps {
 const NAV_ITEMS: { route: keyof import("../navigation/types").DrawerParamList; labelKey: string }[] = [
   { route: "Categories", labelKey: "app.categories" },
   { route: "Accounts", labelKey: "app.accounts" },
+  { route: "Reminders", labelKey: "app.reminders" },
   { route: "Family", labelKey: "app.family" },
   { route: "ManageMonths", labelKey: "app.manageMonths" },
 ];

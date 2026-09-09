@@ -7,6 +7,8 @@ export interface UserRecord {
   googleId?: string;
   appleId?: string;
   familyId?: string;
+  /** HH:mm in America/Sao_Paulo; when to send payment-reminder pushes. */
+  reminderNotifyTime?: string;
   createdAt: string;
 }
 
@@ -159,6 +161,37 @@ export interface LimitAlertRecord {
   yearMonth: string;
   percent: number;
   threshold: number;
+  notifiedAt: string;
+}
+
+export interface ReminderRecord {
+  PK: string;
+  SK: string;
+  reminderId: string;
+  name: string;
+  dayOfMonth: number;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReminderOccurrenceRecord {
+  PK: string;
+  SK: string;
+  reminderId: string;
+  yearMonth: string;
+  paid: boolean;
+  paidAt?: string;
+  paidByUserId?: string;
+  paidByName?: string;
+}
+
+export interface ReminderPushRecord {
+  PK: string;
+  SK: string;
+  reminderId: string;
+  yearMonth: string;
+  userId: string;
   notifiedAt: string;
 }
 

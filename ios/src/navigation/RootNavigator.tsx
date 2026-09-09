@@ -5,6 +5,7 @@ import BrandSplash from "../components/BrandSplash";
 import DrawerContent from "../components/DrawerContent";
 import AboutScreen from "../screens/AboutScreen";
 import AccountsScreen from "../screens/AccountsScreen";
+import RemindersScreen from "../screens/RemindersScreen";
 import CategoriesScreen from "../screens/CategoriesScreen";
 import DashboardScreen from "../screens/DashboardScreen";
 import FamilyScreen from "../screens/FamilyScreen";
@@ -47,6 +48,7 @@ function MainDrawer() {
       />
       <Drawer.Screen name="Categories" component={CategoriesScreen} />
       <Drawer.Screen name="Accounts" component={AccountsScreen} />
+      <Drawer.Screen name="Reminders" component={RemindersScreen} />
       <Drawer.Screen name="Family" component={FamilyScreen} />
       <Drawer.Screen name="ManageMonths" component={ManageMonthsScreen} options={{ title: "Manage Months" }} />
       <Drawer.Screen name="About" component={AboutScreen} />
