@@ -1,37 +1,45 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { PaymentReminder } from "@aletheia/shared";
+import type { ReminderMonth, ReminderRecurrence, ReminderSeries } from "@aletheia/shared";
 import { api } from "../auth/api";
 
 interface RemindersResponse {
-  month: string;
   notifyTime: string;
-  reminders: PaymentReminder[];
+  months: ReminderMonth[];
+  series: ReminderSeries[];
 }
 
-export function useReminders(authenticated: boolean, month: string) {
-  const [reminders, setReminders] = useState<PaymentReminder[]>([]);
+export interface ReminderWriteInput {
+  name: string;
+  startDate: string;
+  recurrence: ReminderRecurrence;
+}
+
+export function useReminders(authenticated: boolean) {
+  const [months, setMonths] = useState<ReminderMonth[]>([]);
+  const [series, setSeries] = useState<ReminderSeries[]>([]);
   const [notifyTime, setNotifyTimeState] = useState("09:00");
   const [loading, setLoading] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.get<RemindersResponse>(`/reminders?month=${month}`);
-      setReminders(data.reminders ?? []);
+      const data = await api.get<RemindersResponse>("/reminders");
+      setMonths(data.months ?? []);
+      setSeries(data.series ?? []);
       setNotifyTimeState(data.notifyTime || "09:00");
     } catch {
       /* keep last */
     } finally {
       setLoading(false);
     }
-  }, [month]);
+  }, []);
 
   useEffect(() => {
     if (authenticated) void refresh();
   }, [authenticated, refresh]);
 
   const create = useCallback(
-    async (input: { name: string; dayOfMonth: number }) => {
+    async (input: ReminderWriteInput) => {
       await api.post("/reminders", input);
       await refresh();
     },
@@ -39,7 +47,7 @@ export function useReminders(authenticated: boolean, month: string) {
   );
 
   const update = useCallback(
-    async (reminderId: string, input: { name?: string; dayOfMonth?: number }) => {
+    async (reminderId: string, input: Partial<ReminderWriteInput>) => {
       await api.put(`/reminders/${reminderId}`, input);
       await refresh();
     },
@@ -55,11 +63,11 @@ export function useReminders(authenticated: boolean, month: string) {
   );
 
   const setPaid = useCallback(
-    async (reminderId: string, paid: boolean) => {
-      await api.put(`/reminders/${reminderId}/paid`, { paid, yearMonth: month });
+    async (reminderId: string, paid: boolean, date: string) => {
+      await api.put(`/reminders/${reminderId}/paid`, { paid, date });
       await refresh();
     },
-    [month, refresh],
+    [refresh],
   );
 
   const setNotifyTime = useCallback(async (time: string) => {
@@ -69,7 +77,8 @@ export function useReminders(authenticated: boolean, month: string) {
 
   return useMemo(
     () => ({
-      reminders,
+      months,
+      series,
       notifyTime,
       loading,
       refresh,
@@ -79,6 +88,6 @@ export function useReminders(authenticated: boolean, month: string) {
       setPaid,
       setNotifyTime,
     }),
-    [reminders, notifyTime, loading, refresh, create, update, remove, setPaid, setNotifyTime],
+    [months, series, notifyTime, loading, refresh, create, update, remove, setPaid, setNotifyTime],
   );
 }

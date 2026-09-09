@@ -280,4 +280,14 @@ Key changes:
 - GET is open to every member. Create/edit/delete require a family manager (solo users can always mutate). Any member can toggle paid.
 - Pierre's 5-minute schedule evaluates due reminders even when there is no Open Finance key, and sends APNs once per user per reminder per month.
 
+## Phase 22: Reminder Recurrence
+
+Payment reminders were monthly-only, with one row per template and a month picker. Creation now takes a first due date and a recurrence (once, monthly, or yearly). The list expands those series into occurrences for the current month plus the next eleven, so you mark a specific date paid instead of a calendar month.
+
+Key changes:
+- Reminder records store `startDate` (`YYYY-MM-DD`) and `recurrence`. Legacy rows without those fields still behave as monthly from `createdAt` + `dayOfMonth`.
+- Paid/push keys are `REMINDEROCC#<YYYY-MM-DD>#<id>` and `REMINDERPUSH#<YYYY-MM-DD>#<id>#<userId>`; month-based keys from phase 21 are still read.
+- `GET /reminders` returns `months` (grouped occurrences) and `series` (for edit). Create/edit is a separate view from the occurrence list.
+- Pierre still sends one push per user per due date; paid checks use the occurrence date.
+
 

@@ -7,8 +7,8 @@ import {
   alreadyPushed,
   getOccurrence,
   isAtOrAfterNotifyTime,
-  isDueOnDay,
   markPushed,
+  matchesDueDate,
   parseOwnerPk,
   saoPauloParts,
   scanAllReminders,
@@ -33,15 +33,15 @@ export async function evaluateAndNotifyPaymentReminders(
   let sent = 0;
 
   for (const reminder of reminders) {
-    if (!isDueOnDay(reminder.dayOfMonth, clock.yearMonth, clock.day)) continue;
-    const occ = await getOccurrence(reminder.PK, clock.yearMonth, reminder.reminderId);
+    if (!matchesDueDate(reminder, clock.date)) continue;
+    const occ = await getOccurrence(reminder.PK, clock.date, reminder.reminderId);
     if (occ?.paid) continue;
     due += 1;
 
     const owner = parseOwnerPk(reminder.PK);
     const userIds = await recipientUserIds(owner.userId, owner.familyId);
     for (const userId of userIds) {
-      if (await alreadyPushed(reminder.PK, clock.yearMonth, reminder.reminderId, userId)) {
+      if (await alreadyPushed(reminder.PK, clock.date, reminder.reminderId, userId)) {
         continue;
       }
       const user = await getUser(userId);
@@ -57,7 +57,7 @@ export async function evaluateAndNotifyPaymentReminders(
         yearMonth: clock.yearMonth,
       });
       if (pushed > 0) {
-        await markPushed(reminder.PK, clock.yearMonth, reminder.reminderId, userId);
+        await markPushed(reminder.PK, clock.date, reminder.reminderId, userId);
         sent += pushed;
       }
     }

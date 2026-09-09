@@ -1,21 +1,29 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { PaymentReminder } from "@aletheia/shared";
+import type { ReminderRecurrence, ReminderSeries } from "@aletheia/shared";
 import { useAuth } from "../auth/AuthContext";
 import { canManageFamily } from "../auth/permissions";
 import { useReminders } from "../hooks/useReminders";
-import { currentYearMonth, formatYearMonth } from "../utils";
+import { formatYearMonth } from "../utils";
+import { resolveLocale } from "../i18n";
 
 interface Props {
   onBack: () => void;
 }
 
-function monthOptions(from: string, count: number): string[] {
-  const year = parseInt(from.slice(0, 4), 10);
-  const month = parseInt(from.slice(4, 6), 10);
-  return Array.from({ length: count }, (_, i) => {
-    const date = new Date(year, month - 1 - i, 1);
-    return `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, "0")}`;
+type View = "list" | "form";
+
+function todayIso(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
+function formatIsoDate(date: string): string {
+  const [year, month, day] = date.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString(resolveLocale(), {
+    day: "numeric",
+    month: "short",
+    weekday: "short",
   });
 }
 
@@ -23,30 +31,55 @@ export default function RemindersPage({ onBack }: Props) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const canManage = canManageFamily(user);
-  const [month, setMonth] = useState(currentYearMonth());
-  const { reminders, notifyTime, loading, create, update, remove, setPaid, setNotifyTime } =
-    useReminders(true, month);
+  const { months, series, notifyTime, loading, create, update, remove, setPaid, setNotifyTime } =
+    useReminders(true);
+  const [view, setView] = useState<View>("list");
+  const [editing, setEditing] = useState<ReminderSeries | null>(null);
   const [name, setName] = useState("");
-  const [day, setDay] = useState("5");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editDay, setEditDay] = useState("5");
-  const [openHistory, setOpenHistory] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState(todayIso());
+  const [recurrence, setRecurrence] = useState<ReminderRecurrence>("monthly");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [timeDraft, setTimeDraft] = useState<string | null>(null);
 
-  const months = useMemo(() => monthOptions(currentYearMonth(), 12), []);
   const timeValue = timeDraft ?? notifyTime;
+  const hasOccurrences = months.some((month) => month.occurrences.length > 0);
 
-  const handleCreate = async () => {
-    const dayOfMonth = parseInt(day, 10);
-    if (!name.trim() || !Number.isFinite(dayOfMonth)) return;
+  const openCreate = () => {
+    setEditing(null);
+    setName("");
+    setStartDate(todayIso());
+    setRecurrence("monthly");
+    setError(null);
+    setView("form");
+  };
+
+  const openEdit = (reminderId: string) => {
+    const item = series.find((s) => s.reminderId === reminderId);
+    if (!item) return;
+    setEditing(item);
+    setName(item.name);
+    setStartDate(item.startDate);
+    setRecurrence(item.recurrence);
+    setError(null);
+    setView("form");
+  };
+
+  const closeForm = () => {
+    setView("list");
+    setEditing(null);
+    setError(null);
+  };
+
+  const handleSave = async () => {
+    if (!name.trim() || !startDate) return;
     setBusy(true);
     setError(null);
     try {
-      await create({ name: name.trim(), dayOfMonth });
-      setName("");
+      const payload = { name: name.trim(), startDate, recurrence };
+      if (editing) await update(editing.reminderId, payload);
+      else await create(payload);
+      closeForm();
     } catch (e) {
       setError(e instanceof Error ? e.message : t("reminders.saveFailed"));
     } finally {
@@ -54,14 +87,13 @@ export default function RemindersPage({ onBack }: Props) {
     }
   };
 
-  const handleSaveEdit = async (reminder: PaymentReminder) => {
-    const dayOfMonth = parseInt(editDay, 10);
-    if (!editName.trim() || !Number.isFinite(dayOfMonth)) return;
+  const handleDelete = async (item: ReminderSeries) => {
+    if (!window.confirm(t("reminders.deleteConfirm", { name: item.name }))) return;
     setBusy(true);
     setError(null);
     try {
-      await update(reminder.reminderId, { name: editName.trim(), dayOfMonth });
-      setEditingId(null);
+      await remove(item.reminderId);
+      closeForm();
     } catch (e) {
       setError(e instanceof Error ? e.message : t("reminders.saveFailed"));
     } finally {
@@ -69,23 +101,10 @@ export default function RemindersPage({ onBack }: Props) {
     }
   };
 
-  const handleDelete = async (reminder: PaymentReminder) => {
-    if (!window.confirm(t("reminders.deleteConfirm", { name: reminder.name }))) return;
-    setBusy(true);
+  const handlePaid = async (reminderId: string, date: string, paid: boolean) => {
     setError(null);
     try {
-      await remove(reminder.reminderId);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("reminders.saveFailed"));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handlePaid = async (reminder: PaymentReminder, paid: boolean) => {
-    setError(null);
-    try {
-      await setPaid(reminder.reminderId, paid, month);
+      await setPaid(reminderId, paid, date);
     } catch (e) {
       setError(e instanceof Error ? e.message : t("reminders.saveFailed"));
     }
@@ -104,6 +123,100 @@ export default function RemindersPage({ onBack }: Props) {
     }
   };
 
+  if (view === "form") {
+    return (
+      <div>
+        <button
+          onClick={closeForm}
+          className="mb-4 text-sm text-indigo-600 hover:underline dark:text-indigo-400"
+        >
+          ← {t("reminders.back")}
+        </button>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          {editing ? t("reminders.editTitle") : t("reminders.newTitle")}
+        </h2>
+        <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t("reminders.formIntro")}</p>
+        {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+        <form
+          className="mt-6 max-w-md space-y-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handleSave();
+          }}
+        >
+          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">
+            {t("reminders.name")}
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t("reminders.namePlaceholder")}
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+            />
+          </label>
+          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400">
+            {t("reminders.startDate")}
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
+            />
+          </label>
+          <fieldset>
+            <legend className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              {t("reminders.recurrence")}
+            </legend>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {(["once", "monthly", "yearly"] as ReminderRecurrence[]).map((value) => (
+                <label
+                  key={value}
+                  className={`cursor-pointer rounded-lg border px-3 py-2 text-sm ${
+                    recurrence === value
+                      ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-950 dark:text-indigo-200"
+                      : "border-gray-300 text-gray-700 dark:border-gray-600 dark:text-gray-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="recurrence"
+                    value={value}
+                    checked={recurrence === value}
+                    onChange={() => setRecurrence(value)}
+                    className="sr-only"
+                  />
+                  {t(`reminders.recurrence${value.charAt(0).toUpperCase()}${value.slice(1)}`)}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="submit"
+              disabled={busy || !name.trim() || !startDate}
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            >
+              {editing ? t("reminders.save") : t("reminders.create")}
+            </button>
+            <button type="button" onClick={closeForm} className="text-sm text-gray-500">
+              {t("reminders.cancel")}
+            </button>
+            {editing && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void handleDelete(editing)}
+                className="ml-auto text-sm text-red-600 dark:text-red-400"
+              >
+                {t("reminders.delete")}
+              </button>
+            )}
+          </div>
+        </form>
+      </div>
+    );
+  }
+
   return (
     <div>
       <button
@@ -112,8 +225,21 @@ export default function RemindersPage({ onBack }: Props) {
       >
         ← {t("reminders.back")}
       </button>
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t("reminders.title")}</h2>
-      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t("reminders.intro")}</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t("reminders.title")}</h2>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{t("reminders.intro")}</p>
+        </div>
+        {canManage && (
+          <button
+            type="button"
+            onClick={openCreate}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white"
+          >
+            {t("reminders.create")}
+          </button>
+        )}
+      </div>
 
       {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
 
@@ -138,169 +264,66 @@ export default function RemindersPage({ onBack }: Props) {
         </button>
       </div>
 
-      <div className="mt-6 flex items-center gap-3">
-        <label className="text-sm text-gray-600 dark:text-gray-300">
-          {t("reminders.month")}
-          <select
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-            className="ml-2 rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
-          >
-            {months.map((ym) => (
-              <option key={ym} value={ym}>
-                {formatYearMonth(ym)}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-
-      {loading && reminders.length === 0 && (
+      {loading && !hasOccurrences && (
         <p className="mt-6 text-sm text-gray-400">{t("reminders.loading")}</p>
       )}
-      {!loading && reminders.length === 0 && (
+      {!loading && !hasOccurrences && (
         <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">{t("reminders.empty")}</p>
       )}
-
-      <ul className="mt-4 space-y-3">
-        {reminders.map((reminder) => (
-          <li
-            key={reminder.reminderId}
-            className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
-          >
-            {editingId === reminder.reminderId ? (
-              <div className="space-y-3">
-                <input
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
-                />
-                <input
-                  type="number"
-                  min={1}
-                  max={31}
-                  value={editDay}
-                  onChange={(e) => setEditDay(e.target.value)}
-                  className="w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
-                />
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void handleSaveEdit(reminder)}
-                    className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm text-white"
-                  >
-                    {t("reminders.save")}
-                  </button>
-                  <button type="button" onClick={() => setEditingId(null)} className="text-sm text-gray-500">
-                    {t("reminders.cancel")}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-gray-100">{reminder.name}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {t("reminders.dayLabel", { day: reminder.dayOfMonth })}
-                    </p>
-                  </div>
-                  <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-                    <input
-                      type="checkbox"
-                      checked={reminder.paid}
-                      onChange={(e) => void handlePaid(reminder, e.target.checked)}
-                    />
-                    {t("reminders.paid")}
-                  </label>
-                </div>
-                {canManage && (
-                  <div className="mt-3 flex gap-3 text-sm">
-                    <button
-                      type="button"
-                      className="text-indigo-600 dark:text-indigo-400"
-                      onClick={() => {
-                        setEditingId(reminder.reminderId);
-                        setEditName(reminder.name);
-                        setEditDay(String(reminder.dayOfMonth));
-                      }}
-                    >
-                      {t("reminders.edit")}
-                    </button>
-                    <button
-                      type="button"
-                      className="text-red-600 dark:text-red-400"
-                      onClick={() => void handleDelete(reminder)}
-                    >
-                      {t("reminders.delete")}
-                    </button>
-                  </div>
-                )}
-                <button
-                  type="button"
-                  className="mt-3 text-xs font-medium text-gray-400"
-                  onClick={() =>
-                    setOpenHistory(openHistory === reminder.reminderId ? null : reminder.reminderId)
-                  }
-                >
-                  {openHistory === reminder.reminderId ? t("reminders.hideHistory") : t("reminders.showHistory")}
-                </button>
-                {openHistory === reminder.reminderId && (
-                  <ul className="mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-300">
-                    {reminder.history.map((row) => (
-                      <li key={row.yearMonth} className="flex justify-between">
-                        <span>{formatYearMonth(row.yearMonth)}</span>
-                        <span>
-                          {row.paid
-                            ? t("reminders.paidOn", { who: row.paidByName || "—" })
-                            : t("reminders.unpaid")}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      {canManage && (
-        <form
-          className="mt-8 space-y-3 rounded-xl border border-dashed border-gray-300 p-4 dark:border-gray-600"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void handleCreate();
-          }}
-        >
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t("reminders.newTitle")}</h3>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={t("reminders.namePlaceholder")}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
-          />
-          <label className="block text-xs text-gray-500">
-            {t("reminders.dayOfMonth")}
-            <input
-              type="number"
-              min={1}
-              max={31}
-              value={day}
-              onChange={(e) => setDay(e.target.value)}
-              className="mt-1 w-24 rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100"
-            />
-          </label>
-          <button
-            type="submit"
-            disabled={busy || !name.trim()}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-          >
-            {t("reminders.create")}
-          </button>
-        </form>
+      {!canManage && (
+        <p className="mt-4 text-xs text-gray-400">{t("reminders.membersReadOnly")}</p>
       )}
+
+      <div className="mt-6 space-y-8">
+        {months.map((month) => (
+          <section key={month.yearMonth}>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              {formatYearMonth(month.yearMonth)}
+            </h3>
+            <ul className="mt-3 space-y-3">
+              {month.occurrences.map((occ) => (
+                <li
+                  key={`${occ.reminderId}-${occ.date}`}
+                  className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-gray-100">{occ.name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {formatIsoDate(occ.date)} · {t(`reminders.recurrence${occ.recurrence.charAt(0).toUpperCase()}${occ.recurrence.slice(1)}`)}
+                      </p>
+                      {occ.paid && occ.paidByName && (
+                        <p className="mt-1 text-xs text-gray-400">
+                          {t("reminders.paidOn", { who: occ.paidByName })}
+                        </p>
+                      )}
+                    </div>
+                    <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+                      <input
+                        type="checkbox"
+                        checked={occ.paid}
+                        onChange={(e) => void handlePaid(occ.reminderId, occ.date, e.target.checked)}
+                      />
+                      {t("reminders.paid")}
+                    </label>
+                  </div>
+                  {canManage && (
+                    <div className="mt-3 flex gap-3 text-sm">
+                      <button
+                        type="button"
+                        className="text-indigo-600 dark:text-indigo-400"
+                        onClick={() => openEdit(occ.reminderId)}
+                      >
+                        {t("reminders.editSeries")}
+                      </button>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }

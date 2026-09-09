@@ -164,12 +164,16 @@ export interface LimitAlertRecord {
   notifiedAt: string;
 }
 
+export type ReminderRecurrence = "once" | "monthly" | "yearly";
+
 export interface ReminderRecord {
   PK: string;
   SK: string;
   reminderId: string;
   name: string;
   dayOfMonth: number;
+  startDate?: string;
+  recurrence?: ReminderRecurrence;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -180,6 +184,7 @@ export interface ReminderOccurrenceRecord {
   SK: string;
   reminderId: string;
   yearMonth: string;
+  date?: string;
   paid: boolean;
   paidAt?: string;
   paidByUserId?: string;
@@ -191,6 +196,7 @@ export interface ReminderPushRecord {
   SK: string;
   reminderId: string;
   yearMonth: string;
+  date?: string;
   userId: string;
   notifiedAt: string;
 }

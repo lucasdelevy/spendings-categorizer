@@ -41,23 +41,32 @@ export interface Account {
   updatedAt: string;
 }
 
+export type ReminderRecurrence = "once" | "monthly" | "yearly";
+
+export interface ReminderSeries {
+  reminderId: string;
+  name: string;
+  startDate: string;
+  recurrence: ReminderRecurrence;
+  dayOfMonth: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ReminderOccurrence {
+  reminderId: string;
+  name: string;
+  date: string;
   yearMonth: string;
+  recurrence: ReminderRecurrence;
   paid: boolean;
   paidAt?: string;
   paidByName?: string;
 }
 
-export interface PaymentReminder {
-  reminderId: string;
-  name: string;
-  dayOfMonth: number;
-  createdAt: string;
-  updatedAt: string;
-  paid: boolean;
-  paidAt?: string;
-  paidByName?: string;
-  history: ReminderOccurrence[];
+export interface ReminderMonth {
+  yearMonth: string;
+  occurrences: ReminderOccurrence[];
 }
 
 export type LimitPeriod = "daily" | "weekly" | "monthly";
