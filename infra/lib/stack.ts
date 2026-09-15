@@ -200,27 +200,27 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       "RemindersIntegration",
       remindersFunction,
     );
-    const authGoogleRoutes = httpApi.addRoutes({
+    httpApi.addRoutes({
       path: "/auth/google",
       methods: [apigatewayv2.HttpMethod.POST],
       integration: authIntegration,
     });
-    const authAppleRoutes = httpApi.addRoutes({
+    httpApi.addRoutes({
       path: "/auth/apple",
       methods: [apigatewayv2.HttpMethod.POST],
       integration: authIntegration,
     });
-    const authMeRoutes = httpApi.addRoutes({
+    httpApi.addRoutes({
       path: "/auth/me",
       methods: [apigatewayv2.HttpMethod.GET, apigatewayv2.HttpMethod.DELETE],
       integration: authIntegration,
     });
-    const authLogoutRoutes = httpApi.addRoutes({
+    httpApi.addRoutes({
       path: "/auth/logout",
       methods: [apigatewayv2.HttpMethod.POST],
       integration: authIntegration,
     });
-    const authEmailRoutes = httpApi.addRoutes({
+    httpApi.addRoutes({
       path: "/auth/email",
       methods: [apigatewayv2.HttpMethod.POST],
       integration: authIntegration,
@@ -314,28 +314,26 @@ export class SpendingsCategorizerStack extends cdk.Stack {
       integration: devicesIntegration,
     });
 
-    const reminderRoutes = [
-      ...httpApi.addRoutes({
-        path: "/reminders",
-        methods: [apigatewayv2.HttpMethod.GET, apigatewayv2.HttpMethod.POST],
-        integration: remindersIntegration,
-      }),
-      ...httpApi.addRoutes({
-        path: "/reminders/settings",
-        methods: [apigatewayv2.HttpMethod.PUT],
-        integration: remindersIntegration,
-      }),
-      ...httpApi.addRoutes({
-        path: "/reminders/{id}",
-        methods: [apigatewayv2.HttpMethod.PUT, apigatewayv2.HttpMethod.DELETE],
-        integration: remindersIntegration,
-      }),
-      ...httpApi.addRoutes({
-        path: "/reminders/{id}/paid",
-        methods: [apigatewayv2.HttpMethod.PUT],
-        integration: remindersIntegration,
-      }),
-    ];
+    httpApi.addRoutes({
+      path: "/reminders",
+      methods: [apigatewayv2.HttpMethod.GET, apigatewayv2.HttpMethod.POST],
+      integration: remindersIntegration,
+    });
+    httpApi.addRoutes({
+      path: "/reminders/settings",
+      methods: [apigatewayv2.HttpMethod.PUT],
+      integration: remindersIntegration,
+    });
+    httpApi.addRoutes({
+      path: "/reminders/{id}",
+      methods: [apigatewayv2.HttpMethod.PUT, apigatewayv2.HttpMethod.DELETE],
+      integration: remindersIntegration,
+    });
+    httpApi.addRoutes({
+      path: "/reminders/{id}/paid",
+      methods: [apigatewayv2.HttpMethod.PUT],
+      integration: remindersIntegration,
+    });
 
     const pierreIntegration = new integrations.HttpLambdaIntegration(
       "PierreIntegration",
@@ -350,45 +348,14 @@ export class SpendingsCategorizerStack extends cdk.Stack {
     const defaultStage = httpApi.defaultStage!.node
       .defaultChild as apigatewayv2.CfnStage;
 
-    // Stage RouteSettings 404 if CloudFormation updates the stage before the
-    // named routes exist (and rollback hits the same bug in reverse).
-    for (const route of [
-      ...authGoogleRoutes,
-      ...authAppleRoutes,
-      ...authMeRoutes,
-      ...authLogoutRoutes,
-      ...authEmailRoutes,
-      ...reminderRoutes,
-    ]) {
-      defaultStage.addDependency(route.node.defaultChild as cdk.CfnResource);
-    }
-
+    // Per-route Stage RouteSettings 404 when CloudFormation updates the stage
+    // before those named routes exist; rollback hits the same API Gateway 404
+    // and can leave $default with no deployed routes. Throttle only globally.
+    defaultStage.autoDeploy = true;
+    defaultStage.description = "auto-deploy; default throttling only";
     defaultStage.defaultRouteSettings = {
       throttlingBurstLimit: 100,
       throttlingRateLimit: 50,
-    };
-
-    defaultStage.routeSettings = {
-      "POST /auth/google": {
-        ThrottlingBurstLimit: 10,
-        ThrottlingRateLimit: 5,
-      },
-      "POST /auth/apple": {
-        ThrottlingBurstLimit: 10,
-        ThrottlingRateLimit: 5,
-      },
-      "POST /auth/logout": {
-        ThrottlingBurstLimit: 10,
-        ThrottlingRateLimit: 5,
-      },
-      "GET /auth/me": {
-        ThrottlingBurstLimit: 20,
-        ThrottlingRateLimit: 10,
-      },
-      "DELETE /auth/me": {
-        ThrottlingBurstLimit: 5,
-        ThrottlingRateLimit: 2,
-      },
     };
 
     new cdk.CfnOutput(this, "ApiUrl", {
